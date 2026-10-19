@@ -7,7 +7,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#5b6cff">
 <title>記帳</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="記帳">
 <style>
 :root{
   --accent:#5b6cff;
@@ -255,7 +258,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         <div class="mlabel" id="mlabel"></div>
         <button onclick="shiftMonth(1)">›</button>
       </div>
-      <button class="gear" id="gearBtn" onclick="go('settings')">⚙️</button>
+      <button class="gear" id="gearBtn" onclick="go('settings')"><span data-ic="settings"></span></button>
     </div>
   </div>
 
@@ -271,12 +274,12 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   <button class="fab" id="fab" onclick="openAdd()">＋</button>
 
   <div class="nav" id="nav">
-    <button data-p="records" class="on" onclick="go('records')"><span class="ni">📋</span>記錄</button>
-    <button data-p="stats" onclick="go('stats')"><span class="ni">📊</span>統計</button>
+    <button data-p="records" class="on" onclick="go('records')"><span class="ni" data-ic="receipt-text"></span>記錄</button>
+    <button data-p="stats" onclick="go('stats')"><span class="ni" data-ic="chart-pie"></span>統計</button>
     <span class="spacer"></span>
-    <button data-p="accounts" onclick="go('accounts')"><span class="ni">💳</span>帳戶</button>
-    <button data-p="projects" onclick="go('projects')"><span class="ni">📁</span>專案</button>
-    <button data-p="budgets" onclick="go('budgets')"><span class="ni">🎯</span>預算</button>
+    <button data-p="accounts" onclick="go('accounts')"><span class="ni" data-ic="wallet"></span>帳戶</button>
+    <button data-p="projects" onclick="go('projects')"><span class="ni" data-ic="folder"></span>專案</button>
+    <button data-p="budgets" onclick="go('budgets')"><span class="ni" data-ic="target"></span>預算</button>
   </div>
 </div>
 
@@ -354,6 +357,12 @@ const ICONS={
  "cross":'<path d="M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a1 1 0 0 1 1 1v4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4a1 1 0 0 1 1-1h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a1 1 0 0 1-1-1V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1z"/>',
  "book-open":'<path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/>',
  "ellipsis":'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+ "receipt-text":'<path d="M13 16H8"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/>',
+ "chart-pie":'<path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>',
+ "wallet":'<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+ "folder":'<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+ "target":'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+ "settings":'<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
 };
 function IC(icon){
   if(icon&&ICONS[icon])return '<svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[icon]+'</svg>';
@@ -472,7 +481,7 @@ function renderRecords(){
     <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(inc-exp)}</div></div>
   </div>`;
   if(!recs.length){
-    html+=`<div class="empty"><div class="big">📝</div>這個月還沒有記錄<br>點下方 ＋ 開始記帳</div>`;
+    html+=`<div class="empty"><div class="big">${IC("receipt-text")}</div>這個月還沒有記錄<br>點下方 ＋ 開始記帳</div>`;
     document.getElementById("page-records").innerHTML=html;return;
   }
   // group by date
@@ -641,9 +650,9 @@ function renderBudgets(){
   let html="";
   if(totalBud){
     html+=`<div class="card"><div class="bud" onclick="openBudget('total')">
-      ${budBar("本月總預算","🎯",DB.config.accent,totalExp,totalBud.amount)}</div></div>`;
+      ${budBar("本月總預算","target",DB.config.accent,totalExp,totalBud.amount)}</div></div>`;
   }else{
-    html+=`<div class="card"><div class="row" onclick="openBudget('total')"><div class="ic" style="background:${hex2(DB.config.accent)};color:var(--accent)">🎯</div><div class="mid"><div class="rtitle">設定總預算</div><div class="rsub">設定每月總支出上限</div></div><div class="chev" style="color:var(--text3)">›</div></div></div>`;
+    html+=`<div class="card"><div class="row" onclick="openBudget('total')"><div class="ic" style="background:${hex2(DB.config.accent)};color:var(--accent)">${IC("target")}</div><div class="mid"><div class="rtitle">設定總預算</div><div class="rsub">設定每月總支出上限</div></div><div class="chev" style="color:var(--text3)">›</div></div></div>`;
   }
   const catBuds=DB.budgets.filter(b=>b.categoryId!=="total");
   html+=`<div class="card"><div class="card-h">分類預算</div>`;
@@ -677,7 +686,7 @@ function projStats(pid){
 function renderProjects(){
   let html="";
   if(!DB.projects.length){
-    html=`<div class="empty"><div class="big">📁</div>還沒有專案<br>用專案把一趟旅遊、一個活動的收支<br>獨立歸在一起追蹤</div>`;
+    html=`<div class="empty"><div class="big">${IC("folder")}</div>還沒有專案<br>用專案把一趟旅遊、一個活動的收支<br>獨立歸在一起追蹤</div>`;
   }else{
     const sorted=DB.projects.map(p=>({p,s:projStats(p.id)})).sort((a,b)=>b.s.n-a.s.n);
     html+=`<div class="card"><div class="card-h">專案 (${DB.projects.length})</div>`;
@@ -1370,6 +1379,7 @@ function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t
 
 /* =================== init =================== */
 applyTheme();
+document.querySelectorAll("[data-ic]").forEach(e=>{e.innerHTML=IC(e.dataset.ic);});
 go("records");
 if(syncOn()){syncPull({force:true,silent:true});startPoll();}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&syncOn())syncPull({background:true,silent:true});});
