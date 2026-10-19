@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#5b6cff">
+<title>記帳</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<style>
+:root{
+  --accent:#5b6cff;
+  --expense:#e5484d;
+  --income:#30a46c;
+  --bg:#f4f5f7;
+  --card:#ffffff;
+  --text:#1a1d24;
+  --text2:#6b7280;
+  --text3:#9ca3af;
+  --line:#e8eaed;
+  --input:#f1f2f4;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --nav-h:62px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+:root[data-theme="dark"]{
+  --bg:#15171c;
+  --card:#1e2127;
+  --text:#eceef2;
+  --text2:#9aa1ad;
+  --text3:#6b7280;
+  --line:#2b2f37;
+  --input:#282c34;
+  --shadow:0 1px 3px rgba(0,0,0,.3);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171c;--card:#1e2127;--text:#eceef2;--text2:#9aa1ad;--text3:#6b7280;--line:#2b2f37;--input:#282c34;--shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+  background:var(--bg);color:var(--text);
+  font-size:15px;line-height:1.4;overflow:hidden;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+.gi{width:1.12em;height:1.12em;display:block;flex:0 0 auto}
+input,select,textarea{font-family:inherit;font-size:16px;color:var(--text);background:var(--input);border:none;border-radius:10px;padding:11px 13px;width:100%;outline:none}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+.app{display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;position:relative;background:var(--bg)}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;background:var(--bg);position:sticky;top:0;z-index:10}
+.topbar h1{font-size:20px;font-weight:700}
+.month-nav{display:flex;align-items:center;gap:4px;background:var(--card);border-radius:20px;padding:5px 6px;box-shadow:var(--shadow)}
+.month-nav button{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--text2)}
+.month-nav .mlabel{font-weight:600;min-width:92px;text-align:center;font-size:14px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.gear{width:38px;height:38px;border-radius:50%;background:var(--card);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:18px}
+.gear:active{background:var(--input)}
+
+/* pages */
+.pages{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 80px)}
+.page{display:none;padding:0 14px}
+.page.active{display:block}
+
+/* summary strip */
+.sumstrip{display:flex;background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin:4px 0 14px;overflow:hidden}
+.sumstrip .cell{flex:1;padding:13px 10px;text-align:center;position:relative}
+.sumstrip .cell+.cell::before{content:"";position:absolute;left:0;top:22%;height:56%;width:1px;background:var(--line)}
+.sumstrip .lbl{font-size:12px;color:var(--text2);margin-bottom:3px}
+.sumstrip .val{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.val.exp{color:var(--expense)}.val.inc{color:var(--income)}
+
+/* record list */
+.daygroup{margin-bottom:14px}
+.dayhead{display:flex;justify-content:space-between;align-items:baseline;padding:4px 6px 8px;font-size:12.5px;color:var(--text2)}
+.dayhead .ddate{font-weight:600;color:var(--text)}
+.dayhead .dsum{font-variant-numeric:tabular-nums}
+.reclist{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.rec{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.rec+.rec{border-top:1px solid var(--line)}
+.rec:active{background:var(--input)}
+.rec .ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.rec .mid{flex:1;min-width:0}
+.rec .rname{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .rmeta{font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .ramt{font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;font-size:15.5px}
+
+.empty{text-align:center;color:var(--text3);padding:60px 20px;font-size:14px}
+.empty .big{font-size:46px;margin-bottom:12px;opacity:.5}
+
+/* generic card list (accounts/budgets) */
+.card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.card-h{padding:14px 16px 6px;font-size:13px;color:var(--text2);font-weight:600}
+.row{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer}
+.row+.row{border-top:1px solid var(--line)}
+.row:active{background:var(--input)}
+.row .ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.row .mid{flex:1;min-width:0}
+.row .rtitle{font-weight:600}
+.row .rsub{font-size:12px;color:var(--text2);margin-top:2px}
+.row .rval{font-weight:700;font-variant-numeric:tabular-nums}
+
+.networth{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#000));color:#fff;border-radius:18px;padding:20px;margin:4px 0 16px;box-shadow:var(--shadow)}
+.networth .nwl{font-size:13px;opacity:.85}
+.networth .nwv{font-size:30px;font-weight:800;margin-top:4px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.networth .nwsub{display:flex;gap:18px;margin-top:12px;font-size:12.5px}
+.networth .nwsub span{opacity:.9}
+.networth .nwsub b{display:block;font-size:15px;margin-top:2px}
+
+/* budget progress */
+.bud{padding:14px 16px;cursor:pointer}
+.bud+.bud{border-top:1px solid var(--line)}
+.bud .bhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.bud .bname{font-weight:600;display:flex;align-items:center;gap:8px}
+.bud .bname .ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.bud .bnum{font-size:12.5px;color:var(--text2);font-variant-numeric:tabular-nums}
+.pbar{height:8px;border-radius:5px;background:var(--input);overflow:hidden}
+.pbar>i{display:block;height:100%;border-radius:5px;transition:width .4s}
+
+/* stats */
+.seg{display:flex;background:var(--input);border-radius:12px;padding:3px;margin:2px 0 14px}
+.seg button{flex:1;padding:8px;border-radius:9px;font-size:14px;font-weight:600;color:var(--text2)}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+.chartcard{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:18px 16px;margin-bottom:14px}
+.chartcard h3{font-size:14px;color:var(--text2);margin-bottom:12px;font-weight:600}
+.donut-wrap{display:flex;flex-direction:column;align-items:center}
+.legend{width:100%;margin-top:6px}
+.legrow{display:flex;align-items:center;gap:10px;padding:9px 2px;cursor:pointer}
+.legrow+.legrow{border-top:1px solid var(--line)}
+.legrow .dot{width:12px;height:12px;border-radius:4px;flex-shrink:0}
+.legrow .lname{flex:1;font-weight:500;display:flex;align-items:center;gap:7px}
+.legrow .lpct{color:var(--text2);font-size:12.5px;width:46px;text-align:right}
+.legrow .lamt{font-weight:600;font-variant-numeric:tabular-nums;width:92px;text-align:right}
+.barchart{display:flex;align-items:flex-end;gap:7px;height:140px;padding-top:10px}
+.barchart .bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.barchart .bbar{width:70%;max-width:26px;border-radius:5px 5px 0 0;background:var(--accent);min-height:2px;transition:height .4s}
+.barchart .blbl{font-size:10.5px;color:var(--text2);white-space:nowrap}
+.barchart .bval{font-size:9.5px;color:var(--text3);font-variant-numeric:tabular-nums}
+
+/* settings */
+.set-group{background:var(--card);border-radius:14px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.set-item{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.set-item+.set-item{border-top:1px solid var(--line)}
+.set-item:active{background:var(--input)}
+.set-item .si-ic{font-size:18px;width:24px;text-align:center}
+.set-item .si-label{flex:1;font-weight:500}
+.set-item .si-val{color:var(--text2);font-size:13px}
+.set-item .chev{color:var(--text3);font-size:18px}
+
+/* fab */
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + var(--safe-b) + 14px);width:60px;height:60px;border-radius:50%;background:var(--accent);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px color-mix(in srgb,var(--accent) 55%,transparent);z-index:40;max-width:560px}
+.fab:active{transform:translateX(-50%) scale(.92)}
+
+/* bottom nav */
+.nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));padding-bottom:var(--safe-b);background:var(--card);border-top:1px solid var(--line);display:flex;z-index:30;max-width:560px;margin:0 auto}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text3);font-size:10.5px;padding-top:7px}
+.nav button .ni{font-size:21px;line-height:1}
+.nav button.on{color:var(--accent)}
+.nav .spacer{flex:1}
+
+/* modal / sheet */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+.mask.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);z-index:60;border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform .3s cubic-bezier(.3,.9,.3,1);max-width:560px;margin:0 auto;max-height:94vh;display:flex;flex-direction:column;padding-bottom:var(--safe-b)}
+.sheet.show{transform:translateY(0)}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;flex-shrink:0}
+.sheet-h .st{font-size:17px;font-weight:700}
+.sheet-h button.x{font-size:15px;color:var(--text2);padding:4px 8px}
+.sheet-h button.del{color:var(--expense);font-size:14px;font-weight:600}
+.sheet-body{flex:1;min-height:0;overflow-y:auto;padding:0 18px 18px}
+.grab{width:38px;height:4px;background:var(--line);border-radius:3px;margin:8px auto 0}
+
+/* add-record sheet specials */
+.addtype{display:flex;background:var(--input);border-radius:12px;padding:3px;margin:4px 0 14px}
+.addtype button{flex:1;padding:9px;border-radius:9px;font-weight:700;color:var(--text2);font-size:14.5px}
+.addtype button.on-exp{background:var(--card);color:var(--expense);box-shadow:var(--shadow)}
+.addtype button.on-inc{background:var(--card);color:var(--income);box-shadow:var(--shadow)}
+.addtype button.on-xfer{background:var(--card);color:var(--accent);box-shadow:var(--shadow)}
+.amtbox{text-align:right;padding:6px 6px 16px}
+.amtbox .cur{color:var(--text2);font-size:20px;margin-right:4px}
+.amtbox .num{font-size:40px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.mainchips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;-webkit-overflow-scrolling:touch}
+.mainchips::-webkit-scrollbar{display:none}
+.mchip{display:flex;flex-direction:column;align-items:center;gap:5px;flex:0 0 auto;font-size:11px;color:var(--text2);min-width:52px}
+.mchip .mci{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;background:var(--input);color:var(--text3)}
+.mchip.on{color:var(--accent);font-weight:700}
+.mchip.on .mci{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--accent)}
+.catgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px 0;margin-bottom:6px}
+.catgrid .cat{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px;border-radius:12px}
+.catgrid .cat .cic{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:23px;transition:transform .1s}
+.catgrid .cat .cl{font-size:11px;color:var(--text2);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px}
+.catgrid .cat.on .cic{transform:scale(1.04);box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--accent)}
+.catgrid .cat.on .cl{color:var(--accent);font-weight:600}
+.catgrid .cat.addc .cic{background:var(--input);color:var(--text3)}
+
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:600}
+.fieldrow{display:flex;gap:10px}
+.fieldrow>*{flex:1}
+.selwrap{position:relative}
+.selwrap select{appearance:none;padding-right:34px}
+.selwrap::after{content:"▾";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:7px 13px;border-radius:18px;background:var(--input);font-size:13px;color:var(--text2);font-weight:500}
+.chip.on{background:var(--accent);color:#fff}
+
+/* keypad */
+.keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 18px calc(10px + var(--safe-b));background:var(--bg);flex-shrink:0}
+.keypad button{background:var(--card);border-radius:13px;height:54px;font-size:22px;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center}
+.keypad button:active{background:var(--input)}
+.keypad button.op{color:var(--accent)}
+.keypad button.done{background:var(--accent);color:#fff;grid-row:span 2;height:auto}
+
+/* big action button */
+.btn{display:block;width:100%;background:var(--accent);color:#fff;border-radius:13px;padding:14px;font-weight:700;font-size:16px;text-align:center;margin-top:8px}
+.btn:active{opacity:.85}
+.btn.ghost{background:var(--input);color:var(--text)}
+.btn.danger{background:var(--expense)}
+.btn.sm{padding:10px;font-size:14px}
+
+/* manage lists */
+.mitem{display:flex;align-items:center;gap:12px;padding:11px 2px}
+.mitem+.mitem{border-top:1px solid var(--line)}
+.mitem .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px}
+.mitem .mn{flex:1;font-weight:500}
+.mitem .medit{color:var(--accent);font-size:13px;padding:5px 8px}
+.mitem .mdel{color:var(--expense);font-size:17px;padding:5px 8px}
+
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:200px;overflow-y:auto;margin-top:6px}
+.emoji-grid button{font-size:22px;padding:7px 0;border-radius:10px}
+.emoji-grid button.on{background:var(--input)}
+.color-grid{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px}
+.color-grid button{width:34px;height:34px;border-radius:50%}
+.color-grid button.on{box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--text2)}
+
+.hint{font-size:12px;color:var(--text2);line-height:1.6;margin:6px 2px}
+.synbadge{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text3);margin-left:6px;vertical-align:middle}
+.synbadge.on{background:var(--income)}
+.toast{position:fixed;bottom:calc(var(--nav-h) + 90px);left:50%;transform:translateX(-50%);background:rgba(0,0,0,.82);color:#fff;padding:10px 18px;border-radius:22px;font-size:13.5px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1 id="pageTitle">記錄</h1>
+    <div class="topbar-right">
+      <div class="month-nav" id="monthNav">
+        <button onclick="shiftMonth(-1)">‹</button>
+        <div class="mlabel" id="mlabel"></div>
+        <button onclick="shiftMonth(1)">›</button>
+      </div>
+      <button class="gear" id="gearBtn" onclick="go('settings')">⚙️</button>
+    </div>
+  </div>
+
+  <div class="pages">
+    <div class="page active" id="page-records"></div>
+    <div class="page" id="page-stats"></div>
+    <div class="page" id="page-accounts"></div>
+    <div class="page" id="page-projects"></div>
+    <div class="page" id="page-budgets"></div>
+    <div class="page" id="page-settings"></div>
+  </div>
+
+  <button class="fab" id="fab" onclick="openAdd()">＋</button>
+
+  <div class="nav" id="nav">
+    <button data-p="records" class="on" onclick="go('records')"><span class="ni">📋</span>記錄</button>
+    <button data-p="stats" onclick="go('stats')"><span class="ni">📊</span>統計</button>
+    <span class="spacer"></span>
+    <button data-p="accounts" onclick="go('accounts')"><span class="ni">💳</span>帳戶</button>
+    <button data-p="projects" onclick="go('projects')"><span class="ni">📁</span>專案</button>
+    <button data-p="budgets" onclick="go('budgets')"><span class="ni">🎯</span>預算</button>
+  </div>
+</div>
+
+<div class="mask" id="mask" onclick="closeTopSheet()"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =================== data layer =================== */
+const STORE_KEY="moze_data";
+const SYNC_DESC="MozeClone Sync — do not delete";
+const SYNC_FILE="moze_data.json";
+const DEFAULT_CURRENCIES=[
+  {code:"TWD",symbol:"$",rate:1},
+  {code:"HKD",symbol:"HK$",rate:4.1},
+  {code:"JPY",symbol:"¥",rate:0.22},
+  {code:"USD",symbol:"US$",rate:31},
+];
+
+const DEFAULT_ACCOUNTS=[
+  {id:"a_cash",name:"現金",type:"cash",init:0,icon:"banknote",color:"#30a46c"},
+  {id:"a_bank",name:"銀行帳戶",type:"bank",init:0,icon:"landmark",color:"#5b6cff"},
+  {id:"a_card",name:"信用卡",type:"credit",init:0,icon:"credit-card",color:"#e5484d"},
+];
+const DEFAULT_CATS=[
+  // expense
+  {id:"c_food",name:"餐飲",type:"expense",icon:"utensils",color:"#f59e0b"},
+  {id:"c_daily",name:"日用品",type:"expense",icon:"package",color:"#06b6d4"},
+  {id:"c_traffic",name:"交通",type:"expense",icon:"car",color:"#3b82f6"},
+  {id:"c_shop",name:"購物",type:"expense",icon:"shopping-bag",color:"#ec4899"},
+  {id:"c_fun",name:"娛樂",type:"expense",icon:"gamepad-2",color:"#8b5cf6"},
+  {id:"c_home",name:"居家",type:"expense",icon:"house",color:"#14b8a6"},
+  {id:"c_med",name:"醫療",type:"expense",icon:"pill",color:"#ef4444"},
+  {id:"c_edu",name:"教育",type:"expense",icon:"graduation-cap",color:"#6366f1"},
+  {id:"c_cloth",name:"服飾",type:"expense",icon:"shopping-bag",color:"#f43f5e"},
+  {id:"c_comm",name:"通訊",type:"expense",icon:"smartphone",color:"#0ea5e9"},
+  {id:"c_social",name:"社交",type:"expense",icon:"users",color:"#d97706"},
+  {id:"c_travel",name:"旅行",type:"expense",icon:"sparkles",color:"#0891b2"},
+  {id:"c_other_e",name:"其他",type:"expense",icon:"package",color:"#78716c"},
+  // income
+  {id:"c_salary",name:"薪資",type:"income",icon:"coins",color:"#30a46c"},
+  {id:"c_bonus",name:"獎金",type:"income",icon:"sparkles",color:"#16a34a"},
+  {id:"c_invest",name:"投資",type:"income",icon:"trending-up",color:"#059669"},
+  {id:"c_parttime",name:"兼職",type:"income",icon:"user",color:"#10b981"},
+  {id:"c_refund",name:"退款",type:"income",icon:"coins",color:"#22c55e"},
+  {id:"c_other_i",name:"其他",type:"income",icon:"coins",color:"#65a30d"},
+];
+const EMOJIS=["🍜","🍔","🍱","☕","🍰","🍺","🛒","🧴","🚗","🚌","🚇","⛽","🛍️","👕","👟","🎮","🎬","🎵","🏠","💡","💧","📱","💻","💊","🏥","📚","✏️","✈️","🏨","🎁","💰","💵","💳","📈","💼","🏦","🎯","🐾","👶","💄","✂️","🔧","🎾","⚽","🚭","🧾","📦","❤️","🌐","⚡"];
+const COLORS=["#e5484d","#f59e0b","#eab308","#30a46c","#06b6d4","#3b82f6","#5b6cff","#8b5cf6","#ec4899","#f43f5e","#14b8a6","#78716c"];
+
+/* line-icon registry (Lucide, ISC license) — key -> inner svg markup */
+const ICONS={
+ "utensils":'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+ "shopping-bag":'<path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/>',
+ "car":'<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+ "house":'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+ "user":'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+ "gamepad-2":'<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/>',
+ "sparkles":'<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+ "pill":'<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
+ "graduation-cap":'<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+ "package":'<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/>',
+ "users":'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
+ "key-round":'<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>',
+ "coins":'<path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/><path d="M15 6h1v4"/><path d="m6.134 14.768.866-.5 2 3.464"/><circle cx="16" cy="8" r="6"/>',
+ "scale":'<path d="M12 3v18"/><path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/><path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M7 21h10"/>',
+ "banknote":'<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+ "landmark":'<path d="M10 18v-7"/><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/>',
+ "credit-card":'<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M6 14h2"/>',
+ "smartphone":'<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+ "trending-up":'<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
+ "signpost":'<path d="M12 13v8"/><path d="M12 3v3"/><path d="M2.354 10.354a1.207 1.207 0 0 1 0-1.708l2.06-2.06A2 2 0 0 1 5.828 6h12.344a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H5.828a2 2 0 0 1-1.414-.586z"/>',
+ "mic":'<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
+ "store":'<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>',
+ "cross":'<path d="M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a1 1 0 0 1 1 1v4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4a1 1 0 0 1 1-1h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a1 1 0 0 1-1-1V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1z"/>',
+ "book-open":'<path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/>',
+ "ellipsis":'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+};
+function IC(icon){
+  if(icon&&ICONS[icon])return '<svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICONS[icon]+'</svg>';
+  return icon||"";
+}
+function emojiOrBlank(icon){return (icon&&!ICONS[icon])?icon+" ":"";}
+
+let DB=load();
+let ui={page:"records",month:curMonth(),statType:"expense",statMain:null};
+
+function curMonth(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+function load(){
+  let raw=null;try{raw=JSON.parse(localStorage.getItem(STORE_KEY));}catch(e){}
+  if(!raw||!raw.accounts){
+    return {version:1,accounts:structuredClone(DEFAULT_ACCOUNTS),categories:structuredClone(DEFAULT_CATS),
+            records:[],budgets:[],tags:["早餐","午餐","晚餐"],projects:[],
+            config:defaultConfig(),_exportedAt:0};
+  }
+  raw.tags=raw.tags||[];raw.budgets=raw.budgets||[];
+  raw.projects=(raw.projects||[]).map((p,i)=> (typeof p==="string")
+    ? {id:"p_"+uid(),name:p,color:COLORS[i%COLORS.length],icon:"📁"} : p);
+  raw.config=normalizeConfig(raw.config);
+  return raw;
+}
+function defaultConfig(){return {baseCur:"TWD",currencies:structuredClone(DEFAULT_CURRENCIES),theme:"auto",accent:"#5b6cff"};}
+function normalizeConfig(c){
+  c=c||{};
+  if(!c.currencies){
+    const cs=structuredClone(DEFAULT_CURRENCIES);
+    if(c.currency){const b=cs.find(x=>x.code==="TWD");if(b)b.symbol=c.currency;}
+    c.currencies=cs;
+  }
+  if(!c.baseCur)c.baseCur="TWD";
+  if(!c.currencies.some(x=>x.code===c.baseCur))c.baseCur=c.currencies[0].code;
+  if(c.theme==null)c.theme="auto";if(c.accent==null)c.accent="#5b6cff";
+  return c;
+}
+function save(skipSync){
+  DB._exportedAt=Date.now();
+  localStorage.setItem(STORE_KEY,JSON.stringify(DB));
+  if(!skipSync){_localDirty=true;schedulePush();}
+}
+
+/* =================== helpers =================== */
+function curInfo(code){return (DB.config.currencies||[]).find(x=>x.code===code)||{code:code||"",symbol:code||"$",rate:1};}
+function baseSym(){return curInfo(DB.config.baseCur).symbol;}
+function cur(){return baseSym();}
+function isForeign(code){return !!code&&code!==DB.config.baseCur;}
+function baseAmt(r){const rt=(r.rate!=null)?r.rate:curInfo(r.cur||DB.config.baseCur).rate;return (r.amount||0)*(rt||1);}
+function numStr(n){const a=Math.abs(n);return (a%1===0)?a.toLocaleString("en-US"):a.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt(n,signed){n=Math.round((n||0)*100)/100;const neg=n<0;const out=baseSym()+numStr(n);if(signed)return (neg?"−":"+")+out;return (neg?"−":"")+out;}
+function fmtCur(amount,code,signed){const info=curInfo(code);const neg=amount<0;const out=info.symbol+numStr(amount);if(signed)return (neg?"−":"+")+out;return (neg?"−":"")+out;}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function acc(id){return DB.accounts.find(a=>a.id===id);}
+function catOf(id){return DB.categories.find(c=>c.id===id);}
+function projOf(id){return DB.projects.find(p=>p.id===id);}
+function mainCats(type){return DB.categories.filter(c=>c.type===type&&!c.parent);}
+function subCats(mainId){return DB.categories.filter(c=>c.parent===mainId);}
+function mainOf(cat){return (cat&&cat.parent)?(catOf(cat.parent)||cat):cat;}
+function catColor(cat){if(!cat)return "#999";if(cat.color)return cat.color;const m=cat.parent?catOf(cat.parent):null;return (m&&m.color)||"#999";}
+function catIcon(cat){if(!cat)return "❓";if(cat.icon)return cat.icon;const m=cat.parent?catOf(cat.parent):null;return (m&&m.icon)||"📦";}
+function monthLabel(m){const[y,mo]=m.split("-");return y+"年"+parseInt(mo)+"月";}
+function inMonth(dateStr,m){return dateStr&&dateStr.slice(0,7)===m;}
+function recsInMonth(m){return DB.records.filter(r=>inMonth(r.date,m));}
+
+function accBalance(id){
+  const a=acc(id);if(!a)return 0;let b=a.init||0;
+  for(const r of DB.records){
+    const v=baseAmt(r);
+    if(r.type==="income"&&r.accountId===id)b+=v;
+    else if(r.type==="expense"&&r.accountId===id)b-=v;
+    else if(r.type==="transfer"){if(r.accountId===id)b-=v;if(r.toAccountId===id)b+=v;}
+  }
+  return b;
+}
+
+/* =================== router =================== */
+const TITLES={records:"記錄",stats:"統計",accounts:"帳戶",projects:"專案",budgets:"預算",settings:"設定"};
+function go(p){
+  ui.page=p;
+  document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
+  document.getElementById("page-"+p).classList.add("active");
+  document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+  document.getElementById("gearBtn").style.color=(p==="settings")?"var(--accent)":"";
+  document.getElementById("pageTitle").textContent=TITLES[p];
+  document.getElementById("monthNav").style.visibility=(p==="records"||p==="stats"||p==="budgets")?"visible":"hidden";
+  document.querySelector(".pages").scrollTop=0;
+  render();
+}
+function shiftMonth(d){
+  let[y,m]=ui.month.split("-").map(Number);m+=d;
+  if(m<1){m=12;y--;}if(m>12){m=1;y++;}
+  ui.month=y+"-"+String(m).padStart(2,"0");render();
+}
+function render(){
+  document.getElementById("mlabel").textContent=monthLabel(ui.month);
+  if(ui.page==="records")renderRecords();
+  else if(ui.page==="stats")renderStats();
+  else if(ui.page==="accounts")renderAccounts();
+  else if(ui.page==="projects")renderProjects();
+  else if(ui.page==="budgets")renderBudgets();
+  else if(ui.page==="settings")renderSettings();
+}
+
+/* =================== records page =================== */
+function renderRecords(){
+  const recs=recsInMonth(ui.month).slice().sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0));
+  let inc=0,exp=0;
+  recs.forEach(r=>{if(r.type==="income")inc+=baseAmt(r);else if(r.type==="expense")exp+=baseAmt(r);});
+  let html=`<div class="sumstrip">
+    <div class="cell"><div class="lbl">收入</div><div class="val inc">${fmt(inc)}</div></div>
+    <div class="cell"><div class="lbl">支出</div><div class="val exp">${fmt(exp)}</div></div>
+    <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(inc-exp)}</div></div>
+  </div>`;
+  if(!recs.length){
+    html+=`<div class="empty"><div class="big">📝</div>這個月還沒有記錄<br>點下方 ＋ 開始記帳</div>`;
+    document.getElementById("page-records").innerHTML=html;return;
+  }
+  // group by date
+  const groups={};
+  recs.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
+  Object.keys(groups).sort().reverse().forEach(d=>{
+    let din=0,dex=0;groups[d].forEach(r=>{if(r.type==="income")din+=baseAmt(r);else if(r.type==="expense")dex+=baseAmt(r);});
+    let dsum=[];if(dex)dsum.push(`<span class="val exp" style="font-size:12.5px">支 ${fmt(dex)}</span>`);if(din)dsum.push(`<span class="val inc" style="font-size:12.5px">收 ${fmt(din)}</span>`);
+    html+=`<div class="daygroup"><div class="dayhead"><span class="ddate">${fmtDay(d)}</span><span class="dsum">${dsum.join("　")}</span></div><div class="reclist">`;
+    groups[d].forEach(r=>html+=recRow(r));
+    html+=`</div></div>`;
+  });
+  document.getElementById("page-records").innerHTML=html;
+}
+function fmtDay(d){
+  const[y,m,dd]=d.split("-").map(Number);const dt=new Date(y,m-1,dd);
+  const wk=["日","一","二","三","四","五","六"][dt.getDay()];
+  const t=todayStr();
+  let pre=(d===t)?"今天 ":"";
+  return pre+`${m}/${dd} 週${wk}`;
+}
+function recRow(r){
+  const rc=r.cur||DB.config.baseCur,fgn=isForeign(rc);
+  if(r.type==="transfer"){
+    const fa=acc(r.accountId),ta=acc(r.toAccountId);
+    return `<div class="rec" onclick="openAdd('${r.id}')">
+      <div class="ic" style="background:${hex2(DB.config.accent)};">🔄</div>
+      <div class="mid"><div class="rname">轉帳</div><div class="rmeta">${esc(fa?fa.name:"?")} → ${esc(ta?ta.name:"?")}${r.note?" · "+esc(r.note):""}</div></div>
+      <div class="ramt" style="color:var(--accent)">${fmtCur(r.amount,rc)}</div></div>`;
+  }
+  const c=catOf(r.categoryId),a=acc(r.accountId);
+  const col=catColor(c);
+  const sign=r.type==="income"?"income":"expense";
+  const cname=c?(c.parent?(mainOf(c).name+"·"+c.name):c.name):"未分類";
+  const metaParts=[a?a.name:"",r.note].filter(Boolean);
+  if(fgn)metaParts.push("≈"+fmt(baseAmt(r)));
+  const proj=r.projectId?projOf(r.projectId):null;
+  if(proj)metaParts.push("📁"+proj.name);
+  const meta=metaParts.concat((r.tags||[]).map(t=>"#"+t)).join(" · ");
+  return `<div class="rec" onclick="openAdd('${r.id}')">
+    <div class="ic" style="background:${hex2(col)};color:${col}">${IC(catIcon(c))}</div>
+    <div class="mid"><div class="rname">${esc(cname)}</div><div class="rmeta">${esc(meta)||"—"}</div></div>
+    <div class="ramt" style="color:var(--${sign})">${r.type==="income"?"+":"−"}${fmtCur(r.amount,rc)}</div></div>`;
+}
+function hex2(hex){ // translucent bg from hex
+  hex=hex||"#888888";if(hex.length===4)hex="#"+hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3];
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},.15)`;
+}
+
+/* =================== stats page =================== */
+function renderStats(){
+  const recs=recsInMonth(ui.month);
+  let inc=0,exp=0;recs.forEach(r=>{if(r.type==="income")inc+=baseAmt(r);else if(r.type==="expense")exp+=baseAmt(r);});
+  let html=`<div class="sumstrip">
+    <div class="cell"><div class="lbl">收入</div><div class="val inc">${fmt(inc)}</div></div>
+    <div class="cell"><div class="lbl">支出</div><div class="val exp">${fmt(exp)}</div></div>
+    <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(inc-exp)}</div></div>
+  </div>`;
+  html+=`<div class="seg">
+    <button class="${ui.statType==="expense"?"on":""}" onclick="ui.statType='expense';ui.statMain=null;render()">支出分類</button>
+    <button class="${ui.statType==="income"?"on":""}" onclick="ui.statType='income';ui.statMain=null;render()">收入分類</button>
+  </div>`;
+  // category breakdown (roll up to main, drill into subs)
+  const recsT=recs.filter(r=>r.type===ui.statType);
+  let items=[],tot=0,back="";
+  if(ui.statMain){
+    const m=catOf(ui.statMain);const bySub={};
+    recsT.forEach(r=>{const c=catOf(r.categoryId),mm=mainOf(c);if(!mm||mm.id!==ui.statMain)return;const v=baseAmt(r);bySub[r.categoryId]=(bySub[r.categoryId]||0)+v;tot+=v;});
+    items=Object.entries(bySub).map(([id,v],i)=>{const c=catOf(id);return {id,name:c?(c.id===ui.statMain?"（整體）":c.name):"未分類",icon:catIcon(c),v,color:COLORS[i%COLORS.length]};}).sort((a,b)=>b.v-a.v);
+    back=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button onclick="ui.statMain=null;render()" style="color:var(--accent);font-weight:600">‹ 返回</button><span style="font-weight:700;display:inline-flex;align-items:center;gap:6px">${m?IC(m.icon)+esc(m.name):""}</span></div>`;
+  }else{
+    const byMain={};
+    recsT.forEach(r=>{const c=catOf(r.categoryId),m=mainOf(c);if(!m)return;const v=baseAmt(r);byMain[m.id]=(byMain[m.id]||0)+v;tot+=v;});
+    items=Object.entries(byMain).map(([id,v])=>{const m=catOf(id);return {id,name:m?m.name:"未分類",icon:m?m.icon:"❓",v,color:m?m.color:"#999",drill:m?subCats(m.id).length>0:false};}).sort((a,b)=>b.v-a.v);
+  }
+  html+=`<div class="chartcard">${back}<div class="donut-wrap">`;
+  if(tot<=0){html+=`<div class="empty" style="padding:30px 0">這個月沒有${ui.statType==="expense"?"支出":"收入"}資料</div>`;}
+  else{
+    html+=donutSVG(items.map(x=>({value:x.v,color:x.color})),tot);
+    html+=`<div class="legend">`;
+    items.forEach(x=>{const pct=x.v/tot*100;
+      html+=`<div class="legrow" ${x.drill?`onclick="ui.statMain='${x.id}';render()"`:""}>
+        <span class="dot" style="background:${x.color}"></span>
+        <span class="lname">${IC(x.icon)} ${esc(x.name)}${x.drill?' <span style="color:var(--text3)">›</span>':""}</span>
+        <span class="lpct">${pct.toFixed(1)}%</span>
+        <span class="lamt">${fmt(x.v)}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div></div>`;
+  // 6-month trend
+  html+=`<div class="chartcard"><h3>近 6 個月${ui.statType==="expense"?"支出":"收入"}趨勢</h3>${trendChart(ui.statType)}</div>`;
+  document.getElementById("page-stats").innerHTML=html;
+}
+function donutSVG(slices,total){
+  const R=68,r=44,cx=90,cy=90;let a0=-Math.PI/2;
+  let paths="";
+  slices.forEach(s=>{
+    const frac=s.value/total;let a1=a0+frac*Math.PI*2;
+    if(frac>=0.9999){ // full circle
+      paths+=`<circle cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="${s.color}" stroke-width="${R-r}"/>`;
+    }else{
+      paths+=arc(cx,cy,R,r,a0,a1,s.color);
+    }
+    a0=a1;
+  });
+  return `<svg width="180" height="180" viewBox="0 0 180 180">${paths}
+    <text x="90" y="84" text-anchor="middle" font-size="11" fill="var(--text2)">共</text>
+    <text x="90" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">${fmt(total)}</text></svg>`;
+}
+function arc(cx,cy,R,r,a0,a1,color){
+  const p=(rad,ang)=>[cx+rad*Math.cos(ang),cy+rad*Math.sin(ang)];
+  const large=(a1-a0)>Math.PI?1:0;
+  const[x1,y1]=p(R,a0),[x2,y2]=p(R,a1),[x3,y3]=p(r,a1),[x4,y4]=p(r,a0);
+  return `<path d="M${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${r} ${r} 0 ${large} 0 ${x4} ${y4} Z" fill="${color}"/>`;
+}
+function trendChart(type){
+  const months=[];let[y,m]=ui.month.split("-").map(Number);
+  for(let i=5;i>=0;i--){let yy=y,mm=m-i;while(mm<1){mm+=12;yy--;}months.push(yy+"-"+String(mm).padStart(2,"0"));}
+  const vals=months.map(mo=>{let s=0;DB.records.forEach(r=>{if(r.type===type&&inMonth(r.date,mo))s+=baseAmt(r);});return s;});
+  const max=Math.max(1,...vals);
+  let bars="";
+  months.forEach((mo,i)=>{
+    const h=vals[i]/max*100;const cur=(mo===ui.month);
+    bars+=`<div class="bcol">
+      <div class="bval">${vals[i]?kfmt(vals[i]):""}</div>
+      <div class="bbar" style="height:${h}%;background:${cur?"var(--accent)":"color-mix(in srgb,var(--accent) 40%,transparent)"}"></div>
+      <div class="blbl">${parseInt(mo.split("-")[1])}月</div></div>`;
+  });
+  return `<div class="barchart">${bars}</div>`;
+}
+function kfmt(n){if(n>=10000)return (n/10000).toFixed(n>=100000?0:1)+"萬";if(n>=1000)return (n/1000).toFixed(0)+"k";return Math.round(n);}
+
+/* =================== accounts page =================== */
+function renderAccounts(){
+  const live=DB.accounts;
+  let assets=0,debt=0;
+  const bals=live.map(a=>{const b=accBalance(a.id);if(b>=0)assets+=b;else debt+=b;return b;});
+  const net=assets+debt;
+  let html=`<div class="networth"><div class="nwl">淨資產</div><div class="nwv">${fmt(net)}</div>
+    <div class="nwsub"><span>資產<b>${fmt(assets)}</b></span><span>負債<b>${fmt(Math.abs(debt))}</b></span></div></div>`;
+  html+=`<div class="card"><div class="card-h">帳戶 (${live.length})</div>`;
+  if(!live.length)html+=`<div class="empty" style="padding:30px">尚無帳戶</div>`;
+  live.forEach((a,i)=>{
+    html+=`<div class="row" onclick="openAccount('${a.id}')">
+      <div class="ic" style="background:${hex2(a.color)};color:${a.color}">${IC(a.icon)}</div>
+      <div class="mid"><div class="rtitle">${esc(a.name)}</div><div class="rsub">${accTypeName(a.type)}</div></div>
+      <div class="rval" style="color:${bals[i]<0?"var(--expense)":"var(--text)"}">${fmt(bals[i])}</div></div>`;
+  });
+  html+=`</div><button class="btn ghost" onclick="openAccount()">＋ 新增帳戶</button>`;
+  document.getElementById("page-accounts").innerHTML=html;
+}
+function accTypeName(t){return {cash:"現金",bank:"銀行",credit:"信用卡",ewallet:"電子支付",invest:"投資"}[t]||"其他";}
+
+/* =================== budgets page =================== */
+function budSpent(catId,recs){
+  const c=catOf(catId);if(!c)return 0;const isMain=!c.parent;let s=0;
+  recs.forEach(r=>{const rc=catOf(r.categoryId);if(!rc)return;const match=isMain?((mainOf(rc)||{}).id===catId):(r.categoryId===catId);if(match)s+=baseAmt(r);});
+  return s;
+}
+function renderBudgets(){
+  const recs=recsInMonth(ui.month).filter(r=>r.type==="expense");
+  let totalExp=0;recs.forEach(r=>{totalExp+=baseAmt(r);});
+  const totalBud=DB.budgets.find(b=>b.categoryId==="total");
+  let html="";
+  if(totalBud){
+    html+=`<div class="card"><div class="bud" onclick="openBudget('total')">
+      ${budBar("本月總預算","🎯",DB.config.accent,totalExp,totalBud.amount)}</div></div>`;
+  }else{
+    html+=`<div class="card"><div class="row" onclick="openBudget('total')"><div class="ic" style="background:${hex2(DB.config.accent)};color:var(--accent)">🎯</div><div class="mid"><div class="rtitle">設定總預算</div><div class="rsub">設定每月總支出上限</div></div><div class="chev" style="color:var(--text3)">›</div></div></div>`;
+  }
+  const catBuds=DB.budgets.filter(b=>b.categoryId!=="total");
+  html+=`<div class="card"><div class="card-h">分類預算</div>`;
+  if(!catBuds.length)html+=`<div class="empty" style="padding:26px">尚未設定分類預算</div>`;
+  catBuds.forEach(b=>{
+    const c=catOf(b.categoryId);if(!c)return;
+    const nm=c.parent?(mainOf(c).name+"·"+c.name):c.name;
+    html+=`<div class="bud" onclick="openBudget('${b.categoryId}')">${budBar(nm,catIcon(c),catColor(c),budSpent(b.categoryId,recs),b.amount)}</div>`;
+  });
+  html+=`</div><button class="btn ghost" onclick="openBudget()">＋ 新增分類預算</button>`;
+  document.getElementById("page-budgets").innerHTML=html;
+}
+function budBar(name,icon,color,spent,budget){
+  const pct=budget>0?spent/budget*100:0;
+  const over=pct>=100;
+  const barcol=over?"var(--expense)":pct>=80?"#f59e0b":"var(--income)";
+  const left=budget-spent;
+  return `<div class="bhead"><div class="bname"><span class="ic" style="background:${hex2(color)};color:${color}">${IC(icon)}</span>${esc(name)}</div>
+    <div class="bnum">${fmt(spent)} / ${fmt(budget)}</div></div>
+    <div class="pbar"><i style="width:${Math.min(100,pct)}%;background:${barcol}"></i></div>
+    <div class="bnum" style="margin-top:6px;text-align:right;color:${over?"var(--expense)":"var(--text2)"}">${over?"超支 "+fmt(-left):"剩餘 "+fmt(left)} · ${pct.toFixed(0)}%</div>`;
+}
+
+/* =================== projects page =================== */
+function projStats(pid){
+  let inc=0,exp=0,n=0,byCat={};
+  DB.records.forEach(r=>{if(r.projectId!==pid)return;n++;const v=baseAmt(r);
+    if(r.type==="income")inc+=v;else if(r.type==="expense"){exp+=v;const m=mainOf(catOf(r.categoryId));if(m)byCat[m.id]=(byCat[m.id]||0)+v;}});
+  return {inc,exp,net:inc-exp,n,byCat};
+}
+function renderProjects(){
+  let html="";
+  if(!DB.projects.length){
+    html=`<div class="empty"><div class="big">📁</div>還沒有專案<br>用專案把一趟旅遊、一個活動的收支<br>獨立歸在一起追蹤</div>`;
+  }else{
+    const sorted=DB.projects.map(p=>({p,s:projStats(p.id)})).sort((a,b)=>b.s.n-a.s.n);
+    html+=`<div class="card"><div class="card-h">專案 (${DB.projects.length})</div>`;
+    sorted.forEach(({p,s})=>{
+      html+=`<div class="row" onclick="openProjectDetail('${p.id}')">
+        <div class="ic" style="background:${hex2(p.color)};color:${p.color}">${IC(p.icon||"📁")}</div>
+        <div class="mid"><div class="rtitle">${esc(p.name)}</div><div class="rsub">${s.n} 筆 · 支 ${fmt(s.exp)}${s.inc?" · 收 "+fmt(s.inc):""}</div></div>
+        <div class="rval" style="color:${s.net<0?"var(--expense)":"var(--income)"}">${fmt(s.net,true)}</div></div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`<button class="btn ghost" onclick="openProjectEdit()">＋ 新增專案</button>`;
+  document.getElementById("page-projects").innerHTML=html;
+}
+function openProjectDetail(pid){
+  const p=projOf(pid);if(!p)return;
+  const s=projStats(pid);
+  const recs=DB.records.filter(r=>r.projectId===pid).sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0));
+  let body=`<div class="sumstrip" style="margin-top:0">
+    <div class="cell"><div class="lbl">收入</div><div class="val inc">${fmt(s.inc)}</div></div>
+    <div class="cell"><div class="lbl">支出</div><div class="val exp">${fmt(s.exp)}</div></div>
+    <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(s.net)}</div></div></div>
+    <button class="btn ghost sm" onclick="openProjectEdit('${pid}')">編輯專案</button>`;
+  // category breakdown
+  const arr=Object.entries(s.byCat).map(([id,v])=>({c:catOf(id),v})).filter(x=>x.c).sort((a,b)=>b.v-a.v);
+  if(arr.length){
+    body+=`<div class="card-h" style="padding:14px 2px 2px">支出分類</div><div class="card" style="padding:4px 14px">`;
+    arr.forEach(x=>{const pct=s.exp>0?x.v/s.exp*100:0;const col=catColor(x.c);
+      body+=`<div class="legrow"><span class="dot" style="background:${col}"></span><span class="lname">${IC(catIcon(x.c))} ${esc(x.c.name)}</span><span class="lpct">${pct.toFixed(0)}%</span><span class="lamt">${fmt(x.v)}</span></div>`;});
+    body+=`</div>`;
+  }
+  // records
+  body+=`<div class="card-h" style="padding:14px 2px 2px">明細 (${recs.length})</div>`;
+  if(!recs.length){body+=`<div class="empty" style="padding:24px">此專案尚無記錄</div>`;}
+  else{
+    const groups={};recs.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
+    Object.keys(groups).sort().reverse().forEach(d=>{
+      body+=`<div class="daygroup"><div class="dayhead"><span class="ddate">${fmtDay(d)}</span></div><div class="reclist">`;
+      groups[d].forEach(r=>body+=recRow(r));body+=`</div></div>`;
+    });
+  }
+  openSheet(p.name,body,{del:"deleteProject('"+pid+"')"});
+}
+let projState=null;
+function openProjectEdit(pid){
+  let p=pid?projOf(pid):null;
+  projState=p?Object.assign({},p):{id:null,name:"",icon:"📁",color:COLORS[DB.projects.length%COLORS.length]};
+  const body=`
+    <div class="field"><label>專案名稱</label><input id="pj_name" value="${esc(projState.name)}" placeholder="例如 2026 東京旅遊"></div>
+    <div class="field"><label>圖示</label><div class="emoji-grid" id="pj_emoji">${["📁","✈️","🏖️","🗾","🏔️","🎡","🎒","🏠","💼","🎁","🎤","🚗","🍜","💰","📦","❤️"].map(e=>`<button data-e="${e}" class="${e===projState.icon?"on":""}">${e}</button>`).join("")}</div></div>
+    <div class="field"><label>顏色</label><div class="color-grid" id="pj_color">${COLORS.map(c=>`<button data-c="${c}" style="background:${c}" class="${c===projState.color?"on":""}"></button>`).join("")}</div></div>
+    <button class="btn" onclick="saveProject()">${p?"儲存":"新增專案"}</button>`;
+  const el=openSheet(p?"編輯專案":"新增專案",body);
+  const b=el.querySelector(".sheet-body");
+  b.querySelector("#pj_name").oninput=e=>projState.name=e.target.value;
+  b.querySelector("#pj_emoji").onclick=e=>{const t=e.target.closest("[data-e]");if(!t)return;projState.icon=t.dataset.e;b.querySelectorAll("#pj_emoji button").forEach(x=>x.classList.toggle("on",x.dataset.e===projState.icon));};
+  b.querySelector("#pj_color").onclick=e=>{const t=e.target.closest("[data-c]");if(!t)return;projState.color=t.dataset.c;b.querySelectorAll("#pj_color button").forEach(x=>x.classList.toggle("on",x.dataset.c===projState.color));};
+}
+function saveProject(){
+  if(!projState.name.trim()){toast("請輸入名稱");return;}
+  const editing=!!projState.id;
+  if(editing){Object.assign(projOf(projState.id),projState);}
+  else{projState.id="p_"+uid();DB.projects.push(Object.assign({},projState));}
+  save();closeTopSheet();
+  if(editing&&sheetStack.length)closeTopSheet(); // close detail too, will reopen
+  if(ui.page!=="projects")go("projects");else render();
+  toast("已儲存");
+}
+function deleteProject(pid){
+  const n=DB.records.filter(r=>r.projectId===pid).length;
+  if(!confirm(n?`此專案有 ${n} 筆記錄，刪除專案後這些記錄會保留、只是取消歸屬。確定？`:"確定刪除此專案？"))return;
+  DB.records.forEach(r=>{if(r.projectId===pid)delete r.projectId;});
+  DB.projects=DB.projects.filter(p=>p.id!==pid);
+  save();closeTopSheet();go("projects");toast("已刪除");
+}
+
+/* =================== settings page =================== */
+function renderSettings(){
+  const syn=syncOn();
+  let html=`
+  <div class="set-group">
+    <div class="set-item" onclick="openManageCats()"><span class="si-ic">🏷️</span><span class="si-label">分類管理</span><span class="si-val">${DB.categories.length}</span><span class="chev">›</span></div>
+    <div class="set-item" onclick="openManageTags()"><span class="si-ic">#️⃣</span><span class="si-label">標籤管理</span><span class="si-val">${DB.tags.length}</span><span class="chev">›</span></div>
+  </div>
+  <div class="set-group">
+    <div class="set-item" onclick="openCurrency()"><span class="si-ic">💱</span><span class="si-label">幣別與匯率</span><span class="si-val">${DB.config.baseCur}・${DB.config.currencies.length} 種</span><span class="chev">›</span></div>
+    <div class="set-item" onclick="openTheme()"><span class="si-ic">🎨</span><span class="si-label">外觀主題</span><span class="si-val">${({light:"淺色",dark:"深色",auto:"跟隨系統"})[DB.config.theme]}</span><span class="chev">›</span></div>
+  </div>
+  <div class="set-group">
+    <div class="set-item" onclick="openSync()"><span class="si-ic">☁️</span><span class="si-label">雲端同步<span class="synbadge ${syn?"on":""}"></span></span><span class="si-val">${syn?"已啟用":"未設定"}</span><span class="chev">›</span></div>
+    <div class="set-item" onclick="exportData()"><span class="si-ic">📤</span><span class="si-label">匯出備份</span><span class="chev">›</span></div>
+    <div class="set-item" onclick="importData()"><span class="si-ic">📥</span><span class="si-label">匯入備份</span><span class="chev">›</span></div>
+  </div>
+  <div class="set-group">
+    <div class="set-item" onclick="resetAll()"><span class="si-ic">🗑️</span><span class="si-label" style="color:var(--expense)">清除所有資料</span><span class="chev">›</span></div>
+  </div>
+  <div class="hint" style="text-align:center;margin-top:16px">記帳 App · 資料存在本機瀏覽器${syn?" + 雲端 Gist":""}<br>共 ${DB.records.length} 筆記錄</div>`;
+  document.getElementById("page-settings").innerHTML=html;
+}
+
+/* =================== sheet infra =================== */
+let sheetStack=[];
+function openSheet(title,bodyHtml,opts){
+  opts=opts||{};
+  const el=document.createElement("div");el.className="sheet";
+  el.innerHTML=`<div class="grab"></div><div class="sheet-h"><button class="x" onclick="closeTopSheet()">取消</button><span class="st">${esc(title)}</span>${opts.del?`<button class="del" onclick="${opts.del}">刪除</button>`:`<span style="width:44px"></span>`}</div><div class="sheet-body">${bodyHtml}</div>${opts.footer||""}`;
+  document.body.appendChild(el);
+  sheetStack.push(el);
+  document.getElementById("mask").classList.add("show");
+  requestAnimationFrame(()=>el.classList.add("show"));
+  return el;
+}
+function closeTopSheet(){
+  const el=sheetStack.pop();if(!el)return;
+  el.classList.remove("show");
+  if(!sheetStack.length)document.getElementById("mask").classList.remove("show");
+  setTimeout(()=>el.remove(),300);
+}
+function closeAllSheets(){while(sheetStack.length)closeTopSheet();}
+
+/* =================== add / edit record =================== */
+let addState=null;
+function openAdd(editId){
+  let r=editId?DB.records.find(x=>x.id===editId):null;
+  addState={
+    id:r?r.id:null,
+    type:r?r.type:"expense",
+    expr:r?String(r.amount):"0",
+    cur:r?(r.cur||DB.config.baseCur):DB.config.baseCur,
+    rate:r?(r.rate!=null?r.rate:curInfo(r.cur||DB.config.baseCur).rate):1,
+    categoryId:r?r.categoryId:null,
+    accountId:r?r.accountId:(DB.accounts[0]&&DB.accounts[0].id),
+    toAccountId:r?r.toAccountId:(DB.accounts[1]&&DB.accounts[1].id),
+    date:r?r.date:todayStr(),
+    note:r?r.note||"":"",
+    tags:r?(r.tags||[]).slice():[],
+    projectId:r?(r.projectId||""):"",
+  };
+  if(!addState.categoryId&&addState.type!=="transfer"){const m=mainCats(addState.type)[0];if(m){const s=subCats(m.id)[0];addState.categoryId=s?s.id:m.id;}}
+  addState.catMain=(addState.categoryId?((mainOf(catOf(addState.categoryId))||{}).id):((mainCats(addState.type)[0]||{}).id))||null;
+  const el=openSheet(r?"編輯記錄":"新增記錄","",{del:r?"deleteRecord()":null});
+  el.querySelector(".sheet-body").innerHTML=addBody();
+  // keypad outside scroll body
+  const kp=document.createElement("div");kp.className="keypad";kp.innerHTML=keypadHtml();
+  el.appendChild(kp);
+  bindAdd(el);
+  renderAddDynamic(el);
+}
+function addBody(){
+  return `<div class="addtype" id="addtype">
+    <button data-t="expense">支出</button>
+    <button data-t="income">收入</button>
+    <button data-t="transfer">轉帳</button></div>
+  <div class="amtbox"><span class="cur" id="amtcur">${curInfo(addState.cur).symbol}</span><span class="num" id="amtnum">0</span></div>
+  <div id="curarea"></div>
+  <div id="catarea"></div>
+  <div id="formarea"></div>`;
+}
+function keypadHtml(){
+  return `<button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="back">⌫</button>
+  <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="+">＋</button>
+  <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="-">－</button>
+  <button data-k=".">.</button><button data-k="0">0</button><button data-k="00">00</button><button class="done" data-k="done">完成</button>`;
+}
+function bindAdd(el){
+  el.querySelector("#addtype").onclick=(e)=>{
+    const b=e.target.closest("button[data-t]");if(!b)return;
+    addState.type=b.dataset.t;
+    if(addState.type!=="transfer"){
+      const c=catOf(addState.categoryId);
+      if(!c||c.type!==addState.type){const nc=DB.categories.find(x=>x.type===addState.type);addState.categoryId=nc?nc.id:null;}
+    }
+    renderAddDynamic(el);
+  };
+  el.querySelector(".keypad").onclick=(e)=>{
+    const b=e.target.closest("button[data-k]");if(!b)return;
+    const k=b.dataset.k;
+    if(k==="done"){saveRecord();return;}
+    keyPress(k);updateAmtDisplay(el);
+  };
+}
+function renderCurArea(el){
+  const curs=DB.config.currencies||[];
+  const area=el.querySelector("#curarea");if(!area)return;
+  if(curs.length<=1){area.innerHTML="";return;}
+  let h=`<div class="chips" id="curchips" style="margin-bottom:10px">`+curs.map(c=>`<span class="chip ${c.code===addState.cur?"on":""}" data-cur="${c.code}">${c.code}</span>`).join("")+`</div>`;
+  if(isForeign(addState.cur)){
+    h+=`<div class="fieldrow" style="margin-bottom:8px">
+      <div class="field" style="margin:0"><label>匯率 1 ${addState.cur} = ? ${baseSym()}</label><input id="f_rate" type="number" inputmode="decimal" value="${addState.rate}"></div>
+      <div class="field" style="margin:0"><label>約合 ${baseSym()}</label><div style="padding:11px 2px;font-weight:700" id="basePrev">${fmt(evalExpr(addState.expr)*(addState.rate||0))}</div></div></div>`;
+  }
+  area.innerHTML=h;
+  area.querySelector("#curchips").onclick=(e)=>{const c=e.target.closest("[data-cur]");if(!c)return;addState.cur=c.dataset.cur;addState.rate=curInfo(addState.cur).rate;renderCurArea(el);updateAmtDisplay(el);};
+  const fr=area.querySelector("#f_rate");if(fr)fr.oninput=e=>{addState.rate=parseFloat(e.target.value)||0;const bp=area.querySelector("#basePrev");if(bp)bp.textContent=fmt(evalExpr(addState.expr)*(addState.rate||0));};
+}
+function updateAmtDisplay(el){
+  el.querySelector("#amtnum").textContent=dispExpr();
+  const ac=el.querySelector("#amtcur");if(ac)ac.textContent=curInfo(addState.cur).symbol;
+  const bp=el.querySelector("#basePrev");if(bp)bp.textContent=fmt(evalExpr(addState.expr)*(addState.rate||0));
+}
+function renderCatPicker(el){
+  const catarea=el.querySelector("#catarea");
+  const mains=mainCats(addState.type);
+  const main=catOf(addState.catMain);
+  const subs=addState.catMain?subCats(addState.catMain):[];
+  let h=`<div class="mainchips" id="mainchips">`+mains.map(m=>`<button class="mchip ${m.id===addState.catMain?"on":""}" data-main="${m.id}"><span class="mci" style="background:${hex2(m.color)};color:${m.color}">${IC(m.icon)}</span>${esc(m.name)}</button>`).join("")
+    +`<button class="mchip addm" data-addmain="1"><span class="mci">＋</span>大類</button></div>`;
+  h+=`<div class="catgrid" id="subgrid">`;
+  if(main){
+    h+=`<div class="cat ${addState.categoryId===main.id?"on":""}" data-cid="${main.id}"><div class="cic" style="background:${hex2(main.color)};color:${main.color}">${IC(main.icon)}</div><div class="cl">整體</div></div>`;
+    subs.forEach(s=>{const col=catColor(s);h+=`<div class="cat ${s.id===addState.categoryId?"on":""}" data-cid="${s.id}"><div class="cic" style="background:${hex2(col)};color:${col}">${IC(catIcon(s))}</div><div class="cl">${esc(s.name)}</div></div>`;});
+    h+=`<div class="cat addc" data-addsub="1"><div class="cic">＋</div><div class="cl">細項</div></div>`;
+  }
+  h+=`</div>`;
+  catarea.innerHTML=h;
+  catarea.querySelector("#mainchips").onclick=(e)=>{
+    const am=e.target.closest("[data-addmain]");if(am){openEditCat(null,addState.type,()=>openAdd(addState.id),null);closeTopSheetSilent();return;}
+    const mb=e.target.closest("[data-main]");if(!mb)return;
+    addState.catMain=mb.dataset.main;addState.categoryId=mb.dataset.main;
+    renderCatPicker(el);
+  };
+  catarea.querySelector("#subgrid").onclick=(e)=>{
+    const as=e.target.closest("[data-addsub]");if(as){openEditCat(null,addState.type,()=>openAdd(addState.id),addState.catMain);closeTopSheetSilent();return;}
+    const c=e.target.closest("[data-cid]");if(!c)return;
+    addState.categoryId=c.dataset.cid;
+    catarea.querySelectorAll("#subgrid .cat").forEach(x=>x.classList.toggle("on",x.dataset.cid===addState.categoryId));
+  };
+}
+function renderAddDynamic(el){
+  el.querySelectorAll("#addtype button").forEach(b=>{b.className="";if(b.dataset.t===addState.type)b.className="on-"+(addState.type==="expense"?"exp":addState.type==="income"?"inc":"xfer");});
+  renderCurArea(el);
+  updateAmtDisplay(el);
+  const catarea=el.querySelector("#catarea"),formarea=el.querySelector("#formarea");
+  if(addState.type==="transfer"){
+    catarea.innerHTML="";
+    formarea.innerHTML=`
+      <div class="fieldrow">
+        <div class="field"><label>從</label><div class="selwrap"><select id="f_from">${accOpts(addState.accountId)}</select></div></div>
+        <div class="field"><label>到</label><div class="selwrap"><select id="f_to">${accOpts(addState.toAccountId)}</select></div></div>
+      </div>
+      <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
+      <div class="field"><label>備註</label><input id="f_note" placeholder="選填" value="${esc(addState.note)}"></div>
+      ${projField()}`;
+    formarea.querySelector("#f_from").onchange=e=>addState.accountId=e.target.value;
+    formarea.querySelector("#f_to").onchange=e=>addState.toAccountId=e.target.value;
+  }else{
+    renderCatPicker(el);
+    formarea.innerHTML=`
+      <div class="fieldrow">
+        <div class="field"><label>帳戶</label><div class="selwrap"><select id="f_acc">${accOpts(addState.accountId)}</select></div></div>
+        <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
+      </div>
+      <div class="field"><label>備註</label><input id="f_note" placeholder="選填" value="${esc(addState.note)}"></div>
+      ${projField()}
+      ${DB.tags.length?`<div class="field"><label>標籤</label><div class="chips" id="f_tags">${DB.tags.map(t=>`<span class="chip ${addState.tags.includes(t)?"on":""}" data-tag="${esc(t)}">${esc(t)}</span>`).join("")}</div></div>`:""}`;
+    formarea.querySelector("#f_acc").onchange=e=>addState.accountId=e.target.value;
+    const tg=formarea.querySelector("#f_tags");if(tg)tg.onclick=(e)=>{const c=e.target.closest("[data-tag]");if(!c)return;const t=c.dataset.tag;const i=addState.tags.indexOf(t);if(i<0)addState.tags.push(t);else addState.tags.splice(i,1);c.classList.toggle("on");};
+  }
+  const fd=formarea.querySelector("#f_date");if(fd)fd.onchange=e=>addState.date=e.target.value;
+  const fn=formarea.querySelector("#f_note");if(fn)fn.oninput=e=>addState.note=e.target.value;
+  const fp=formarea.querySelector("#f_proj");if(fp)fp.onchange=e=>addState.projectId=e.target.value;
+}
+function closeTopSheetSilent(){const el=sheetStack.pop();if(el)el.remove();if(!sheetStack.length)document.getElementById("mask").classList.remove("show");}
+function accOpts(sel){return DB.accounts.map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${emojiOrBlank(a.icon)}${esc(a.name)}</option>`).join("");}
+function projOpts(sel){return `<option value="">無</option>`+DB.projects.map(p=>`<option value="${p.id}" ${p.id===sel?"selected":""}>${emojiOrBlank(p.icon||"📁")}${esc(p.name)}</option>`).join("");}
+function projField(){return DB.projects.length?`<div class="field"><label>專案</label><div class="selwrap"><select id="f_proj">${projOpts(addState.projectId)}</select></div></div>`:"";}
+
+/* keypad expr */
+function keyPress(k){
+  let e=addState.expr;
+  if(k==="back"){e=e.length>1?e.slice(0,-1):"0";if(/[+\-]$/.test(e)){}addState.expr=e;return;}
+  if(k==="+"||k==="-"){if(/[+\-]$/.test(e))e=e.slice(0,-1)+k;else e=String(evalExpr(e))+k;addState.expr=e;return;}
+  if(k==="."){const last=e.split(/[+\-]/).pop();if(last.includes("."))return;e+=".";addState.expr=e;return;}
+  if(k==="00"){const last=e.split(/[+\-]/).pop();if(last==="0")return;e+="00";addState.expr=e;return;}
+  // digit
+  const last=e.split(/[+\-]/).pop();
+  if(last==="0")e=e.slice(0,-1)+k;else e+=k;
+  addState.expr=e;
+}
+function evalExpr(s){
+  let m=s.match(/-?\d*\.?\d+|[+\-]/g);if(!m)return 0;
+  let total=0,op="+",cur="";
+  // simpler: tokenize
+  let num="0",sum=0,sign=1,started=false;
+  let res=0,curNum="",pend=1;
+  let parts=s.replace(/([+\-])/g," $1 ").trim().split(/\s+/);
+  let acc0=0,sgn=1;
+  for(let i=0;i<parts.length;i++){
+    let p=parts[i];
+    if(p==="+"){sgn=1;}
+    else if(p==="-"){sgn=-1;}
+    else{acc0+=sgn*(parseFloat(p)||0);}
+  }
+  return acc0;
+}
+function dispExpr(){
+  // show expr with current operators; evaluate trailing
+  let e=addState.expr;
+  return e.replace(/\+/g," + ").replace(/-/g," − ");
+}
+function saveRecord(){
+  const amt=Math.round(evalExpr(addState.expr)*100)/100;
+  if(!amt||amt<=0){toast("請輸入金額");return;}
+  if(addState.type==="transfer"){
+    if(addState.accountId===addState.toAccountId){toast("轉出與轉入帳戶需不同");return;}
+  }else if(!addState.categoryId){toast("請選擇分類");return;}
+  let r=addState.id?DB.records.find(x=>x.id===addState.id):null;
+  if(!r){r={id:uid(),_t:Date.now()};DB.records.push(r);}
+  r.type=addState.type;r.amount=amt;r.date=addState.date;r.note=addState.note.trim();
+  r.cur=addState.cur;r.rate=(addState.cur===DB.config.baseCur)?1:(addState.rate||curInfo(addState.cur).rate||1);
+  if(addState.projectId)r.projectId=addState.projectId;else delete r.projectId;
+  if(addState.type==="transfer"){r.accountId=addState.accountId;r.toAccountId=addState.toAccountId;delete r.categoryId;delete r.tags;}
+  else{r.accountId=addState.accountId;r.categoryId=addState.categoryId;r.tags=addState.tags.slice();delete r.toAccountId;}
+  save();closeTopSheet();render();toast(addState.id?"已更新":"已記錄");
+}
+function deleteRecord(){
+  if(!addState||!addState.id)return;
+  DB.records=DB.records.filter(x=>x.id!==addState.id);
+  save();closeTopSheet();render();toast("已刪除");
+}
+
+/* =================== account editor =================== */
+let accState=null;
+function openAccount(id){
+  let a=id?acc(id):null;
+  accState=a?Object.assign({},a):{id:null,name:"",type:"bank",init:0,icon:"🏦",color:"#5b6cff"};
+  const body=`
+    <div class="field"><label>名稱</label><input id="ac_name" value="${esc(accState.name)}" placeholder="例如 玉山銀行"></div>
+    <div class="field"><label>類型</label><div class="selwrap"><select id="ac_type">
+      ${["cash","bank","credit","ewallet","invest"].map(t=>`<option value="${t}" ${t===accState.type?"selected":""}>${accTypeName(t)}</option>`).join("")}
+    </select></div></div>
+    <div class="field"><label>初始餘額</label><input id="ac_init" type="number" inputmode="decimal" value="${accState.init||0}"></div>
+    <div class="field"><label>圖示</label><div class="emoji-grid" id="ac_emoji">${EMOJIS.map(e=>`<button data-e="${e}" class="${e===accState.icon?"on":""}">${e}</button>`).join("")}</div></div>
+    <div class="field"><label>顏色</label><div class="color-grid" id="ac_color">${COLORS.map(c=>`<button data-c="${c}" style="background:${c}" class="${c===accState.color?"on":""}"></button>`).join("")}</div></div>
+    <button class="btn" onclick="saveAccount()">${a?"儲存":"新增帳戶"}</button>
+    ${a?`<button class="btn danger sm" style="margin-top:10px" onclick="deleteAccount('${a.id}')">刪除帳戶</button>`:""}`;
+  const el=openSheet(a?"編輯帳戶":"新增帳戶",body);
+  const b=el.querySelector(".sheet-body");
+  b.querySelector("#ac_name").oninput=e=>accState.name=e.target.value;
+  b.querySelector("#ac_type").onchange=e=>accState.type=e.target.value;
+  b.querySelector("#ac_init").oninput=e=>accState.init=parseFloat(e.target.value)||0;
+  b.querySelector("#ac_emoji").onclick=e=>{const t=e.target.closest("[data-e]");if(!t)return;accState.icon=t.dataset.e;b.querySelectorAll("#ac_emoji button").forEach(x=>x.classList.toggle("on",x.dataset.e===accState.icon));};
+  b.querySelector("#ac_color").onclick=e=>{const t=e.target.closest("[data-c]");if(!t)return;accState.color=t.dataset.c;b.querySelectorAll("#ac_color button").forEach(x=>x.classList.toggle("on",x.dataset.c===accState.color));};
+}
+function saveAccount(){
+  if(!accState.name.trim()){toast("請輸入名稱");return;}
+  if(accState.id){Object.assign(acc(accState.id),accState);}
+  else{accState.id="a_"+uid();DB.accounts.push(Object.assign({},accState));}
+  save();closeTopSheet();render();toast("已儲存");
+}
+function deleteAccount(id){
+  const used=DB.records.some(r=>r.accountId===id||r.toAccountId===id);
+  if(used){if(!confirm("此帳戶已有記錄，刪除後相關記錄的帳戶會變成未知。確定刪除？"))return;}
+  DB.accounts=DB.accounts.filter(a=>a.id!==id);
+  save();closeTopSheet();render();toast("已刪除");
+}
+
+/* =================== budget editor =================== */
+let budState=null;
+function openBudget(catId){
+  // catId: 'total' | existing category id | undefined(new)
+  let existing=catId?DB.budgets.find(b=>b.categoryId===catId):null;
+  const isTotal=catId==="total";
+  budState={categoryId:catId||null,amount:existing?existing.amount:""};
+  let catPicker="";
+  if(!isTotal){
+    const used=new Set(DB.budgets.filter(b=>b.categoryId!=="total").map(b=>b.categoryId));
+    const ordered=[];mainCats("expense").forEach(m=>{ordered.push(m);subCats(m.id).forEach(s=>ordered.push(s));});
+    const opts=ordered.filter(c=>!used.has(c.id)||c.id===catId);
+    catPicker=`<div class="field"><label>分類（大類＝含底下所有細項）</label><div class="selwrap"><select id="bg_cat" ${catId?"disabled":""}>
+      ${opts.map(c=>`<option value="${c.id}" ${c.id===catId?"selected":""}>${c.parent?"　└ "+esc(c.name):emojiOrBlank(catIcon(c))+esc(c.name)}</option>`).join("")}
+    </select></div></div>`;
+    if(!catId&&opts.length)budState.categoryId=opts[0].id;
+  }
+  const body=`${catPicker}
+    <div class="field"><label>每月預算金額</label><input id="bg_amt" type="number" inputmode="decimal" value="${budState.amount}" placeholder="0"></div>
+    <button class="btn" onclick="saveBudget()">儲存</button>
+    ${existing?`<button class="btn danger sm" style="margin-top:10px" onclick="deleteBudget('${catId}')">移除預算</button>`:""}`;
+  const el=openSheet(isTotal?"總預算":"分類預算",body);
+  const b=el.querySelector(".sheet-body");
+  const sc=b.querySelector("#bg_cat");if(sc)sc.onchange=e=>budState.categoryId=e.target.value;
+  b.querySelector("#bg_amt").oninput=e=>budState.amount=parseFloat(e.target.value)||0;
+}
+function saveBudget(){
+  if(!budState.categoryId){toast("沒有可設定的分類");return;}
+  if(!budState.amount||budState.amount<=0){toast("請輸入預算金額");return;}
+  let ex=DB.budgets.find(b=>b.categoryId===budState.categoryId);
+  if(ex)ex.amount=budState.amount;else DB.budgets.push({id:uid(),categoryId:budState.categoryId,amount:budState.amount});
+  save();closeTopSheet();render();toast("已儲存");
+}
+function deleteBudget(catId){DB.budgets=DB.budgets.filter(b=>b.categoryId!==catId);save();closeTopSheet();render();toast("已移除");}
+
+/* =================== category management (two-level) =================== */
+function openManageCats(){
+  window._mctType="expense";window._mctMain=null;
+  openSheet("分類管理",`<div class="seg" style="margin-top:4px"><button class="on" id="mct_e" onclick="switchCatTab('expense')">支出</button><button id="mct_i" onclick="switchCatTab('income')">收入</button></div><div id="mct_body"></div>`);
+  mctRender();
+}
+function switchCatTab(type){
+  window._mctType=type;window._mctMain=null;
+  const el=sheetStack[sheetStack.length-1];
+  el.querySelector("#mct_e").classList.toggle("on",type==="expense");
+  el.querySelector("#mct_i").classList.toggle("on",type==="income");
+  mctRender();
+}
+function mctRender(){
+  const el=sheetStack[sheetStack.length-1];if(!el)return;const box=el.querySelector("#mct_body");if(!box)return;
+  const type=window._mctType||"expense";
+  if(!window._mctMain){
+    // main categories list
+    const mains=mainCats(type);
+    let h=mains.map(m=>{const n=subCats(m.id).length;return `<div class="mitem">
+      <div class="ic" style="background:${hex2(m.color)};color:${m.color}">${IC(m.icon)}</div>
+      <div class="mn" onclick="window._mctMain='${m.id}';mctRender()" style="cursor:pointer">${esc(m.name)}<div style="font-size:11px;color:var(--text2)">${n} 個細項 ›</div></div>
+      <button class="medit" onclick="openEditCat('${m.id}')">編輯</button>
+      <button class="mdel" onclick="deleteCat('${m.id}')">✕</button></div>`;}).join("")
+      ||`<div class="empty" style="padding:24px">尚無大類</div>`;
+    h+=`<button class="btn ghost" style="margin-top:14px" onclick="openEditCat(null,'${type}',null,null)">＋ 新增大類</button>`;
+    box.innerHTML=h;
+  }else{
+    const m=catOf(window._mctMain);if(!m){window._mctMain=null;return mctRender();}
+    const subs=subCats(m.id);
+    let h=`<div class="mitem" style="border:none"><button class="medit" style="padding-left:0" onclick="window._mctMain=null;mctRender()">‹ 返回大類</button><div class="mn" style="text-align:center;font-weight:700;display:inline-flex;align-items:center;gap:6px;justify-content:center">${IC(m.icon)}${esc(m.name)}</div><span style="width:50px"></span></div>`;
+    h+=subs.map(s=>{const col=catColor(s);return `<div class="mitem">
+      <div class="ic" style="background:${hex2(col)};color:${col}">${IC(catIcon(s))}</div>
+      <div class="mn">${esc(s.name)}</div>
+      <button class="medit" onclick="openEditCat('${s.id}')">編輯</button>
+      <button class="mdel" onclick="deleteCat('${s.id}')">✕</button></div>`;}).join("")
+      ||`<div class="empty" style="padding:20px">此大類尚無細項</div>`;
+    h+=`<button class="btn ghost" style="margin-top:14px" onclick="openEditCat(null,'${type}',null,'${m.id}')">＋ 新增細項到「${esc(m.name)}」</button>`;
+    box.innerHTML=h;
+  }
+}
+let catState=null,catCb=null;
+function openEditCat(id,type,cb,parent){
+  catCb=cb||null;
+  let c=id?catOf(id):null;
+  const par=c?(c.parent||null):(parent||null);
+  const parCat=par?catOf(par):null;
+  catState=c?Object.assign({},c):{id:null,name:"",type:(parCat?parCat.type:(type||"expense")),icon:(par?"":"📦"),color:parCat?parCat.color:"#78716c",parent:par};
+  const isSub=!!par;
+  const body=`
+    ${isSub?`<div class="hint" style="margin:0 0 10px">${parCat?emojiOrBlank(parCat.icon)+esc(parCat.name):""} 的細項</div>`:""}
+    <div class="field"><label>名稱</label><input id="ct_name" value="${esc(catState.name)}" placeholder="${isSub?"細項名稱":"大類名稱"}"></div>
+    <div class="field"><label>圖示</label><div class="emoji-grid" id="ct_emoji">${EMOJIS.map(e=>`<button data-e="${e}" class="${e===catState.icon?"on":""}">${e}</button>`).join("")}</div></div>
+    <div class="field"><label>顏色${isSub?"（細項預設沿用大類色）":""}</label><div class="color-grid" id="ct_color">${COLORS.map(x=>`<button data-c="${x}" style="background:${x}" class="${x===catState.color?"on":""}"></button>`).join("")}</div></div>
+    <button class="btn" onclick="saveCat()">${c?"儲存":"新增"}</button>`;
+  const el=openSheet(c?"編輯分類":(isSub?"新增細項":"新增"+(catState.type==="expense"?"支出":"收入")+"大類"),body);
+  const b=el.querySelector(".sheet-body");
+  b.querySelector("#ct_name").oninput=e=>catState.name=e.target.value;
+  b.querySelector("#ct_emoji").onclick=e=>{const t=e.target.closest("[data-e]");if(!t)return;catState.icon=t.dataset.e;b.querySelectorAll("#ct_emoji button").forEach(x=>x.classList.toggle("on",x.dataset.e===catState.icon));};
+  b.querySelector("#ct_color").onclick=e=>{const t=e.target.closest("[data-c]");if(!t)return;catState.color=t.dataset.c;b.querySelectorAll("#ct_color button").forEach(x=>x.classList.toggle("on",x.dataset.c===catState.color));};
+}
+function saveCat(){
+  if(!catState.name.trim()){toast("請輸入名稱");return;}
+  if(catState.id){Object.assign(catOf(catState.id),catState);}
+  else{catState.id="c_"+uid();if(!catState.parent)delete catState.parent;DB.categories.push(Object.assign({},catState));}
+  save();closeTopSheet();
+  const cb=catCb;catCb=null;
+  if(cb){cb();return;}
+  if(sheetStack.length&&sheetStack[sheetStack.length-1].querySelector("#mct_body"))mctRender();
+  render();toast("已儲存");
+}
+function deleteCat(id){
+  const c=catOf(id);if(!c)return;
+  const isMain=!c.parent;
+  const subIds=isMain?subCats(id).map(s=>s.id):[];
+  const ids=[id].concat(subIds);
+  const usedN=DB.records.filter(r=>ids.includes(r.categoryId)).length;
+  let msg=isMain
+    ?(subIds.length?`「${c.name}」有 ${subIds.length} 個細項，將一併刪除。`:`確定刪除大類「${c.name}」？`)
+    :`確定刪除細項「${c.name}」？`;
+  if(usedN)msg+=`\n有 ${usedN} 筆記錄使用，刪除後會變成未分類。`;
+  if(!confirm(msg))return;
+  DB.records.forEach(r=>{if(ids.includes(r.categoryId))delete r.categoryId;});
+  DB.categories=DB.categories.filter(x=>!ids.includes(x.id));
+  DB.budgets=DB.budgets.filter(b=>!ids.includes(b.categoryId));
+  if(isMain)window._mctMain=null;
+  save();mctRender();render();toast("已刪除");
+}
+
+/* =================== tags management =================== */
+function openManageTags(){
+  const body=`<div id="tg_list">${tagList()}</div>
+    <div class="field" style="margin-top:14px"><label>新增標籤</label><div class="fieldrow"><input id="tg_new" placeholder="標籤名稱"><button class="btn sm" style="flex:0 0 72px;margin-top:0" onclick="addTag()">新增</button></div></div>`;
+  openSheet("標籤管理",body);
+  const el=sheetStack[sheetStack.length-1];
+  el.querySelector("#tg_new").onkeydown=e=>{if(e.key==="Enter")addTag();};
+}
+function tagList(){
+  if(!DB.tags.length)return `<div class="empty" style="padding:20px">尚無標籤</div>`;
+  return DB.tags.map(t=>`<div class="mitem"><div class="mn">#${esc(t)}</div><button class="mdel" onclick="delTag('${esc(t)}')">✕</button></div>`).join("");
+}
+function addTag(){
+  const el=sheetStack[sheetStack.length-1];const inp=el.querySelector("#tg_new");
+  const v=inp.value.trim();if(!v)return;if(DB.tags.includes(v)){toast("已存在");return;}
+  DB.tags.push(v);save();inp.value="";el.querySelector("#tg_list").innerHTML=tagList();renderSettings();
+}
+function delTag(t){DB.tags=DB.tags.filter(x=>x!==t);DB.records.forEach(r=>{if(r.tags)r.tags=r.tags.filter(x=>x!==t);});save();const el=sheetStack[sheetStack.length-1];el.querySelector("#tg_list").innerHTML=tagList();renderSettings();}
+
+/* =================== currency / theme =================== */
+function openCurrency(){
+  const body=`
+    <div class="field"><label>主要幣別（所有統計與餘額以此計價）</label><div class="selwrap"><select id="cm_base">
+      ${DB.config.currencies.map(c=>`<option value="${c.code}" ${c.code===DB.config.baseCur?"selected":""}>${c.code}（${esc(c.symbol)}）</option>`).join("")}
+    </select></div></div>
+    <div class="card-h" style="padding:8px 2px 4px">幣別與匯率</div>
+    <div id="cm_list">${curManagerList()}</div>
+    <div class="hint">匯率 = 1 單位外幣可換多少主要幣別（例如 1 HKD = 4.1 TWD 就填 4.1）。記帳時仍可調整單筆匯率。</div>
+    <div class="field" style="margin-top:12px"><label>新增幣別</label>
+      <div class="fieldrow"><input id="cm_code" placeholder="代碼 EUR" maxlength="5"><input id="cm_sym" placeholder="符號 €"><input id="cm_rate" type="number" inputmode="decimal" placeholder="匯率"></div>
+      <button class="btn sm ghost" style="margin-top:8px" onclick="addCurrency()">＋ 新增幣別</button></div>`;
+  openSheet("幣別與匯率",body);
+  const el=sheetStack[sheetStack.length-1];
+  el.querySelector("#cm_base").onchange=e=>{DB.config.baseCur=e.target.value;save();el.querySelector("#cm_list").innerHTML=curManagerList();renderSettings();};
+}
+function curManagerList(){
+  return DB.config.currencies.map(c=>{
+    const isBase=c.code===DB.config.baseCur;
+    return `<div class="mitem">
+      <div class="mn">${c.code} <span style="color:var(--text2)">${esc(c.symbol)}</span>${isBase?' <span style="color:var(--accent);font-size:12px">主要</span>':""}</div>
+      ${isBase?'<span class="si-val" style="color:var(--text2)">匯率 1</span>':`<input style="width:86px;text-align:right" type="number" inputmode="decimal" value="${c.rate}" onchange="setRate('${c.code}',this.value)">`}
+      ${isBase?'<span style="width:30px"></span>':`<button class="mdel" onclick="delCurrency('${c.code}')">✕</button>`}</div>`;
+  }).join("");
+}
+function setRate(code,v){const c=curInfo(code);c.rate=parseFloat(v)||c.rate;save();}
+function addCurrency(){
+  const el=sheetStack[sheetStack.length-1];
+  const code=(el.querySelector("#cm_code").value||"").trim().toUpperCase();
+  const sym=(el.querySelector("#cm_sym").value||"").trim()||code;
+  const rate=parseFloat(el.querySelector("#cm_rate").value)||0;
+  if(!code){toast("請輸入代碼");return;}
+  if(DB.config.currencies.some(x=>x.code===code)){toast("此幣別已存在");return;}
+  if(rate<=0){toast("請輸入匯率");return;}
+  DB.config.currencies.push({code,symbol:sym,rate});save();
+  el.querySelector("#cm_list").innerHTML=curManagerList();
+  el.querySelector("#cm_code").value="";el.querySelector("#cm_sym").value="";el.querySelector("#cm_rate").value="";
+}
+function delCurrency(code){
+  if(DB.records.some(r=>(r.cur||DB.config.baseCur)===code)){toast("有記錄使用此幣別，無法刪除");return;}
+  DB.config.currencies=DB.config.currencies.filter(x=>x.code!==code);save();
+  const el=sheetStack[sheetStack.length-1];el.querySelector("#cm_list").innerHTML=curManagerList();
+}
+function openTheme(){
+  const body=[["auto","跟隨系統"],["light","淺色"],["dark","深色"]].map(([k,n])=>`<div class="set-item" onclick="setTheme('${k}')"><span class="si-label">${n}</span>${DB.config.theme===k?'<span class="si-val">✓</span>':""}</div>`).join("");
+  openSheet("外觀主題",`<div class="set-group" style="margin-top:6px">${body}</div>`);
+}
+function setTheme(t){DB.config.theme=t;save();applyTheme();closeTopSheet();render();}
+function applyTheme(){
+  const t=DB.config.theme;
+  if(t==="auto")document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme",t);
+  document.documentElement.style.setProperty("--accent",DB.config.accent||"#5b6cff");
+}
+
+/* =================== backup =================== */
+function exportData(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="記帳備份_"+todayStr()+".json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast("已匯出");
+}
+function importData(){
+  const inp=document.createElement("input");inp.type="file";inp.accept=".json,application/json";
+  inp.onchange=()=>{const f=inp.files[0];if(!f)return;const rd=new FileReader();
+    rd.onload=()=>{try{const obj=JSON.parse(rd.result);if(!obj.accounts||!obj.categories)throw 0;
+      if(!confirm("匯入將覆蓋目前所有資料，確定？"))return;
+      DB=obj;DB.config=Object.assign({currency:"$",theme:"auto",accent:"#5b6cff"},DB.config||{});
+      save();applyTheme();render();toast("已匯入");
+    }catch(e){toast("檔案格式錯誤");}};
+    rd.readAsText(f);};
+  inp.click();
+}
+function resetAll(){
+  if(!confirm("這會清除所有帳戶、記錄、預算與設定，無法復原。確定？"))return;
+  if(!confirm("再次確認：真的要清除全部資料嗎？"))return;
+  localStorage.removeItem(STORE_KEY);DB=load();save(true);applyTheme();go("records");toast("已清除");
+}
+
+/* =================== cloud sync (GitHub Gist) =================== */
+const SYNC_POLL_MS=15000;
+let _localDirty=false,_syncing=false,_pushTimer=null,_pollTimer=null;
+function pat(){return localStorage.getItem("moze_sync_pat")||"";}
+function gistId(){return localStorage.getItem("moze_sync_gist_id")||"";}
+function syncBase(){return +localStorage.getItem("moze_sync_base")||0;}
+function syncOn(){return !!pat();}
+function isBusyEditing(){
+  if(sheetStack.length)return true;
+  const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;
+  return false;
+}
+async function ghFetch(url,opts){
+  opts=opts||{};opts.headers=Object.assign({"Authorization":"Bearer "+pat(),"Accept":"application/vnd.github+json"},opts.headers||{});
+  return fetch(url,opts);
+}
+function schedulePush(){if(!syncOn())return;clearTimeout(_pushTimer);_pushTimer=setTimeout(()=>syncPush({auto:true}),2500);}
+async function findOrCreateGist(){
+  let gid=gistId();if(gid)return gid;
+  let r=await ghFetch("https://api.github.com/gists?per_page=100");
+  if(r.ok){const list=await r.json();const found=list.find(g=>g.description===SYNC_DESC||(g.files&&g.files[SYNC_FILE]));if(found){localStorage.setItem("moze_sync_gist_id",found.id);return found.id;}}
+  // create
+  let cr=await ghFetch("https://api.github.com/gists",{method:"POST",body:JSON.stringify({description:SYNC_DESC,public:false,files:{[SYNC_FILE]:{content:JSON.stringify(DB)}}})});
+  if(!cr.ok)throw new Error("建立 Gist 失敗");
+  const g=await cr.json();localStorage.setItem("moze_sync_gist_id",g.id);return g.id;
+}
+async function syncPush(opts){
+  opts=opts||{};if(!syncOn()||_syncing)return;
+  _syncing=true;
+  try{
+    const gid=await findOrCreateGist();
+    // conflict check
+    let rr=await ghFetch("https://api.github.com/gists/"+gid);
+    if(rr.ok){const g=await rr.json();const f=g.files&&g.files[SYNC_FILE];
+      if(f){let remote={};try{remote=JSON.parse(f.content);}catch(e){}
+        if(remote._exportedAt&&remote._exportedAt!==syncBase()&&remote._exportedAt>DB._exportedAt){
+          if(opts.auto){toast("雲端有較新資料，請先拉取");_syncing=false;return;}
+          if(!confirm("雲端有較新的版本，直接上傳會覆蓋它。確定？")){_syncing=false;return;}
+        }
+      }
+    }
+    let pr=await ghFetch("https://api.github.com/gists/"+gid,{method:"PATCH",body:JSON.stringify({files:{[SYNC_FILE]:{content:JSON.stringify(DB)}}})});
+    if(pr.ok){localStorage.setItem("moze_sync_base",String(DB._exportedAt));_localDirty=false;if(!opts.silent)toast("已同步到雲端");updateSyncUI();}
+    else toast("上傳失敗 ("+pr.status+")");
+  }catch(e){toast("同步錯誤："+e.message);}
+  _syncing=false;
+}
+async function syncPull(opts){
+  opts=opts||{};if(!syncOn()||_syncing)return;
+  try{
+    const gid=await findOrCreateGist();
+    let r=await ghFetch("https://api.github.com/gists/"+gid);if(!r.ok)return;
+    const g=await r.json();const f=g.files&&g.files[SYNC_FILE];if(!f)return;
+    let remote={};try{remote=JSON.parse(f.content);}catch(e){return;}
+    if(!remote._exportedAt)return;
+    if(remote._exportedAt===syncBase())return; // nothing new
+    if(remote._exportedAt<=DB._exportedAt&&!opts.force)return;
+    if(opts.background&&(_localDirty||_syncing||isBusyEditing()))return;
+    DB=remote;DB.config=Object.assign({currency:"$",theme:"auto",accent:"#5b6cff"},DB.config||{});
+    localStorage.setItem(STORE_KEY,JSON.stringify(DB));
+    localStorage.setItem("moze_sync_base",String(DB._exportedAt));
+    _localDirty=false;applyTheme();render();updateSyncUI();
+    if(!opts.silent)toast("已從雲端更新");
+  }catch(e){if(!opts.background)toast("拉取錯誤："+e.message);}
+}
+function openSync(){
+  const on=syncOn();
+  let body;
+  if(!on){
+    body=`<div class="hint">在每台裝置貼上同一組 GitHub Token（需 <b>gist</b> 權限），資料就會存進你 GitHub 帳號下的一個私密 Gist，手機和電腦共用同一份。Token 只存在這台瀏覽器，不會外流。</div>
+    <div class="field" style="margin-top:12px"><label>GitHub Personal Access Token</label><input id="sy_pat" placeholder="ghp_..." autocomplete="off"></div>
+    <button class="btn" onclick="enableSync()">啟用雲端同步</button>
+    <div class="hint" style="margin-top:14px">取得方式：GitHub → Settings → Developer settings → Personal access tokens → 勾選 <b>gist</b> 權限。</div>`;
+  }else{
+    const last=syncBase()?new Date(syncBase()).toLocaleString("zh-TW"):"尚未";
+    body=`<div class="hint">雲端同步已啟用。上次同步：${last}</div>
+    <button class="btn" onclick="syncPush({})">⬆️ 立即上傳</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="syncPull({force:true})">⬇️ 從雲端拉取</button>
+    <button class="btn danger sm" style="margin-top:14px" onclick="disableSync()">停用同步（清除本機 Token）</button>`;
+  }
+  openSheet("雲端同步",body);
+}
+function enableSync(){
+  const el=sheetStack[sheetStack.length-1];const v=el.querySelector("#sy_pat").value.trim();
+  if(!v){toast("請貼上 Token");return;}
+  localStorage.setItem("moze_sync_pat",v);
+  closeTopSheet();toast("連線中…");
+  (async()=>{try{
+    const gid=await findOrCreateGist();
+    let r=await ghFetch("https://api.github.com/gists/"+gid);const g=await r.json();const f=g.files&&g.files[SYNC_FILE];
+    let remote=null;if(f){try{remote=JSON.parse(f.content);}catch(e){}}
+    if(remote&&remote.records&&(remote.records.length||!DB.records.length)&&remote._exportedAt){
+      if(confirm("雲端已有資料，要用雲端資料覆蓋本機嗎？\n（選取消＝改用本機資料上傳覆蓋雲端）")){await syncPull({force:true,silent:true});toast("已套用雲端資料");}
+      else{await syncPush({silent:true});toast("已上傳本機資料");}
+    }else{await syncPush({silent:true});toast("雲端同步已啟用");}
+    startPoll();renderSettings();
+  }catch(e){toast("啟用失敗："+e.message);localStorage.removeItem("moze_sync_pat");}})();
+}
+function disableSync(){
+  if(!confirm("停用後這台裝置不再同步（雲端資料保留）。確定？"))return;
+  localStorage.removeItem("moze_sync_pat");localStorage.removeItem("moze_sync_gist_id");localStorage.removeItem("moze_sync_base");
+  clearInterval(_pollTimer);closeTopSheet();render();toast("已停用同步");
+}
+function updateSyncUI(){if(ui.page==="settings")renderSettings();}
+function startPoll(){clearInterval(_pollTimer);if(!syncOn())return;_pollTimer=setInterval(()=>{if(document.visibilityState==="visible")syncPull({background:true,silent:true});},SYNC_POLL_MS);}
+
+/* =================== toast =================== */
+let _toastT=null;
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(_toastT);_toastT=setTimeout(()=>t.classList.remove("show"),1800);}
+
+/* =================== init =================== */
+applyTheme();
+go("records");
+if(syncOn()){syncPull({force:true,silent:true});startPoll();}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&syncOn())syncPull({background:true,silent:true});});
+window.addEventListener("focus",()=>{if(syncOn())syncPull({background:true,silent:true});});
+// prevent double-tap zoom on buttons
+document.addEventListener("dblclick",e=>e.preventDefault(),{passive:false});
+</script>
+</body>
+</html>
