@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#5b6cff">
-<title>記帳</title>
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<title>Tally</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAA5klEQVR4nO3aQWqEQBgF4bIwZ/BAOXcO5BmyMIvAbAZCRseR0vlWrrqF/9G+BodlWSiTOImTOImTOImTOImTOImTOImTOIkb91t6/vz4fZi+vvfbReIkbth4I7vlZJ1pc7ryE5C48ekr3lJxfwptzNs5JyDXjNB8F4b/nCd7fNEkTuLGVvM54QQkbnh3oYPJxSP0h4e60LT27MpPQOLGV262R6+WOLl4hOZHevW6En7yCUjc+PQV73Oyx13+PBOQuOGVXWgPEidxw/t/oYNJnMRJnMRJnMRJnMRJnMRJnMRJnEe/wFY/JOo9qLkvtEoAAAAASUVORK5CYII=">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACMElEQVR4nO3dMW6DQBBAURwlZ+BAOXcOxBlSOH3kj+QQCxbeK6Fx8TXFaL3c7vf7BI+8PXwK4mCNyUESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQ3qdrWz4/Vt7OX9/ThZkcJHGQxEESB0kcJHGQxEESB0kcpNsQF+Ov7zFHNI+wezU5SOIgiYMkDpI4SOIgiYMkDpI4uPAZ0vVd5JYzpMvp9ra/mBwkcZDEQRIHSRwkcZDEQRIHSRwcfkO6Zdu413nMeYRzoFuYHCRxkMRBEgdJHCRxkMRBEgdJHBx+Q7qFu0RfxOQgiYMkDpI4SOIgiYMkDpI4SOIguYd0H/MI509NDpI4SOIgiYMkDpI4SOIgiYMkDgbfkL7OMe8hnY+xPzU5SOIgiYMkDpI4SOIgiYMkDpI4OPW/7Pcyn/07TiYHSRwkcZDEQRIHSRwkcZDEQRIHg29Ij/kdp+WQv+ofmRwkcZDEQRIHSRyIg+eZHCRxkMTB4BvSvfaYy/jnQLcwOUjiIImDJA6SOEjiIImDJA6SOEjuIf37PaSnZ3KQxEESB0kcJHGQxEESB0kcJHGQrr4hZYXJQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHU/kBjGg+kIbDUCIAAAAASUVORK5CYII=">
+<meta name="apple-mobile-web-app-title" content="Tally">
 <style>
 :root{
   --accent:#5b6cff;
@@ -286,7 +287,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 <script>
 "use strict";
 /* =================== data layer =================== */
-const APP_VERSION="2026.10.22-d";
+const APP_VERSION="2026.10.22-e";
 const STORE_KEY="moze_data";
 const SYNC_DESC="MozeClone Sync — do not delete";
 const SYNC_FILE="moze_data.json";
@@ -781,7 +782,7 @@ function renderSettings(){
   <div class="set-group">
     <div class="set-item" onclick="resetAll()"><span class="si-ic">🗑️</span><span class="si-label" style="color:var(--expense)">清除所有資料</span><span class="chev">›</span></div>
   </div>
-  <div class="hint" style="text-align:center;margin-top:16px">記帳 App · 資料存在本機瀏覽器${syn?" + 雲端 Gist":""}<br>共 ${DB.records.length} 筆記錄 · 版本 ${APP_VERSION}</div>`;
+  <div class="hint" style="text-align:center;margin-top:16px">Tally · 資料存在本機瀏覽器${syn?" + 雲端 Gist":""}<br>共 ${DB.records.length} 筆記錄 · 版本 ${APP_VERSION}</div>`;
   document.getElementById("page-settings").innerHTML=html;
 }
 
