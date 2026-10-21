@@ -1,0 +1,121 @@
+"use strict";
+/* data layer: storage, model, helpers */
+/* one-time lossless migration from the app's earlier storage keys */
+(function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
+const APP_VERSION="2026.10.22-f";
+const STORE_KEY="tally_data";
+const SYNC_DESC="Tally Sync — do not delete";
+const SYNC_FILE="tally_data.json";
+const SYNC_DESC_OLD="MozeClone Sync — do not delete";
+const SYNC_FILE_OLD="moze_data.json";
+const DEFAULT_CURRENCIES=[
+  {code:"TWD",symbol:"$",rate:1},
+  {code:"HKD",symbol:"HK$",rate:4.1},
+  {code:"JPY",symbol:"¥",rate:0.22},
+  {code:"USD",symbol:"US$",rate:31},
+];
+
+const DEFAULT_ACCOUNTS=[
+  {id:"a_cash",name:"現金",type:"cash",init:0,icon:"banknote",color:"#30a46c"},
+  {id:"a_bank",name:"銀行帳戶",type:"bank",init:0,icon:"landmark",color:"#5b6cff"},
+  {id:"a_card",name:"信用卡",type:"credit",init:0,icon:"credit-card",color:"#e5484d"},
+];
+const DEFAULT_CATS=[
+  // expense
+  {id:"c_food",name:"餐飲",type:"expense",icon:"utensils",color:"#f59e0b"},
+  {id:"c_daily",name:"日用品",type:"expense",icon:"package",color:"#06b6d4"},
+  {id:"c_traffic",name:"交通",type:"expense",icon:"car",color:"#3b82f6"},
+  {id:"c_shop",name:"購物",type:"expense",icon:"shopping-bag",color:"#ec4899"},
+  {id:"c_fun",name:"娛樂",type:"expense",icon:"gamepad-2",color:"#8b5cf6"},
+  {id:"c_home",name:"居家",type:"expense",icon:"house",color:"#14b8a6"},
+  {id:"c_med",name:"醫療",type:"expense",icon:"pill",color:"#ef4444"},
+  {id:"c_edu",name:"教育",type:"expense",icon:"graduation-cap",color:"#6366f1"},
+  {id:"c_cloth",name:"服飾",type:"expense",icon:"shopping-bag",color:"#f43f5e"},
+  {id:"c_comm",name:"通訊",type:"expense",icon:"smartphone",color:"#0ea5e9"},
+  {id:"c_social",name:"社交",type:"expense",icon:"users",color:"#d97706"},
+  {id:"c_travel",name:"旅行",type:"expense",icon:"sparkles",color:"#0891b2"},
+  {id:"c_other_e",name:"其他",type:"expense",icon:"package",color:"#78716c"},
+  // income
+  {id:"c_salary",name:"薪資",type:"income",icon:"coins",color:"#30a46c"},
+  {id:"c_bonus",name:"獎金",type:"income",icon:"sparkles",color:"#16a34a"},
+  {id:"c_invest",name:"投資",type:"income",icon:"trending-up",color:"#059669"},
+  {id:"c_parttime",name:"兼職",type:"income",icon:"user",color:"#10b981"},
+  {id:"c_refund",name:"退款",type:"income",icon:"coins",color:"#22c55e"},
+  {id:"c_other_i",name:"其他",type:"income",icon:"coins",color:"#65a30d"},
+];
+const EMOJIS=["🍜","🍔","🍱","☕","🍰","🍺","🛒","🧴","🚗","🚌","🚇","⛽","🛍️","👕","👟","🎮","🎬","🎵","🏠","💡","💧","📱","💻","💊","🏥","📚","✏️","✈️","🏨","🎁","💰","💵","💳","📈","💼","🏦","🎯","🐾","👶","💄","✂️","🔧","🎾","⚽","🚭","🧾","📦","❤️","🌐","⚡"];
+const COLORS=["#e5484d","#f59e0b","#eab308","#30a46c","#06b6d4","#3b82f6","#5b6cff","#8b5cf6","#ec4899","#f43f5e","#14b8a6","#78716c"];
+
+/* line-icon registry (Lucide, ISC license) — key -> inner svg markup */
+
+let DB=load();
+let ui={page:"records",month:curMonth(),statType:"expense",statMain:null};
+
+function curMonth(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+function load(){
+  let raw=null;try{raw=JSON.parse(localStorage.getItem(STORE_KEY));}catch(e){}
+  if(!raw||!raw.accounts){
+    return {version:1,accounts:structuredClone(DEFAULT_ACCOUNTS),categories:structuredClone(DEFAULT_CATS),
+            records:[],budgets:[],tags:["早餐","午餐","晚餐"],projects:[],
+            config:defaultConfig(),_exportedAt:0};
+  }
+  raw.tags=raw.tags||[];raw.budgets=raw.budgets||[];
+  raw.projects=(raw.projects||[]).map((p,i)=> (typeof p==="string")
+    ? {id:"p_"+uid(),name:p,color:COLORS[i%COLORS.length],icon:"📁"} : p);
+  raw.config=normalizeConfig(raw.config);
+  return raw;
+}
+function defaultConfig(){return {baseCur:"TWD",currencies:structuredClone(DEFAULT_CURRENCIES),theme:"auto",accent:"#5b6cff"};}
+function normalizeConfig(c){
+  c=c||{};
+  if(!c.currencies){
+    const cs=structuredClone(DEFAULT_CURRENCIES);
+    if(c.currency){const b=cs.find(x=>x.code==="TWD");if(b)b.symbol=c.currency;}
+    c.currencies=cs;
+  }
+  if(!c.baseCur)c.baseCur="TWD";
+  if(!c.currencies.some(x=>x.code===c.baseCur))c.baseCur=c.currencies[0].code;
+  if(c.theme==null)c.theme="auto";if(c.accent==null)c.accent="#5b6cff";
+  return c;
+}
+function save(skipSync){
+  DB._exportedAt=Date.now();
+  localStorage.setItem(STORE_KEY,JSON.stringify(DB));
+  if(!skipSync){_localDirty=true;schedulePush();}
+}
+
+/* =================== helpers =================== */
+function curInfo(code){return (DB.config.currencies||[]).find(x=>x.code===code)||{code:code||"",symbol:code||"$",rate:1};}
+function baseSym(){return curInfo(DB.config.baseCur).symbol;}
+function cur(){return baseSym();}
+function isForeign(code){return !!code&&code!==DB.config.baseCur;}
+function baseAmt(r){const rt=(r.rate!=null)?r.rate:curInfo(r.cur||DB.config.baseCur).rate;return (r.amount||0)*(rt||1);}
+function numStr(n){const a=Math.abs(n);return (a%1===0)?a.toLocaleString("en-US"):a.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt(n,signed){n=Math.round((n||0)*100)/100;const neg=n<0;const out=baseSym()+numStr(n);if(signed)return (neg?"−":"+")+out;return (neg?"−":"")+out;}
+function fmtCur(amount,code,signed){const info=curInfo(code);const neg=amount<0;const out=info.symbol+numStr(amount);if(signed)return (neg?"−":"+")+out;return (neg?"−":"")+out;}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function acc(id){return DB.accounts.find(a=>a.id===id);}
+function catOf(id){return DB.categories.find(c=>c.id===id);}
+function projOf(id){return DB.projects.find(p=>p.id===id);}
+function mainCats(type){return DB.categories.filter(c=>c.type===type&&!c.parent);}
+function subCats(mainId){return DB.categories.filter(c=>c.parent===mainId);}
+function mainOf(cat){return (cat&&cat.parent)?(catOf(cat.parent)||cat):cat;}
+function catColor(cat){if(!cat)return "#999";if(cat.color)return cat.color;const m=cat.parent?catOf(cat.parent):null;return (m&&m.color)||"#999";}
+function catIcon(cat){if(!cat)return "❓";if(cat.icon)return cat.icon;const m=cat.parent?catOf(cat.parent):null;return (m&&m.icon)||"📦";}
+function monthLabel(m){const[y,mo]=m.split("-");return y+"年"+parseInt(mo)+"月";}
+function inMonth(dateStr,m){return dateStr&&dateStr.slice(0,7)===m;}
+function recsInMonth(m){return DB.records.filter(r=>inMonth(r.date,m));}
+
+function accBalance(id){
+  const a=acc(id);if(!a)return 0;let b=a.init||0;
+  for(const r of DB.records){
+    const v=baseAmt(r);
+    if(r.type==="income"&&r.accountId===id)b+=v;
+    else if(r.type==="expense"&&r.accountId===id)b-=v;
+    else if(r.type==="transfer"){if(r.accountId===id)b-=v;if(r.toAccountId===id)b+=v;}
+  }
+  return b;
+}
