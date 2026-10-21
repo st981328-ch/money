@@ -9,10 +9,13 @@ function go(p){
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
   document.getElementById("gearBtn").style.color=(p==="settings")?"var(--accent)":"";
   document.getElementById("pageTitle").textContent=TITLES[p];
-  document.getElementById("monthNav").style.visibility=(p==="records"||p==="stats"||p==="budgets")?"visible":"hidden";
+  document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
+  document.getElementById("navAddBtn").classList.toggle("on",p==="records");
   document.querySelector(".pages").scrollTop=0;
   render();
 }
+/* center + : jump to records when elsewhere, else open the add sheet */
+function navAdd(){ if(ui.page!=="records") go("records"); else openAdd(); }
 function shiftMonth(d){
   let[y,m]=ui.month.split("-").map(Number);m+=d;
   if(m<1){m=12;y--;}if(m>12){m=1;y++;}
@@ -28,31 +31,49 @@ function render(){
   else if(ui.page==="settings")renderSettings();
 }
 
-/* =================== records page =================== */
-function renderRecords(){
-  const recs=recsInMonth(ui.month).slice().sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0));
-  let inc=0,exp=0;
-  recs.forEach(r=>{if(r.type==="income")inc+=baseAmt(r);else if(r.type==="expense")exp+=baseAmt(r);});
-  let html=`<div class="sumstrip">
-    <div class="cell"><div class="lbl">收入</div><div class="val inc">${fmt(inc)}</div></div>
-    <div class="cell"><div class="lbl">支出</div><div class="val exp">${fmt(exp)}</div></div>
-    <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(inc-exp)}</div></div>
-  </div>`;
-  if(!recs.length){
-    html+=`<div class="empty"><div class="big">${IC("receipt-text")}</div>這個月還沒有記錄<br>點下方 ＋ 開始記帳</div>`;
-    document.getElementById("page-records").innerHTML=html;return;
+/* =================== records page (day view) =================== */
+function dstr(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+function selectDay(ds){ui.selDate=ds;ui.month=ds.slice(0,7);render();}
+function shiftWeek(dir){const[y,m,d]=ui.selDate.split("-").map(Number);selectDay(dstr(new Date(y,m-1,d+dir*7)));}
+function weekStripHTML(sel){
+  const[y,m,d]=sel.split("-").map(Number);const dt=new Date(y,m-1,d);
+  const off=(dt.getDay()===0?6:dt.getDay()-1);
+  const mon=new Date(y,m-1,d-off);const today=todayStr();const lab=["一","二","三","四","五","六","日"];
+  let cells="";
+  for(let i=0;i<7;i++){
+    const cd=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i);const ds=dstr(cd);
+    cells+=`<div class="wk-day ${ds===sel?"sel":""} ${ds===today?"today":""}" onclick="selectDay('${ds}')">
+      <div class="wk-dow">週${lab[i]}</div><div class="wk-num">${cd.getDate()}</div></div>`;
   }
-  // group by date
-  const groups={};
-  recs.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
-  Object.keys(groups).sort().reverse().forEach(d=>{
-    let din=0,dex=0;groups[d].forEach(r=>{if(r.type==="income")din+=baseAmt(r);else if(r.type==="expense")dex+=baseAmt(r);});
-    let dsum=[];if(dex)dsum.push(`<span class="val exp" style="font-size:12.5px">支 ${fmt(dex)}</span>`);if(din)dsum.push(`<span class="val inc" style="font-size:12.5px">收 ${fmt(din)}</span>`);
-    html+=`<div class="daygroup"><div class="dayhead"><span class="ddate">${fmtDay(d)}</span><span class="dsum">${dsum.join("　")}</span></div><div class="reclist">`;
-    groups[d].forEach(r=>html+=recRow(r));
-    html+=`</div></div>`;
-  });
+  return `<div class="weeknav"><button onclick="shiftWeek(-1)">‹</button><div class="weekstrip" id="weekstrip">${cells}</div><button onclick="shiftWeek(1)">›</button></div>`;
+}
+function bindWeekSwipe(){
+  const el=document.getElementById("weekstrip");if(!el)return;let x0=null;
+  el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
+  el.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)shiftWeek(dx<0?1:-1);},{passive:true});
+}
+function renderRecords(){
+  const sel=ui.selDate,mo=sel.slice(0,7);
+  document.getElementById("pageTitle").textContent=sel.replace(/-/g,"/");
+  // month summary
+  let minc=0,mexp=0;recsInMonth(mo).forEach(r=>{if(r.type==="income")minc+=baseAmt(r);else if(r.type==="expense")mexp+=baseAmt(r);});
+  let html=weekStripHTML(sel);
+  html+=`<div class="card msum" onclick="go('stats')">
+    <div class="ic" style="background:${hex2(DB.config.accent)};color:var(--accent)">${IC("chart-pie")}</div>
+    <div class="mid"><div class="rtitle">每月統計</div><div class="rsub">${monthLabel(mo)}</div></div>
+    <div class="msum-fig"><div><span class="val inc">${fmt(minc)}</span> <span style="color:var(--text3)">/</span> <span class="val exp">${fmt(mexp)}</span></div><div class="msum-net">結餘 ${fmt(minc-mexp)}</div></div></div>`;
+  // selected day's records
+  const day=DB.records.filter(r=>r.date===sel).sort((a,b)=>(b._t||0)-(a._t||0));
+  let dinc=0,dexp=0;day.forEach(r=>{if(r.type==="income")dinc+=baseAmt(r);else if(r.type==="expense")dexp+=baseAmt(r);});
+  const dsum=[dexp?`<span class="val exp">支 ${fmt(dexp)}</span>`:"",dinc?`<span class="val inc">收 ${fmt(dinc)}</span>`:""].filter(Boolean).join("　")||'<span style="color:var(--text3)">無記錄</span>';
+  html+=`<div class="dayhead2"><span class="ddate">${fmtDay(sel)}</span><span>${dsum}</span></div>`;
+  if(!day.length){
+    html+=`<div class="empty"><div class="big">${IC("receipt-text")}</div>這天還沒有記錄<br>點下方 ＋ 新增一筆</div>`;
+  }else{
+    html+=`<div class="reclist">`+day.map(recRow).join("")+`</div>`;
+  }
   document.getElementById("page-records").innerHTML=html;
+  bindWeekSwipe();
 }
 function fmtDay(d){
   const[y,m,dd]=d.split("-").map(Number);const dt=new Date(y,m-1,dd);
@@ -63,26 +84,32 @@ function fmtDay(d){
 }
 function recRow(r){
   const rc=r.cur||DB.config.baseCur,fgn=isForeign(rc);
+  const proj=r.projectId?projOf(r.projectId):null;
+  let icon,col,name,note,amt,amtcol,pills="";
   if(r.type==="transfer"){
     const fa=acc(r.accountId),ta=acc(r.toAccountId);
-    return `<div class="rec" onclick="openAdd('${r.id}')">
-      <div class="ic" style="background:${hex2(DB.config.accent)};">🔄</div>
-      <div class="mid"><div class="rname">轉帳</div><div class="rmeta">${esc(fa?fa.name:"?")} → ${esc(ta?ta.name:"?")}${r.note?" · "+esc(r.note):""}</div></div>
-      <div class="ramt" style="color:var(--accent)">${fmtCur(r.amount,rc)}</div></div>`;
+    col=DB.config.accent;icon="🔄";name="轉帳";note=r.note||"";amt=fmtCur(r.amount,rc);amtcol="var(--accent)";
+    pills=`<span class="pill">${esc(fa?fa.name:"?")}</span><span class="pill">→ ${esc(ta?ta.name:"?")}</span>`;
+  }else{
+    const c=catOf(r.categoryId),a=acc(r.accountId);
+    col=catColor(c);icon=IC(catIcon(c));
+    name=c?(c.parent?(mainOf(c).name+"·"+c.name):c.name):"未分類";
+    note=r.note||"";
+    amt=(r.type==="income"?"+":"−")+fmtCur(r.amount,rc);
+    amtcol=r.type==="income"?"var(--income)":"var(--expense)";
+    if(proj)pills+=`<span class="pill proj" style="border-color:${hex2b(proj.color)};color:${proj.color}">${esc(proj.name)}</span>`;
+    if(a)pills+=`<span class="pill">${esc(a.name)}</span>`;
   }
-  const c=catOf(r.categoryId),a=acc(r.accountId);
-  const col=catColor(c);
-  const sign=r.type==="income"?"income":"expense";
-  const cname=c?(c.parent?(mainOf(c).name+"·"+c.name):c.name):"未分類";
-  const metaParts=[a?a.name:"",r.note].filter(Boolean);
-  if(fgn)metaParts.push("≈"+fmt(baseAmt(r)));
-  const proj=r.projectId?projOf(r.projectId):null;
-  if(proj)metaParts.push("📁"+proj.name);
-  const meta=metaParts.concat((r.tags||[]).map(t=>"#"+t)).join(" · ");
+  if(fgn)note=(note?note+" · ":"")+"≈"+fmt(baseAmt(r));
   return `<div class="rec" onclick="openAdd('${r.id}')">
-    <div class="ic" style="background:${hex2(col)};color:${col}">${IC(catIcon(c))}</div>
-    <div class="mid"><div class="rname">${esc(cname)}</div><div class="rmeta">${esc(meta)||"—"}</div></div>
-    <div class="ramt" style="color:var(--${sign})">${r.type==="income"?"+":"−"}${fmtCur(r.amount,rc)}</div></div>`;
+    <div class="ic" style="background:${hex2(col)};color:${col}">${icon}</div>
+    <div class="mid"><div class="rname">${esc(name)}</div>${note?`<div class="rnote">${esc(note)}</div>`:""}</div>
+    <div class="rright"><div class="ramt" style="color:${amtcol}">${amt}</div>${pills?`<div class="pills">${pills}</div>`:""}</div></div>`;
+}
+function hex2b(hex){ // slightly stronger translucent for pill borders
+  hex=hex||"#888888";if(hex.length===4)hex="#"+hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3];
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},.45)`;
 }
 function hex2(hex){ // translucent bg from hex
   hex=hex||"#888888";if(hex.length===4)hex="#"+hex[1]+hex[1]+hex[2]+hex[2]+hex[3]+hex[3];

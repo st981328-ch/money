@@ -33,14 +33,11 @@
     <div class="page" id="page-settings"></div>
   </div>
 
-  <button class="fab" id="fab" onclick="openAdd()">＋</button>
-
   <div class="nav" id="nav">
-    <button data-p="records" class="on" onclick="go('records')"><span class="ni" data-ic="receipt-text"></span>記錄</button>
-    <button data-p="stats" onclick="go('stats')"><span class="ni" data-ic="chart-pie"></span>統計</button>
-    <span class="spacer"></span>
     <button data-p="accounts" onclick="go('accounts')"><span class="ni" data-ic="wallet"></span>帳戶</button>
     <button data-p="projects" onclick="go('projects')"><span class="ni" data-ic="folder"></span>專案</button>
+    <button class="navadd" id="navAddBtn" onclick="navAdd()">＋</button>
+    <button data-p="stats" onclick="go('stats')"><span class="ni" data-ic="chart-pie"></span>統計</button>
     <button data-p="budgets" onclick="go('budgets')"><span class="ni" data-ic="target"></span>預算</button>
   </div>
 </div>

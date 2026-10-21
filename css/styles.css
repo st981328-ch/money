@@ -233,3 +233,38 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .synbadge.on{background:var(--income)}
 .toast{position:fixed;bottom:calc(var(--nav-h) + 90px);left:50%;transform:translateX(-50%);background:rgba(0,0,0,.82);color:#fff;padding:10px 18px;border-radius:22px;font-size:13.5px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
+
+/* === center + nav button === */
+.nav button.navadd{flex:0 0 56px;align-self:center;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;font-size:30px;font-weight:400;display:flex;align-items:center;justify-content:center;gap:0;padding:0;margin:0 10px;transform:translateY(-14px);box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 50%,transparent)}
+.nav button.navadd:active{transform:translateY(-14px) scale(.92)}
+.nav button.navadd.on{color:#fff;box-shadow:0 0 0 4px var(--card),0 0 0 6px color-mix(in srgb,var(--accent) 45%,transparent),0 6px 18px color-mix(in srgb,var(--accent) 50%,transparent)}
+
+/* === week strip === */
+.weeknav{display:flex;align-items:center;gap:2px;margin:4px 0 12px}
+.weeknav>button{flex:0 0 20px;color:var(--text3);font-size:18px;height:40px}
+.weekstrip{flex:1;display:flex;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:8px 2px;touch-action:pan-y;user-select:none}
+.wk-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:4px 0;cursor:pointer}
+.wk-dow{font-size:10.5px;color:var(--text2)}
+.wk-num{font-size:15px;font-weight:600;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:var(--text)}
+.wk-day.today .wk-num{color:var(--accent)}
+.wk-day.sel .wk-num{background:var(--accent);color:#fff}
+.wk-day.sel .wk-dow{color:var(--accent);font-weight:700}
+
+/* === month-summary card on records === */
+.msum{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.msum .ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.msum .mid{flex:1;min-width:0}
+.msum .rtitle{font-weight:600}
+.msum .rsub{font-size:12px;color:var(--text2);margin-top:2px}
+.msum-fig{text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0}
+.msum-fig .val{font-size:14px;font-weight:600}
+.msum-net{font-size:12px;color:var(--text2);margin-top:3px}
+.dayhead2{display:flex;justify-content:space-between;align-items:baseline;padding:4px 6px 8px;font-size:12.5px;color:var(--text2)}
+.dayhead2 .ddate{font-weight:600;color:var(--text)}
+
+/* === record row: amount + project/account pills === */
+.rec .rnote{font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .rright{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.rec .rright .ramt{font-weight:700;font-variant-numeric:tabular-nums;font-size:15.5px}
+.rec .pills{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:52vw}
+.pill{font-size:10.5px;padding:2px 9px;border-radius:11px;border:1px solid var(--line);color:var(--text2);white-space:nowrap;line-height:1.5}
