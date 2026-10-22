@@ -162,7 +162,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .sheet-h .st{font-size:17px;font-weight:700}
 .sheet-h button.x{font-size:15px;color:var(--text2);padding:4px 8px}
 .sheet-h button.del{color:var(--expense);font-size:14px;font-weight:600}
-.sheet-body{flex:1;min-height:0;overflow-y:auto;padding:0 18px 18px}
+.sheet-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 18px 18px;overscroll-behavior-x:none}
 .grab{width:38px;height:4px;background:var(--line);border-radius:3px;margin:8px auto 0}
 
 /* add-record sheet specials */
