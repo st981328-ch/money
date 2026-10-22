@@ -429,7 +429,10 @@ function addBody(editing){
     <button data-t="expense">支出</button>
     <button data-t="income">收入</button>
     <button data-t="transfer">轉帳</button></div>
-  <div class="amtbox"><span class="cur" id="amtcur">${curInfo(addState.cur).symbol}</span><span class="num" id="amtnum">0</span></div>
+  <div class="amtrow">
+    <div class="curpick"><button type="button" class="curpill" id="curpill" onclick="toggleCurMenu()">${addState.cur}</button><div class="curmenu" id="curmenu"></div></div>
+    <span class="num" id="amtnum">0</span>
+  </div>
   <div id="curarea"></div>
   <div id="catarea"></div>
   <div id="formarea"></div>
@@ -440,9 +443,8 @@ function stdForm(){
       <div class="field"><label>帳戶</label><div class="selwrap"><select id="f_acc">${accOpts(addState.accountId)}</select></div></div>
       <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
     </div>
-    <div class="field"><label>備註</label><input id="f_note" placeholder="選填" value="${esc(addState.note)}"></div>
     ${projField()}
-    ${DB.tags.length?`<div class="field"><label>標籤</label><div class="chips" id="f_tags">${DB.tags.map(t=>`<span class="chip ${addState.tags.includes(t)?"on":""}" data-tag="${esc(t)}">${esc(t)}</span>`).join("")}</div></div>`:""}`;
+    <div class="field"><label>備註</label><textarea id="f_note" placeholder="備註" rows="3">${esc(addState.note)}</textarea></div>`;
 }
 function bindStdForm(formarea){
   const fa=formarea.querySelector("#f_acc");if(fa)fa.onchange=e=>addState.accountId=e.target.value;
@@ -486,23 +488,31 @@ function bindAdd(el){
     keyPress(k);updateAmtDisplay(el);
   };
 }
+let _curMenuCloser=null;
+function toggleCurMenu(){
+  const m=document.getElementById("curmenu");if(!m)return;
+  if(m.classList.contains("show")){closeCurMenu();return;}
+  m.innerHTML=(DB.config.currencies||[]).map(c=>`<div class="curopt ${c.code===addState.cur?"on":""}" onclick="pickCur('${c.code}')">${c.code}<span>${esc(c.symbol)}</span></div>`).join("");
+  m.classList.add("show");
+  setTimeout(()=>{_curMenuCloser=(e)=>{if(!e.target.closest("#curpill")&&!e.target.closest("#curmenu"))closeCurMenu();};document.addEventListener("click",_curMenuCloser);},0);
+}
+function closeCurMenu(){const m=document.getElementById("curmenu");if(m)m.classList.remove("show");if(_curMenuCloser){document.removeEventListener("click",_curMenuCloser);_curMenuCloser=null;}}
+function pickCur(code){
+  addState.cur=code;addState.rate=curInfo(code).rate;
+  closeCurMenu();
+  const pill=document.getElementById("curpill");if(pill)pill.textContent=code;
+  const el=sheetStack[sheetStack.length-1];renderCurArea(el);updateAmtDisplay(el);
+}
 function renderCurArea(el){
-  const curs=DB.config.currencies||[];
   const area=el.querySelector("#curarea");if(!area)return;
-  if(curs.length<=1){area.innerHTML="";return;}
-  let h=`<div class="chips" id="curchips" style="margin-bottom:10px">`+curs.map(c=>`<span class="chip ${c.code===addState.cur?"on":""}" data-cur="${c.code}">${c.code}</span>`).join("")+`</div>`;
-  if(isForeign(addState.cur)){
-    h+=`<div class="fieldrow" style="margin-bottom:8px">
+  if(!isForeign(addState.cur)){area.innerHTML="";return;}
+  area.innerHTML=`<div class="fieldrow" style="margin:0 0 4px">
       <div class="field" style="margin:0"><label>匯率 1 ${addState.cur} = ? ${baseSym()}</label><input id="f_rate" type="number" inputmode="decimal" value="${addState.rate}"></div>
       <div class="field" style="margin:0"><label>約合 ${baseSym()}</label><div style="padding:11px 2px;font-weight:700" id="basePrev">${fmt(evalExpr(addState.expr)*(addState.rate||0))}</div></div></div>`;
-  }
-  area.innerHTML=h;
-  area.querySelector("#curchips").onclick=(e)=>{const c=e.target.closest("[data-cur]");if(!c)return;addState.cur=c.dataset.cur;addState.rate=curInfo(addState.cur).rate;renderCurArea(el);updateAmtDisplay(el);};
   const fr=area.querySelector("#f_rate");if(fr)fr.oninput=e=>{addState.rate=parseFloat(e.target.value)||0;const bp=area.querySelector("#basePrev");if(bp)bp.textContent=fmt(evalExpr(addState.expr)*(addState.rate||0));};
 }
 function updateAmtDisplay(el){
   el.querySelector("#amtnum").textContent=dispExpr();
-  const ac=el.querySelector("#amtcur");if(ac)ac.textContent=curInfo(addState.cur).symbol;
   const bp=el.querySelector("#basePrev");if(bp)bp.textContent=fmt(evalExpr(addState.expr)*(addState.rate||0));
 }
 function renderCatPicker(el){
@@ -546,8 +556,8 @@ function renderAddDynamic(el){
         <div class="field"><label>到</label><div class="selwrap"><select id="f_to">${accOpts(addState.toAccountId)}</select></div></div>
       </div>
       <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
-      <div class="field"><label>備註</label><input id="f_note" placeholder="選填" value="${esc(addState.note)}"></div>
-      ${projField()}`;
+      ${projField()}
+      <div class="field"><label>備註</label><textarea id="f_note" placeholder="備註" rows="3">${esc(addState.note)}</textarea></div>`;
     formarea.querySelector("#f_from").onchange=e=>addState.accountId=e.target.value;
     formarea.querySelector("#f_to").onchange=e=>addState.toAccountId=e.target.value;
   }else{
