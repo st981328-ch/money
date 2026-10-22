@@ -376,8 +376,9 @@ function renderSettings(){
 let sheetStack=[];
 function openSheet(title,bodyHtml,opts){
   opts=opts||{};
-  const el=document.createElement("div");el.className="sheet";
-  el.innerHTML=`<div class="grab"></div><div class="sheet-h"><button class="x" onclick="closeTopSheet()">取消</button><span class="st">${esc(title)}</span>${opts.del?`<button class="del" onclick="${opts.del}">刪除</button>`:`<span style="width:44px"></span>`}</div><div class="sheet-body">${bodyHtml}</div>${opts.footer||""}`;
+  const el=document.createElement("div");el.className="sheet"+(opts.full?" full":"");
+  const header=opts.customHead||`<div class="grab"></div><div class="sheet-h"><button class="x" onclick="closeTopSheet()">取消</button><span class="st">${esc(title)}</span>${opts.del?`<button class="del" onclick="${opts.del}">刪除</button>`:`<span style="width:44px"></span>`}</div>`;
+  el.innerHTML=`${header}<div class="sheet-body">${bodyHtml}</div>${opts.footer||""}`;
   document.body.appendChild(el);
   sheetStack.push(el);
   document.getElementById("mask").classList.add("show");
@@ -409,26 +410,56 @@ function openAdd(editId){
     note:r?r.note||"":"",
     tags:r?(r.tags||[]).slice():[],
     projectId:r?(r.projectId||""):"",
+    tab:r?r.type:"suggest",
   };
   if(!addState.categoryId&&addState.type!=="transfer"){const m=mainCats(addState.type)[0];if(m){const s=subCats(m.id)[0];addState.categoryId=s?s.id:m.id;}}
   addState.catMain=(addState.categoryId?((mainOf(catOf(addState.categoryId))||{}).id):((mainCats(addState.type)[0]||{}).id))||null;
-  const el=openSheet(r?"編輯記錄":"新增記錄","",{del:r?"deleteRecord()":null});
-  el.querySelector(".sheet-body").innerHTML=addBody();
+  const head=`<div class="sheet-h full-h"><button class="iconbtn" onclick="closeTopSheet()">✕</button><span class="st">${r?"編輯記錄":"新增記錄"}</span><button class="iconbtn ok" onclick="saveRecord()">✓</button></div>`;
+  const el=openSheet(r?"編輯記錄":"新增記錄","",{full:true,customHead:head});
+  el.querySelector(".sheet-body").innerHTML=addBody(!!r);
   // keypad outside scroll body
   const kp=document.createElement("div");kp.className="keypad";kp.innerHTML=keypadHtml();
   el.appendChild(kp);
   bindAdd(el);
   renderAddDynamic(el);
 }
-function addBody(){
-  return `<div class="addtype" id="addtype">
+function addBody(editing){
+  return `<div class="addtabs" id="addtabs">
+    <button data-t="suggest">建議</button>
     <button data-t="expense">支出</button>
     <button data-t="income">收入</button>
     <button data-t="transfer">轉帳</button></div>
   <div class="amtbox"><span class="cur" id="amtcur">${curInfo(addState.cur).symbol}</span><span class="num" id="amtnum">0</span></div>
   <div id="curarea"></div>
   <div id="catarea"></div>
-  <div id="formarea"></div>`;
+  <div id="formarea"></div>
+  ${editing?`<button class="btn danger sm" style="margin-top:16px" onclick="deleteRecord()">刪除這筆記錄</button>`:""}`;
+}
+function stdForm(){
+  return `<div class="fieldrow">
+      <div class="field"><label>帳戶</label><div class="selwrap"><select id="f_acc">${accOpts(addState.accountId)}</select></div></div>
+      <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
+    </div>
+    <div class="field"><label>備註</label><input id="f_note" placeholder="選填" value="${esc(addState.note)}"></div>
+    ${projField()}
+    ${DB.tags.length?`<div class="field"><label>標籤</label><div class="chips" id="f_tags">${DB.tags.map(t=>`<span class="chip ${addState.tags.includes(t)?"on":""}" data-tag="${esc(t)}">${esc(t)}</span>`).join("")}</div></div>`:""}`;
+}
+function bindStdForm(formarea){
+  const fa=formarea.querySelector("#f_acc");if(fa)fa.onchange=e=>addState.accountId=e.target.value;
+  const tg=formarea.querySelector("#f_tags");if(tg)tg.onclick=(e)=>{const c=e.target.closest("[data-tag]");if(!c)return;const t=c.dataset.tag;const i=addState.tags.indexOf(t);if(i<0)addState.tags.push(t);else addState.tags.splice(i,1);c.classList.toggle("on");};
+}
+function suggestedCats(){
+  const cnt={};DB.records.forEach(r=>{if(r.type==="expense"&&r.categoryId)cnt[r.categoryId]=(cnt[r.categoryId]||0)+1;});
+  let arr=Object.keys(cnt).map(id=>({id,n:cnt[id],c:catOf(id)})).filter(x=>x.c).sort((a,b)=>b.n-a.n).slice(0,10);
+  const have=new Set(arr.map(x=>x.id));
+  if(arr.length<10)for(const m of mainCats("expense")){const subs=subCats(m.id);const pick=subs[0]||m;if(!have.has(pick.id)){arr.push({c:pick});have.add(pick.id);}if(arr.length>=10)break;}
+  return arr.map(x=>x.c);
+}
+function renderSuggest(el){
+  const catarea=el.querySelector("#catarea");
+  const cats=suggestedCats();
+  catarea.innerHTML=`<div class="catgrid" id="suggrid">`+cats.map(c=>{const col=catColor(c);return `<div class="cat ${c.id===addState.categoryId?"on":""}" data-cid="${c.id}"><div class="cic" style="background:${col};color:#fff">${IC(catIcon(c))}</div><div class="cl">${esc(c.name)}</div></div>`;}).join("")+`</div>`;
+  catarea.querySelector("#suggrid").onclick=(e)=>{const t=e.target.closest("[data-cid]");if(!t)return;const cat=catOf(t.dataset.cid);if(!cat)return;addState.categoryId=cat.id;addState.type=mainOf(cat).type;addState.catMain=mainOf(cat).id;catarea.querySelectorAll("#suggrid .cat").forEach(x=>x.classList.toggle("on",x.dataset.cid===addState.categoryId));};
 }
 function keypadHtml(){
   return `<button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="back">⌫</button>
@@ -437,13 +468,15 @@ function keypadHtml(){
   <button data-k=".">.</button><button data-k="0">0</button><button data-k="00">00</button><button class="done" data-k="done">完成</button>`;
 }
 function bindAdd(el){
-  el.querySelector("#addtype").onclick=(e)=>{
+  el.querySelector("#addtabs").onclick=(e)=>{
     const b=e.target.closest("button[data-t]");if(!b)return;
-    addState.type=b.dataset.t;
-    if(addState.type!=="transfer"){
+    addState.tab=b.dataset.t;
+    if(addState.tab==="expense"||addState.tab==="income"){
+      addState.type=addState.tab;
       const c=catOf(addState.categoryId);
-      if(!c||c.type!==addState.type){const nc=DB.categories.find(x=>x.type===addState.type);addState.categoryId=nc?nc.id:null;}
-    }
+      if(!c||c.type!==addState.type){const m=mainCats(addState.type)[0];addState.catMain=m?m.id:null;const s=m?subCats(m.id)[0]:null;addState.categoryId=s?s.id:(m?m.id:null);}
+    }else if(addState.tab==="transfer"){addState.type="transfer";}
+    else if(addState.tab==="suggest"){addState.type="expense";}
     renderAddDynamic(el);
   };
   el.querySelector(".keypad").onclick=(e)=>{
@@ -477,12 +510,12 @@ function renderCatPicker(el){
   const mains=mainCats(addState.type);
   const main=catOf(addState.catMain);
   const subs=addState.catMain?subCats(addState.catMain):[];
-  let h=`<div class="mainchips" id="mainchips">`+mains.map(m=>`<button class="mchip ${m.id===addState.catMain?"on":""}" data-main="${m.id}"><span class="mci" style="background:${hex2(m.color)};color:${m.color}">${IC(m.icon)}</span>${esc(m.name)}</button>`).join("")
+  let h=`<div class="mainchips" id="mainchips">`+mains.map(m=>`<button class="mchip ${m.id===addState.catMain?"on":""}" data-main="${m.id}"><span class="mci" style="background:${m.color};color:#fff">${IC(m.icon)}</span>${esc(m.name)}</button>`).join("")
     +`<button class="mchip addm" data-addmain="1"><span class="mci">＋</span>大類</button></div>`;
   h+=`<div class="catgrid" id="subgrid">`;
   if(main){
-    h+=`<div class="cat ${addState.categoryId===main.id?"on":""}" data-cid="${main.id}"><div class="cic" style="background:${hex2(main.color)};color:${main.color}">${IC(main.icon)}</div><div class="cl">整體</div></div>`;
-    subs.forEach(s=>{const col=catColor(s);h+=`<div class="cat ${s.id===addState.categoryId?"on":""}" data-cid="${s.id}"><div class="cic" style="background:${hex2(col)};color:${col}">${IC(catIcon(s))}</div><div class="cl">${esc(s.name)}</div></div>`;});
+    h+=`<div class="cat ${addState.categoryId===main.id?"on":""}" data-cid="${main.id}"><div class="cic" style="background:${main.color};color:#fff">${IC(main.icon)}</div><div class="cl">整體</div></div>`;
+    subs.forEach(s=>{const col=catColor(s);h+=`<div class="cat ${s.id===addState.categoryId?"on":""}" data-cid="${s.id}"><div class="cic" style="background:${col};color:#fff">${IC(catIcon(s))}</div><div class="cl">${esc(s.name)}</div></div>`;});
     h+=`<div class="cat addc" data-addsub="1"><div class="cic">＋</div><div class="cl">細項</div></div>`;
   }
   h+=`</div>`;
@@ -501,11 +534,11 @@ function renderCatPicker(el){
   };
 }
 function renderAddDynamic(el){
-  el.querySelectorAll("#addtype button").forEach(b=>{b.className="";if(b.dataset.t===addState.type)b.className="on-"+(addState.type==="expense"?"exp":addState.type==="income"?"inc":"xfer");});
+  el.querySelectorAll("#addtabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===addState.tab));
   renderCurArea(el);
   updateAmtDisplay(el);
   const catarea=el.querySelector("#catarea"),formarea=el.querySelector("#formarea");
-  if(addState.type==="transfer"){
+  if(addState.tab==="transfer"){
     catarea.innerHTML="";
     formarea.innerHTML=`
       <div class="fieldrow">
@@ -518,17 +551,9 @@ function renderAddDynamic(el){
     formarea.querySelector("#f_from").onchange=e=>addState.accountId=e.target.value;
     formarea.querySelector("#f_to").onchange=e=>addState.toAccountId=e.target.value;
   }else{
-    renderCatPicker(el);
-    formarea.innerHTML=`
-      <div class="fieldrow">
-        <div class="field"><label>帳戶</label><div class="selwrap"><select id="f_acc">${accOpts(addState.accountId)}</select></div></div>
-        <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
-      </div>
-      <div class="field"><label>備註</label><input id="f_note" placeholder="選填" value="${esc(addState.note)}"></div>
-      ${projField()}
-      ${DB.tags.length?`<div class="field"><label>標籤</label><div class="chips" id="f_tags">${DB.tags.map(t=>`<span class="chip ${addState.tags.includes(t)?"on":""}" data-tag="${esc(t)}">${esc(t)}</span>`).join("")}</div></div>`:""}`;
-    formarea.querySelector("#f_acc").onchange=e=>addState.accountId=e.target.value;
-    const tg=formarea.querySelector("#f_tags");if(tg)tg.onclick=(e)=>{const c=e.target.closest("[data-tag]");if(!c)return;const t=c.dataset.tag;const i=addState.tags.indexOf(t);if(i<0)addState.tags.push(t);else addState.tags.splice(i,1);c.classList.toggle("on");};
+    if(addState.tab==="suggest")renderSuggest(el);else renderCatPicker(el);
+    formarea.innerHTML=stdForm();
+    bindStdForm(formarea);
   }
   const fd=formarea.querySelector("#f_date");if(fd)fd.onchange=e=>addState.date=e.target.value;
   const fn=formarea.querySelector("#f_note");if(fn)fn.oninput=e=>addState.note=e.target.value;
