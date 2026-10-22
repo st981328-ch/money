@@ -2,7 +2,7 @@
 /* data layer: storage, model, helpers */
 /* one-time lossless migration from the app's earlier storage keys */
 (function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
-const APP_VERSION="2026.10.23-k";
+const APP_VERSION="2026.10.23-l";
 const STORE_KEY="tally_data";
 const SYNC_DESC="Tally Sync — do not delete";
 const SYNC_FILE="tally_data.json";
@@ -42,6 +42,51 @@ const DEFAULT_CATS=[
   {id:"c_parttime",name:"兼職",type:"income",icon:"user",color:"#10b981"},
   {id:"c_refund",name:"退款",type:"income",icon:"coins",color:"#22c55e"},
   {id:"c_other_i",name:"其他",type:"income",icon:"coins",color:"#65a30d"},
+  // example subcategories (names match SUB_ICON_MAP -> each gets its own icon; colour inherits the main)
+  {id:"c_food_s1",name:"早餐",type:"expense",parent:"c_food"},
+  {id:"c_food_s2",name:"午餐",type:"expense",parent:"c_food"},
+  {id:"c_food_s3",name:"晚餐",type:"expense",parent:"c_food"},
+  {id:"c_food_s4",name:"飲料",type:"expense",parent:"c_food"},
+  {id:"c_food_s5",name:"點心",type:"expense",parent:"c_food"},
+  {id:"c_food_s6",name:"食材",type:"expense",parent:"c_food"},
+  {id:"c_daily_s1",name:"日常用品",type:"expense",parent:"c_daily"},
+  {id:"c_daily_s2",name:"洗衣費",type:"expense",parent:"c_daily"},
+  {id:"c_traffic_s1",name:"捷運",type:"expense",parent:"c_traffic"},
+  {id:"c_traffic_s2",name:"公車",type:"expense",parent:"c_traffic"},
+  {id:"c_traffic_s3",name:"計程車",type:"expense",parent:"c_traffic"},
+  {id:"c_traffic_s4",name:"加油費",type:"expense",parent:"c_traffic"},
+  {id:"c_traffic_s5",name:"停車費",type:"expense",parent:"c_traffic"},
+  {id:"c_shop_s1",name:"衣物",type:"expense",parent:"c_shop"},
+  {id:"c_shop_s2",name:"鞋子",type:"expense",parent:"c_shop"},
+  {id:"c_shop_s3",name:"美妝保養",type:"expense",parent:"c_shop"},
+  {id:"c_shop_s4",name:"配件",type:"expense",parent:"c_shop"},
+  {id:"c_shop_s5",name:"日常採買",type:"expense",parent:"c_shop"},
+  {id:"c_shop_s6",name:"禮物",type:"expense",parent:"c_shop"},
+  {id:"c_fun_s1",name:"電影",type:"expense",parent:"c_fun"},
+  {id:"c_fun_s2",name:"遊戲",type:"expense",parent:"c_fun"},
+  {id:"c_fun_s3",name:"唱歌",type:"expense",parent:"c_fun"},
+  {id:"c_fun_s4",name:"運動",type:"expense",parent:"c_fun"},
+  {id:"c_fun_s5",name:"展覽",type:"expense",parent:"c_fun"},
+  {id:"c_home_s1",name:"房租",type:"expense",parent:"c_home"},
+  {id:"c_home_s2",name:"電費",type:"expense",parent:"c_home"},
+  {id:"c_home_s3",name:"網路費",type:"expense",parent:"c_home"},
+  {id:"c_home_s4",name:"家具",type:"expense",parent:"c_home"},
+  {id:"c_med_s1",name:"門診",type:"expense",parent:"c_med"},
+  {id:"c_med_s2",name:"藥品",type:"expense",parent:"c_med"},
+  {id:"c_med_s3",name:"保健品",type:"expense",parent:"c_med"},
+  {id:"c_edu_s1",name:"課程",type:"expense",parent:"c_edu"},
+  {id:"c_edu_s2",name:"圖書",type:"expense",parent:"c_edu"},
+  {id:"c_comm_s1",name:"電話費",type:"expense",parent:"c_comm"},
+  {id:"c_comm_s2",name:"網路費",type:"expense",parent:"c_comm"},
+  {id:"c_social_s1",name:"聚餐",type:"expense",parent:"c_social"},
+  {id:"c_social_s2",name:"請客",type:"expense",parent:"c_social"},
+  {id:"c_social_s3",name:"喝酒",type:"expense",parent:"c_social"},
+  {id:"c_travel_s1",name:"住宿",type:"expense",parent:"c_travel"},
+  {id:"c_travel_s2",name:"機票",type:"expense",parent:"c_travel"},
+  {id:"c_salary_s1",name:"薪水",type:"income",parent:"c_salary"},
+  {id:"c_bonus_s1",name:"獎金",type:"income",parent:"c_bonus"},
+  {id:"c_bonus_s2",name:"彩券",type:"income",parent:"c_bonus"},
+  {id:"c_parttime_s1",name:"接案",type:"income",parent:"c_parttime"},
 ];
 const EMOJIS=["🍜","🍔","🍱","☕","🍰","🍺","🛒","🧴","🚗","🚌","🚇","⛽","🛍️","👕","👟","🎮","🎬","🎵","🏠","💡","💧","📱","💻","💊","🏥","📚","✏️","✈️","🏨","🎁","💰","💵","💳","📈","💼","🏦","🎯","🐾","👶","💄","✂️","🔧","🎾","⚽","🚭","🧾","📦","❤️","🌐","⚡"];
 const COLORS=["#e5484d","#f59e0b","#eab308","#30a46c","#06b6d4","#3b82f6","#5b6cff","#8b5cf6","#ec4899","#f43f5e","#14b8a6","#78716c"];
