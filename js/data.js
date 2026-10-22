@@ -2,7 +2,7 @@
 /* data layer: storage, model, helpers */
 /* one-time lossless migration from the app's earlier storage keys */
 (function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
-const APP_VERSION="2026.10.22-g";
+const APP_VERSION="2026.10.22-h";
 const STORE_KEY="tally_data";
 const SYNC_DESC="Tally Sync — do not delete";
 const SYNC_FILE="tally_data.json";
@@ -104,7 +104,7 @@ function mainCats(type){return DB.categories.filter(c=>c.type===type&&!c.parent)
 function subCats(mainId){return DB.categories.filter(c=>c.parent===mainId);}
 function mainOf(cat){return (cat&&cat.parent)?(catOf(cat.parent)||cat):cat;}
 function catColor(cat){if(!cat)return "#999";if(cat.color)return cat.color;const m=cat.parent?catOf(cat.parent):null;return (m&&m.color)||"#999";}
-function catIcon(cat){if(!cat)return "❓";if(cat.icon)return cat.icon;const m=cat.parent?catOf(cat.parent):null;return (m&&m.icon)||"📦";}
+function catIcon(cat){if(!cat)return "❓";if(cat.icon)return cat.icon;if(cat.parent&&typeof SUB_ICON_MAP!=="undefined"&&SUB_ICON_MAP[cat.name])return SUB_ICON_MAP[cat.name];const m=cat.parent?catOf(cat.parent):null;return (m&&m.icon)||"📦";}
 function monthLabel(m){const[y,mo]=m.split("-");return y+"年"+parseInt(mo)+"月";}
 function inMonth(dateStr,m){return dateStr&&dateStr.slice(0,7)===m;}
 function recsInMonth(m){return DB.records.filter(r=>inMonth(r.date,m));}
