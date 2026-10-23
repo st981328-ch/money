@@ -56,7 +56,7 @@ function renderRecords(){
       <div class="hv-head">
         <div class="hv-date">${sel.replace(/-/g,"/")}</div>
         <div class="hv-actions">
-          <button class="hv-circ" onclick="selectDay(todayStr())" aria-label="回到今天">${IC("calendar")}</button>
+          <button class="hv-circ" onclick="homeSearch()" aria-label="搜尋">${IC("search")}</button>
           <button class="hv-circ" onclick="homeSearch()" aria-label="搜尋">${IC("search")}</button>
         </div>
       </div>
