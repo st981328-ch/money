@@ -281,22 +281,43 @@ function projStats(pid){
   return {inc,exp,net:inc-exp,n,byCat};
 }
 function renderProjects(){
-  let html="";
   if(!DB.projects.length){
-    html=`<div class="empty"><div class="big">${IC("folder")}</div>還沒有專案<br>用專案把一趟旅遊、一個活動的收支<br>獨立歸在一起追蹤</div>`;
-  }else{
-    const sorted=DB.projects.map(p=>({p,s:projStats(p.id)})).sort((a,b)=>b.s.n-a.s.n);
-    html+=`<div class="card"><div class="card-h">專案 (${DB.projects.length})</div>`;
-    sorted.forEach(({p,s})=>{
-      html+=`<div class="row" onclick="openProjectDetail('${p.id}')">
-        <div class="ic" style="background:${hex2(p.color)};color:${p.color}">${IC(p.icon||"📁")}</div>
-        <div class="mid"><div class="rtitle">${esc(p.name)}</div><div class="rsub">${s.n} 筆 · 支 ${fmt(s.exp)}${s.inc?" · 收 "+fmt(s.inc):""}</div></div>
-        <div class="rval" style="color:${s.net<0?"var(--expense)":"var(--income)"}">${fmt(s.net,true)}</div></div>`;
-    });
-    html+=`</div>`;
+    document.getElementById("page-projects").innerHTML=`<div class="empty"><div class="big">${IC("folder")}</div>還沒有專案<br>用專案把一趟旅遊、一個活動的收支<br>獨立歸在一起追蹤</div><button class="btn ghost" onclick="openProjectEdit()">＋ 新增專案</button>`;
+    return;
   }
-  html+=`<button class="btn ghost" onclick="openProjectEdit()">＋ 新增專案</button>`;
+  const list=DB.projects.map(p=>({p,s:projStats(p.id)})).sort((a,b)=>b.s.n-a.s.n);
+  if(!ui.projActive||!projOf(ui.projActive))ui.projActive=list[0].p.id;
+  let html=`<div class="projwrap">`;
+  list.forEach(({p,s})=>{
+    const active=p.id===ui.projActive;
+    const bg=p.cover?`background-image:url('${p.cover}')`:`background-color:${p.color}`;
+    html+=`<div class="projcard ${active?"active":"collapsed"}" style="${bg}" onclick="${active?`openProjectDetail('${p.id}')`:`setProjActive('${p.id}')`}">
+      ${active?`<button class="pc-cam" onclick="event.stopPropagation();pickCover('${p.id}')" aria-label="更換封面">${IC("image")}</button>`:""}
+      <div class="pc-name">${esc(p.name)}</div>
+      ${active?`<div class="pc-stat">${s.n} 筆 · ${fmt(s.net,true)}</div>`:""}
+    </div>`;
+  });
+  html+=`</div><button class="btn ghost" onclick="openProjectEdit()">＋ 新增專案</button>`;
   document.getElementById("page-projects").innerHTML=html;
+}
+function setProjActive(pid){ui.projActive=pid;render();}
+function pickCover(pid){
+  const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
+  inp.onchange=()=>{
+    const f=inp.files&&inp.files[0];if(!f)return;
+    const img=new Image(),url=URL.createObjectURL(f);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      const max=800;let w=img.width,h=img.height;
+      if(w>h){if(w>max){h=Math.round(h*max/w);w=max;}}else{if(h>max){w=Math.round(w*max/h);h=max;}}
+      const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+      cv.getContext("2d").drawImage(img,0,0,w,h);
+      const p=projOf(pid);if(p){p.cover=cv.toDataURL("image/jpeg",0.72);save();render();toast("封面已更新");}
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);toast("圖片讀取失敗");};
+    img.src=url;
+  };
+  inp.click();
 }
 function openProjectDetail(pid){
   const p=projOf(pid);if(!p)return;
