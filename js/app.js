@@ -7,7 +7,7 @@ function go(p){
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
   document.getElementById("page-"+p).classList.add("active");
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
-  document.documentElement.classList.toggle("fin-full",p==="records"||p==="stats");
+  document.documentElement.classList.toggle("fin-full",p==="records"||p==="stats"||p==="projects");
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
   document.getElementById("navAddBtn").classList.toggle("on",p==="records");
@@ -309,25 +309,81 @@ function projStats(pid){
     if(r.type==="income")inc+=v;else if(r.type==="expense"){exp+=v;const m=mainOf(catOf(r.categoryId));if(m)byCat[m.id]=(byCat[m.id]||0)+v;}});
   return {inc,exp,net:inc-exp,n,byCat};
 }
+function projDateRange(pid){
+  let mn=null,mx=null;
+  DB.records.forEach(r=>{if(r.projectId!==pid||!r.date)return;if(mn===null||r.date<mn)mn=r.date;if(mx===null||r.date>mx)mx=r.date;});
+  return mn?{start:mn,end:mx}:null;
+}
+function fmtRange(dr){
+  if(!dr)return "尚無記錄";
+  const f=d=>d.replace(/-/g,"/");
+  return dr.start===dr.end?f(dr.start):f(dr.start)+" – "+f(dr.end);
+}
+function projYears(){
+  const s=new Set();
+  DB.records.forEach(r=>{if(r.projectId&&r.date)s.add(r.date.slice(0,4));});
+  return[...s].sort().reverse();
+}
+function projInYear(pid,y){return DB.records.some(r=>r.projectId===pid&&r.date&&r.date.slice(0,4)===y);}
+function setProjView(v){ui.projView=v;render();}
+function cycleProjYear(){
+  const ys=projYears();if(!ys.length)return;
+  const opts=[null,...ys];let i=opts.indexOf(ui.projYear);
+  ui.projYear=opts[(i+1)%opts.length];render();
+}
+function projFilter(q){
+  q=(q||"").trim().toLowerCase();
+  document.querySelectorAll("#page-projects [data-pname]").forEach(el=>{
+    el.style.display=(!q||el.dataset.pname.toLowerCase().indexOf(q)>=0)?"":"none";
+  });
+}
+function toggleProjSearch(){
+  const w=document.getElementById("pv-search");if(!w)return;
+  const open=w.classList.toggle("show");
+  document.querySelector(".pv-circ.search").classList.toggle("on",open);
+  const inp=w.querySelector("input");
+  if(open){inp.focus();}else{inp.value="";projFilter("");}
+}
 function renderProjects(){
+  const yearLbl=ui.projYear||"全部";
+  const top=`<div class="pv-top">
+      <div class="pv-title">Projects</div>
+      <div class="pv-actions">
+        <button class="pv-pill" onclick="cycleProjYear()">${yearLbl} ${IC("chevron-down")}</button>
+        <button class="pv-circ search" onclick="toggleProjSearch()" aria-label="搜尋">${IC("search")}</button>
+        <button class="pv-circ toggle" onclick="setProjView('${ui.projView==="card"?"list":"card"}')" aria-label="切換檢視">${IC(ui.projView==="card"?"list":"grid")}</button>
+      </div>
+    </div>
+    <div class="pv-search" id="pv-search"><input type="text" placeholder="搜尋專案名稱" oninput="projFilter(this.value)"></div>`;
   if(!DB.projects.length){
-    document.getElementById("page-projects").innerHTML=`<div class="empty"><div class="big">${IC("folder")}</div>還沒有專案<br>用專案把一趟旅遊、一個活動的收支<br>獨立歸在一起追蹤</div><button class="btn ghost" onclick="openProjectEdit()">＋ 新增專案</button>`;
+    document.getElementById("page-projects").innerHTML=`<div class="projv2">${top}
+      <div class="pv-empty"><div class="big">${IC("folder")}</div>還沒有專案<br>用專案把一趟旅遊、一個活動的收支獨立歸在一起追蹤
+      <button class="btn ghost" style="margin-top:16px;max-width:220px" onclick="openProjectEdit()">＋ 新增專案</button></div></div>`;
     return;
   }
-  const list=DB.projects.map(p=>({p,s:projStats(p.id)})).sort((a,b)=>b.s.n-a.s.n);
-  if(!ui.projActive||!projOf(ui.projActive))ui.projActive=list[0].p.id;
-  let html=`<div class="projwrap">`;
-  list.forEach(({p,s})=>{
-    const active=p.id===ui.projActive;
-    const bg=p.cover?`background-image:url('${p.cover}')`:`background-color:${p.color}`;
-    html+=`<div class="projcard ${active?"active":"collapsed"}" style="${bg}" onclick="${active?`openProjectDetail('${p.id}')`:`setProjActive('${p.id}')`}">
-      ${active?`<button class="pc-cam" onclick="event.stopPropagation();pickCover('${p.id}')" aria-label="更換封面">${IC("image")}</button>`:""}
-      <div class="pc-name">${esc(p.name)}</div>
-      ${active?`<div class="pc-stat">${s.n} 筆 · ${fmt(s.net,true)}</div>`:""}
-    </div>`;
-  });
-  html+=`</div><button class="btn ghost" onclick="openProjectEdit()">＋ 新增專案</button>`;
-  document.getElementById("page-projects").innerHTML=html;
+  let list=DB.projects.map(p=>({p,s:projStats(p.id),dr:projDateRange(p.id)})).sort((a,b)=>b.s.n-a.s.n);
+  if(ui.projYear)list=list.filter(x=>projInYear(x.p.id,ui.projYear));
+  let body;
+  if(ui.projView==="list"){
+    const rows=list.map(({p,s,dr})=>`<div class="pv-row" data-pname="${esc(p.name)}" onclick="openProjectDetail('${p.id}')">
+        <div class="pv-rinfo"><div class="pv-rname">${esc(p.name)}</div><div class="pv-rdate">${fmtRange(dr)}</div></div>
+        <div class="pv-rtotal">${fmt(s.exp)}</div></div>`).join("");
+    body=`<div class="pv-list">${rows||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
+  }else{
+    if(list.length&&(!ui.projActive||!list.some(x=>x.p.id===ui.projActive)))ui.projActive=list[0].p.id;
+    const cards=list.map(({p})=>{
+      const active=p.id===ui.projActive,hasImg=!!p.cover;
+      const bg=hasImg?`background-image:url('${p.cover}')`:"background-color:var(--card-grey)";
+      return `<div class="projcard ${active?"active":"collapsed"} ${hasImg?"img":"plain"}" data-pname="${esc(p.name)}" style="${bg}" onclick="${active?`openProjectDetail('${p.id}')`:`setProjActive('${p.id}')`}">
+        ${active?`<button class="pc-cam" onclick="event.stopPropagation();pickCover('${p.id}')" aria-label="更換封面">${IC("image")}</button>`:""}
+        <div class="pc-name">${esc(p.name)}</div></div>`;
+    }).join("");
+    body=`<div class="projwrap">${cards||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
+  }
+  document.getElementById("page-projects").innerHTML=`<div class="projv2">${top}
+    <div class="pv-body">${body}
+      <button class="pv-add" onclick="openProjectEdit()">${IC("plus")} 新增專案</button>
+    </div></div>`;
 }
 function setProjActive(pid){ui.projActive=pid;render();}
 function pickCover(pid){
