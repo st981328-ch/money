@@ -1,13 +1,12 @@
 "use strict";
 /* views: pages, routing, modals, editors */
 /* =================== router =================== */
-const TITLES={records:"記錄",stats:"統計",accounts:"帳戶",projects:"專案",budgets:"預算",settings:"設定"};
+const TITLES={records:"記錄",stats:"統計",projects:"專案",budgets:"預算",settings:"設定"};
 function go(p){
   ui.page=p;
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
   document.getElementById("page-"+p).classList.add("active");
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
-  document.getElementById("gearBtn").style.color=(p==="settings")?"var(--accent)":"";
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
   document.getElementById("navAddBtn").classList.toggle("on",p==="records");
@@ -25,7 +24,6 @@ function render(){
   document.getElementById("mlabel").textContent=monthLabel(ui.month);
   if(ui.page==="records")renderRecords();
   else if(ui.page==="stats")renderStats();
-  else if(ui.page==="accounts")renderAccounts();
   else if(ui.page==="projects")renderProjects();
   else if(ui.page==="budgets")renderBudgets();
   else if(ui.page==="settings")renderSettings();
@@ -91,14 +89,13 @@ function recRow(r){
     col=DB.config.accent;icon="🔄";name="轉帳";note=r.note||"";amt=fmtCur(r.amount,rc);amtcol="var(--accent)";
     pills=`<span class="pill">${esc(fa?fa.name:"?")}</span><span class="pill">→ ${esc(ta?ta.name:"?")}</span>`;
   }else{
-    const c=catOf(r.categoryId),a=acc(r.accountId);
+    const c=catOf(r.categoryId);
     col=catColor(c);icon=IC(catIcon(c));
     name=c?(c.parent?(mainOf(c).name+"·"+c.name):c.name):"未分類";
     note=r.note||"";
     amt=(r.type==="income"?"+":"−")+fmtCur(r.amount,rc);
     amtcol=r.type==="income"?"var(--income)":"var(--expense)";
     if(proj)pills+=`<span class="pill proj" style="border-color:${hex2b(proj.color)};color:${proj.color}">${esc(proj.name)}</span>`;
-    if(a)pills+=`<span class="pill">${esc(a.name)}</span>`;
   }
   if(fgn)note=(note?note+" · ":"")+"≈"+fmt(baseAmt(r));
   return `<div class="rec" onclick="openAdd('${r.id}')">
@@ -200,27 +197,6 @@ function trendChart(type){
   return `<div class="barchart">${bars}</div>`;
 }
 function kfmt(n){if(n>=10000)return (n/10000).toFixed(n>=100000?0:1)+"萬";if(n>=1000)return (n/1000).toFixed(0)+"k";return Math.round(n);}
-
-/* =================== accounts page =================== */
-function renderAccounts(){
-  const live=DB.accounts;
-  let assets=0,debt=0;
-  const bals=live.map(a=>{const b=accBalance(a.id);if(b>=0)assets+=b;else debt+=b;return b;});
-  const net=assets+debt;
-  let html=`<div class="networth"><div class="nwl">淨資產</div><div class="nwv">${fmt(net)}</div>
-    <div class="nwsub"><span>資產<b>${fmt(assets)}</b></span><span>負債<b>${fmt(Math.abs(debt))}</b></span></div></div>`;
-  html+=`<div class="card"><div class="card-h">帳戶 (${live.length})</div>`;
-  if(!live.length)html+=`<div class="empty" style="padding:30px">尚無帳戶</div>`;
-  live.forEach((a,i)=>{
-    html+=`<div class="row" onclick="openAccount('${a.id}')">
-      <div class="ic" style="background:${hex2(a.color)};color:${a.color}">${IC(a.icon)}</div>
-      <div class="mid"><div class="rtitle">${esc(a.name)}</div><div class="rsub">${accTypeName(a.type)}</div></div>
-      <div class="rval" style="color:${bals[i]<0?"var(--expense)":"var(--text)"}">${fmt(bals[i])}</div></div>`;
-  });
-  html+=`</div><button class="btn ghost" onclick="openAccount()">＋ 新增帳戶</button>`;
-  document.getElementById("page-accounts").innerHTML=html;
-}
-function accTypeName(t){return {cash:"現金",bank:"銀行",credit:"信用卡",ewallet:"電子支付",invest:"投資"}[t]||"其他";}
 
 /* =================== budgets page =================== */
 function budSpent(catId,recs){
@@ -440,16 +416,12 @@ function addBody(editing){
 }
 function stdForm(){
   return `<div class="fieldrow">
-      <div class="field"><label>帳戶</label><div class="selwrap"><select id="f_acc">${accOpts(addState.accountId)}</select></div></div>
       <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
+      ${projField()}
     </div>
-    ${projField()}
     <div class="field"><label>備註</label><textarea id="f_note" placeholder="備註" rows="3">${esc(addState.note)}</textarea></div>`;
 }
-function bindStdForm(formarea){
-  const fa=formarea.querySelector("#f_acc");if(fa)fa.onchange=e=>addState.accountId=e.target.value;
-  const tg=formarea.querySelector("#f_tags");if(tg)tg.onclick=(e)=>{const c=e.target.closest("[data-tag]");if(!c)return;const t=c.dataset.tag;const i=addState.tags.indexOf(t);if(i<0)addState.tags.push(t);else addState.tags.splice(i,1);c.classList.toggle("on");};
-}
+function bindStdForm(formarea){}
 function suggestedCats(){
   const cnt={};DB.records.forEach(r=>{if(r.type==="expense"&&r.categoryId)cnt[r.categoryId]=(cnt[r.categoryId]||0)+1;});
   let arr=Object.keys(cnt).map(id=>({id,n:cnt[id],c:catOf(id)})).filter(x=>x.c).sort((a,b)=>b.n-a.n).slice(0,10);
@@ -625,42 +597,6 @@ function saveRecord(){
 function deleteRecord(){
   if(!addState||!addState.id)return;
   DB.records=DB.records.filter(x=>x.id!==addState.id);
-  save();closeTopSheet();render();toast("已刪除");
-}
-
-/* =================== account editor =================== */
-let accState=null;
-function openAccount(id){
-  let a=id?acc(id):null;
-  accState=a?Object.assign({},a):{id:null,name:"",type:"bank",init:0,icon:"🏦",color:"#5b6cff"};
-  const body=`
-    <div class="field"><label>名稱</label><input id="ac_name" value="${esc(accState.name)}" placeholder="例如 玉山銀行"></div>
-    <div class="field"><label>類型</label><div class="selwrap"><select id="ac_type">
-      ${["cash","bank","credit","ewallet","invest"].map(t=>`<option value="${t}" ${t===accState.type?"selected":""}>${accTypeName(t)}</option>`).join("")}
-    </select></div></div>
-    <div class="field"><label>初始餘額</label><input id="ac_init" type="number" inputmode="decimal" value="${accState.init||0}"></div>
-    <div class="field"><label>圖示</label><div class="emoji-grid" id="ac_emoji">${EMOJIS.map(e=>`<button data-e="${e}" class="${e===accState.icon?"on":""}">${e}</button>`).join("")}</div></div>
-    <div class="field"><label>顏色</label><div class="color-grid" id="ac_color">${COLORS.map(c=>`<button data-c="${c}" style="background:${c}" class="${c===accState.color?"on":""}"></button>`).join("")}</div></div>
-    <button class="btn" onclick="saveAccount()">${a?"儲存":"新增帳戶"}</button>
-    ${a?`<button class="btn danger sm" style="margin-top:10px" onclick="deleteAccount('${a.id}')">刪除帳戶</button>`:""}`;
-  const el=openSheet(a?"編輯帳戶":"新增帳戶",body);
-  const b=el.querySelector(".sheet-body");
-  b.querySelector("#ac_name").oninput=e=>accState.name=e.target.value;
-  b.querySelector("#ac_type").onchange=e=>accState.type=e.target.value;
-  b.querySelector("#ac_init").oninput=e=>accState.init=parseFloat(e.target.value)||0;
-  b.querySelector("#ac_emoji").onclick=e=>{const t=e.target.closest("[data-e]");if(!t)return;accState.icon=t.dataset.e;b.querySelectorAll("#ac_emoji button").forEach(x=>x.classList.toggle("on",x.dataset.e===accState.icon));};
-  b.querySelector("#ac_color").onclick=e=>{const t=e.target.closest("[data-c]");if(!t)return;accState.color=t.dataset.c;b.querySelectorAll("#ac_color button").forEach(x=>x.classList.toggle("on",x.dataset.c===accState.color));};
-}
-function saveAccount(){
-  if(!accState.name.trim()){toast("請輸入名稱");return;}
-  if(accState.id){Object.assign(acc(accState.id),accState);}
-  else{accState.id="a_"+uid();DB.accounts.push(Object.assign({},accState));}
-  save();closeTopSheet();render();toast("已儲存");
-}
-function deleteAccount(id){
-  const used=DB.records.some(r=>r.accountId===id||r.toAccountId===id);
-  if(used){if(!confirm("此帳戶已有記錄，刪除後相關記錄的帳戶會變成未知。確定刪除？"))return;}
-  DB.accounts=DB.accounts.filter(a=>a.id!==id);
   save();closeTopSheet();render();toast("已刪除");
 }
 
