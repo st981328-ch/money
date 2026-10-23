@@ -47,9 +47,7 @@ function renderRecords(){
   const day=DB.records.filter(r=>r.date===sel).sort((a,b)=>(b._t||0)-(a._t||0));
   let dexp=0,dinc=0;day.forEach(r=>{if(r.type==="income")dinc+=baseAmt(r);else if(r.type==="expense")dexp+=baseAmt(r);});
   const rows=day.length
-    ?`<div class="hv-colhead"><span>項目</span><span>金額</span></div>
-      <div class="hv-rows">${day.map(homeRow).join("")}</div>
-      ${dayFoot(dexp,dinc)}`
+    ?`<div class="hv-rows">${day.map(homeRow).join("")}</div>`
     :`<div class="hv-empty">這天還沒有記錄<br>點 ＋ 新增一筆</div>`;
   const html=`<div class="homev2">
     <div class="hv-top">
@@ -68,6 +66,7 @@ function renderRecords(){
       </div>
     </div>
     <div class="hv-list">${rows}</div>
+    ${day.length?`<div class="hv-total"><span>Total</span><span>${fmt(dinc-dexp,true)}</span></div>`:""}
   </div>`;
   document.getElementById("page-records").innerHTML=html;
   bindWeekSwipe();
@@ -108,13 +107,6 @@ function spentCompare(mo,dayCutoff){
   if(pct<0)return{cls:"down",arrow:"↘",text:`比 ${pm} 月同期少 ${Math.abs(pct)}%`};
   if(pct>0)return{cls:"up",arrow:"↗",text:`比 ${pm} 月同期多 ${pct}%`};
   return{cls:"flat",arrow:"→",text:`與 ${pm} 月同期持平`};
-}
-function dayFoot(dexp,dinc){
-  let r="";
-  if(dexp)r+=`<div class="hv-foot-row"><span>支出</span><span>−${fmt(dexp)}</span></div>`;
-  if(dinc)r+=`<div class="hv-foot-row"><span>收入</span><span>+${fmt(dinc)}</span></div>`;
-  r+=`<div class="hv-foot-row total"><span>合計</span><span>${fmt(dinc-dexp,true)}</span></div>`;
-  return `<div class="hv-foot">${r}</div>`;
 }
 function homeSearch(){toast("搜尋功能稍後加入");}
 function fmtDay(d){
