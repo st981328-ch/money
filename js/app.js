@@ -15,7 +15,7 @@ function go(p){
   render();
 }
 /* center + : jump to records when elsewhere, else open the add sheet */
-function navAdd(){ openAdd(); }
+function navAdd(){ if(ui.page!=="records") go("records"); else openAdd(); }
 function shiftMonth(d){
   let[y,m]=ui.month.split("-").map(Number);m+=d;
   if(m<1){m=12;y--;}if(m>12){m=1;y++;}
