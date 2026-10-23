@@ -39,37 +39,80 @@ function bindWeekSwipe(){
   el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
   el.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)shiftWeek(dx<0?1:-1);},{passive:true});
 }
+function greeting(){const h=new Date().getHours();return h<5?"夜深了":h<11?"早安":h<14?"午安":h<18?"午安":"晚安";}
 function renderRecords(){
   document.documentElement.classList.add("on-records");
-  const sel=ui.selDate,mo=sel.slice(0,7);
-  let mexp=0;recsInMonth(mo).forEach(r=>{if(r.type==="expense")mexp+=baseAmt(r);});
-  const cmp=spentCompare(mo,parseInt(sel.slice(8,10),10));
-  const day=DB.records.filter(r=>r.date===sel).sort((a,b)=>(b._t||0)-(a._t||0));
-  let dexp=0,dinc=0;day.forEach(r=>{if(r.type==="income")dinc+=baseAmt(r);else if(r.type==="expense")dexp+=baseAmt(r);});
-  const rows=day.length
-    ?`<div class="hv-rows">${day.map(homeRow).join("")}</div>`
-    :`<div class="hv-empty">這天還沒有記錄<br>點 ＋ 新增一筆</div>`;
-  const html=`<div class="homev2">
-    <div class="hv-top">
-      <div class="hv-head">
-        <div class="hv-date">${sel.replace(/-/g,"/")}</div>
-        <div class="hv-actions">
-          <div class="hv-circ hv-cal" aria-label="跳到日期">${IC("calendar")}<input type="date" value="${sel}" onchange="selectDay(this.value)"></div>
-          <button class="hv-circ" onclick="homeSearch()" aria-label="搜尋">${IC("search")}</button>
-        </div>
-      </div>
-      ${homeStrip(sel)}
-      <div class="hv-spent" onclick="go('stats')">
-        <div class="hv-spent-l">本月支出</div>
-        <div class="hv-spent-amt">${fmt(mexp)}</div>
-        ${cmp?`<div class="hv-spent-cmp ${cmp.cls}">${cmp.arrow} ${cmp.text}</div>`:``}
-      </div>
+  const period=ui.period||"week";
+  const d=dashData(period);
+  const sym=curInfo(DB.config.baseCur).symbol;
+  const recent=DB.records.slice().sort((a,b)=>b.date<a.date?1:b.date>a.date?-1:(b._t||0)-(a._t||0)).slice(0,8);
+  const pl={week:"本週",month:"本月",year:"今年"};
+  const html=`<div class="fin">
+    <div class="fin-top">
+      <div class="fin-ava">${IC("coins")}</div>
+      <button class="fin-bell" onclick="go('settings')">${IC("bell")}</button>
     </div>
-    <div class="hv-list">${rows}</div>
-    ${day.length?`<div class="hv-total"><span>Total</span><span>${fmt(dinc-dexp,true)}</span></div>`:""}
+    <div class="fin-hello">哈囉 👋<br>${greeting()},來記帳</div>
+    <div class="fin-seg">
+      ${[["week","週"],["month","月"],["year","年"]].map(([k,t])=>`<button class="${period===k?"on":""}" onclick="setPeriod('${k}')">${t}</button>`).join("")}
+    </div>
+    <div class="fin-card lime" onclick="go('stats')">
+      <div class="fin-ch"><span class="fin-cic">${IC("hand-coins")}</span><span class="fin-ct">支出總覽</span><span class="fin-cbtns"><span class="fin-cbtn arr">${IC("arrow-up-right")}</span></span></div>
+      <div class="fin-amt">${fmt(d.total)}</div>
+      ${finChart(d.series,d.labels,d.hiIdx)}
+    </div>
+    <div class="fin-card blue">
+      <div class="fin-ch"><span class="fin-cic">${IC("chart-pie")}</span><span class="fin-ct">熱門分類</span><span class="fin-cbtns"><span class="fin-cbtn arr">${IC("arrow-up-right")}</span></span></div>
+      ${d.cats.length?`<div class="fin-cats">${d.cats.map(finCatBars).join("")}</div>`:`<div class="fin-empty">${pl[period]}尚無支出</div>`}
+    </div>
+    <div class="fin-sec">最近交易</div>
+    <div class="fin-recent">${recent.length?recent.map(homeRow).join(""):`<div class="fin-empty">還沒有記錄 · 點 ＋ 新增一筆</div>`}</div>
   </div>`;
   document.getElementById("page-records").innerHTML=html;
-  bindWeekSwipe();
+}
+function setPeriod(p){ui.period=p;render();}
+function periodRange(period){
+  const now=new Date();const y=now.getFullYear(),m=now.getMonth(),dd=now.getDate();
+  if(period==="year")return {start:new Date(y,0,1),end:new Date(y,11,31),unit:"month"};
+  if(period==="month")return {start:new Date(y,m,1),end:new Date(y,m+1,0),unit:"day"};
+  const off=(now.getDay()===0?6:now.getDay()-1);const mon=new Date(y,m,dd-off);
+  return {start:mon,end:new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6),unit:"wday"};
+}
+function dashData(period){
+  const r=periodRange(period);const s=dstr(r.start),e=dstr(r.end);
+  const recs=DB.records.filter(x=>x.type==="expense"&&x.date>=s&&x.date<=e);
+  let total=0;const byCat={};
+  recs.forEach(x=>{const v=baseAmt(x);total+=v;const mc=mainOf(catOf(x.categoryId));if(mc)byCat[mc.id]=(byCat[mc.id]||0)+v;});
+  let series=[],labels=[];
+  if(r.unit==="wday"){const wl=["一","二","三","四","五","六","日"];
+    for(let i=0;i<7;i++){const cd=new Date(r.start.getFullYear(),r.start.getMonth(),r.start.getDate()+i);const ds=dstr(cd);let v=0;recs.forEach(x=>{if(x.date===ds)v+=baseAmt(x);});series.push(v);labels.push(wl[i]);}
+  }else if(r.unit==="day"){const days=r.end.getDate();
+    for(let i=1;i<=days;i++){const ds=`${r.start.getFullYear()}-${String(r.start.getMonth()+1).padStart(2,"0")}-${String(i).padStart(2,"0")}`;let v=0;recs.forEach(x=>{if(x.date===ds)v+=baseAmt(x);});series.push(v);labels.push((i===1||i%7===0||i===days)?String(i):"");}
+  }else{for(let i=0;i<12;i++){const mm=`${r.start.getFullYear()}-${String(i+1).padStart(2,"0")}`;let v=0;recs.forEach(x=>{if(x.date.slice(0,7)===mm)v+=baseAmt(x);});series.push(v);labels.push(String(i+1));}}
+  const hiIdx=series.indexOf(Math.max(...series,0));
+  const cats=Object.entries(byCat).map(([id,v])=>({c:catOf(id),v,pct:total>0?Math.round(v/total*100):0})).filter(x=>x.c).sort((a,b)=>b.v-a.v).slice(0,3);
+  return {total,series,labels,hiIdx,cats};
+}
+function finChart(series,labels,hiIdx){
+  const W=300,H=118,n=series.length,max=Math.max(1,...series);
+  const xs=i=>(n<=1?W/2:W*i/(n-1)),ys=v=>H-6-(H-22)*(v/max);
+  const pts=series.map((v,i)=>[xs(i),ys(v)]);
+  const line=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area=line+` L${W} ${H} L0 ${H} Z`;
+  const hx=xs(hiIdx),hy=ys(series[hiIdx]||0);
+  const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="fin-svg">
+    <defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="7" stroke="#1a2a12" stroke-width="2.4" opacity=".28"/></pattern></defs>
+    <path d="${area}" fill="url(#hatch)"/>
+    <path d="${line}" fill="none" stroke="#1a2a12" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    <line x1="${hx.toFixed(1)}" y1="${hy.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${H}" stroke="#1a2a12" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  </svg>`;
+  const tip=(series[hiIdx]>0)?`<div class="fin-tip" style="left:${(hx/W*100).toFixed(1)}%">${fmt(series[hiIdx])}</div>`:"";
+  return `<div class="fin-chart">${tip}${svg}<div class="fin-xl">${labels.map(t=>`<span>${t}</span>`).join("")}</div></div>`;
+}
+function finCatBars(x){
+  const n=15,seed=(x.c.name.charCodeAt(0)||5);let bars="";
+  for(let i=0;i<n;i++){const h=16+((i*13+seed)%70)/100*30;const on=(i/n*100)<=x.pct;bars+=`<rect x="${(i*4).toFixed(1)}" y="${(46-h).toFixed(1)}" width="2.3" height="${h.toFixed(1)}" rx="1.1" fill="#16271a" opacity="${on?1:0.2}"/>`;}
+  return `<div class="fin-cat"><svg viewBox="0 0 ${n*4} 46" class="fin-catbars">${bars}</svg><div class="fin-catn">${esc(x.c.name)}</div><div class="fin-catp">${x.pct}%</div></div>`;
 }
 function homeStrip(sel){
   const[y,m,d]=sel.split("-").map(Number);const dt=new Date(y,m-1,d);
