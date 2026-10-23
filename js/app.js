@@ -7,6 +7,7 @@ function go(p){
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
   document.getElementById("page-"+p).classList.add("active");
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+  document.documentElement.classList.toggle("on-records",p==="records");
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
   document.getElementById("navAddBtn").classList.toggle("on",p==="records");
@@ -33,46 +34,77 @@ function render(){
 function dstr(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
 function selectDay(ds){ui.selDate=ds;ui.month=ds.slice(0,7);render();}
 function shiftWeek(dir){const[y,m,d]=ui.selDate.split("-").map(Number);selectDay(dstr(new Date(y,m-1,d+dir*7)));}
-function weekStripHTML(sel){
-  const[y,m,d]=sel.split("-").map(Number);const dt=new Date(y,m-1,d);
-  const off=(dt.getDay()===0?6:dt.getDay()-1);
-  const mon=new Date(y,m-1,d-off);const today=todayStr();const lab=["一","二","三","四","五","六","日"];
-  let cells="";
-  for(let i=0;i<7;i++){
-    const cd=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i);const ds=dstr(cd);
-    cells+=`<div class="wk-day ${ds===sel?"sel":""} ${ds===today?"today":""}" onclick="selectDay('${ds}')">
-      <div class="wk-dow">週${lab[i]}</div><div class="wk-num">${cd.getDate()}</div></div>`;
-  }
-  return `<div class="weeknav"><button onclick="shiftWeek(-1)">‹</button><div class="weekstrip" id="weekstrip">${cells}</div><button onclick="shiftWeek(1)">›</button></div>`;
-}
 function bindWeekSwipe(){
   const el=document.getElementById("weekstrip");if(!el)return;let x0=null;
   el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
   el.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)shiftWeek(dx<0?1:-1);},{passive:true});
 }
 function renderRecords(){
+  document.documentElement.classList.add("on-records");
   const sel=ui.selDate,mo=sel.slice(0,7);
-  document.getElementById("pageTitle").textContent=sel.replace(/-/g,"/");
-  // month summary
-  let minc=0,mexp=0;recsInMonth(mo).forEach(r=>{if(r.type==="income")minc+=baseAmt(r);else if(r.type==="expense")mexp+=baseAmt(r);});
-  let html=weekStripHTML(sel);
-  html+=`<div class="card msum" onclick="go('stats')">
-    <div class="ic" style="background:${hex2(DB.config.accent)};color:var(--accent)">${IC("chart-pie")}</div>
-    <div class="mid"><div class="rtitle">每月統計</div><div class="rsub">${monthLabel(mo)}</div></div>
-    <div class="msum-fig"><div><span class="val inc">${fmt(minc)}</span> <span style="color:var(--text3)">/</span> <span class="val exp">${fmt(mexp)}</span></div><div class="msum-net">結餘 ${fmt(minc-mexp)}</div></div></div>`;
-  // selected day's records
+  let mexp=0;recsInMonth(mo).forEach(r=>{if(r.type==="expense")mexp+=baseAmt(r);});
+  const cmp=spentCompare(mo,parseInt(sel.slice(8,10),10));
   const day=DB.records.filter(r=>r.date===sel).sort((a,b)=>(b._t||0)-(a._t||0));
-  let dinc=0,dexp=0;day.forEach(r=>{if(r.type==="income")dinc+=baseAmt(r);else if(r.type==="expense")dexp+=baseAmt(r);});
-  const dsum=[dexp?`<span class="val exp">支 ${fmt(dexp)}</span>`:"",dinc?`<span class="val inc">收 ${fmt(dinc)}</span>`:""].filter(Boolean).join("　")||'<span style="color:var(--text3)">無記錄</span>';
-  html+=`<div class="dayhead2"><span class="ddate">${fmtDay(sel)}</span><span>${dsum}</span></div>`;
-  if(!day.length){
-    html+=`<div class="empty"><div class="big">${IC("receipt-text")}</div>這天還沒有記錄<br>點下方 ＋ 新增一筆</div>`;
-  }else{
-    html+=`<div class="reclist">`+day.map(recRow).join("")+`</div>`;
-  }
+  const rows=day.length?day.map(homeRow).join(""):`<div class="hv-empty">這天還沒有記錄<br>點 ＋ 新增一筆</div>`;
+  const html=`<div class="homev2">
+    <div class="hv-top">
+      <div class="hv-head">
+        <div class="hv-date">${sel.replace(/-/g,"/")}</div>
+        <div class="hv-actions">
+          <button class="hv-circ" onclick="selectDay(todayStr())" aria-label="回到今天">${IC("calendar")}</button>
+          <button class="hv-circ" onclick="homeSearch()" aria-label="搜尋">${IC("search")}</button>
+        </div>
+      </div>
+      ${homeStrip(sel)}
+      <div class="hv-spent" onclick="go('stats')">
+        <div class="hv-spent-l">本月支出</div>
+        <div class="hv-spent-amt">${fmt(mexp)}</div>
+        ${cmp?`<div class="hv-spent-cmp ${cmp.cls}">${cmp.arrow} ${cmp.text}</div>`:``}
+      </div>
+    </div>
+    <div class="hv-list">${rows}</div>
+  </div>`;
   document.getElementById("page-records").innerHTML=html;
   bindWeekSwipe();
 }
+function homeStrip(sel){
+  const[y,m,d]=sel.split("-").map(Number);const dt=new Date(y,m-1,d);
+  const off=(dt.getDay()===0?6:dt.getDay()-1);
+  const mon=new Date(y,m-1,d-off);const today=todayStr();
+  let cells="";
+  for(let i=0;i<7;i++){
+    const cd=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i);const ds=dstr(cd);
+    cells+=`<div class="hv-day ${ds===sel?"sel":""} ${ds===today?"today":""}" onclick="selectDay('${ds}')"><span class="hv-n">${cd.getDate()}</span></div>`;
+  }
+  return `<div class="hv-strip" id="weekstrip">${cells}</div>`;
+}
+function homeRow(r){
+  let name,icon,amt,amtcls="";
+  if(r.type==="transfer"){
+    name=r.note||"轉帳";icon=IC("arrow-left-right");amt="−"+fmt(baseAmt(r));
+  }else{
+    const c=catOf(r.categoryId);
+    name=r.note||(c?c.name:"未分類");icon=IC(catIcon(c));
+    amt=(r.type==="income"?"+":"−")+fmt(baseAmt(r));
+    if(r.type==="income")amtcls="inc";
+  }
+  return `<div class="hv-row" onclick="openAdd('${r.id}')">
+    <span class="hv-ic">${icon}</span>
+    <span class="hv-name">${esc(name)}</span>
+    <span class="hv-amt ${amtcls}">${amt}</span></div>`;
+}
+function spentCompare(mo,dayCutoff){
+  const[y,m]=mo.split("-").map(Number);
+  const prev=(m===1)?((y-1)+"-12"):(y+"-"+String(m-1).padStart(2,"0"));
+  const sum=(mm)=>{let s=0;DB.records.forEach(r=>{if(r.type!=="expense")return;if(r.date.slice(0,7)!==mm)return;if(parseInt(r.date.slice(8,10),10)>dayCutoff)return;s+=baseAmt(r);});return s;};
+  const cur=sum(mo),pre=sum(prev);
+  if(pre<=0)return null;
+  const pct=Math.round((cur-pre)/pre*100);const pm=parseInt(prev.slice(5,7),10);
+  if(pct<0)return{cls:"down",arrow:"↘",text:`比 ${pm} 月同期少 ${Math.abs(pct)}%`};
+  if(pct>0)return{cls:"up",arrow:"↗",text:`比 ${pm} 月同期多 ${pct}%`};
+  return{cls:"flat",arrow:"→",text:`與 ${pm} 月同期持平`};
+}
+function homeSearch(){toast("搜尋功能稍後加入");}
 function fmtDay(d){
   const[y,m,dd]=d.split("-").map(Number);const dt=new Date(y,m-1,dd);
   const wk=["日","一","二","三","四","五","六"][dt.getDay()];
