@@ -306,8 +306,8 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .mchip .mci{border-radius:50%}
 
 /* ===================== home (records) redesign ===================== */
-html.on-records .topbar{display:none}
-html.on-records .pages{padding-bottom:0}
+html.fin-full .topbar{display:none}
+html.fin-full .pages{padding-bottom:0}
 .homev2{
   --cream:#f6f5f0; --sage:#b8d6c4; --lime:#dee514; --lime-sel:rgba(255,255,255,.37); --lime-ring:#bdbdbd;
   --ink:#182b25; --muted:#737a74; --grn:#164c3b; --hairline:rgba(112,112,112,.55);
@@ -359,7 +359,7 @@ html.on-records .pages{padding-bottom:0}
 
 /* ===================== Finly-style home dashboard ===================== */
 :root{--fin-cream:#f1f0e8; --fin-lime:#cdee2e; --fin-blue:#bfe3e9; --fin-ink:#171717; --fin-mut:#8b8e86}
-html.on-records .app{background:var(--fin-cream)}
+html.fin-full .app{background:var(--fin-cream)}
 #page-records{padding:0}
 .fin{padding:4px 20px 0; color:var(--fin-ink); background:var(--fin-cream); min-height:100dvh; font-variant-numeric:tabular-nums}
 .fin-top{display:flex; align-items:center; justify-content:space-between; padding-top:calc(env(safe-area-inset-top,0px) + 8px)}
@@ -397,3 +397,4 @@ html.on-records .app{background:var(--fin-cream)}
 .fin-recent .hv-row:last-child{border-bottom:none}
 .fin-recent .hv-ic,.fin-recent .hv-name,.fin-recent .hv-amt{color:var(--fin-ink)}
 .fin-empty{padding:22px 0; text-align:center; color:var(--fin-mut); font-size:13px}
+.fin-tail{height:calc(var(--nav-h) + var(--safe-b) + 24px)}

@@ -7,7 +7,7 @@ function go(p){
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
   document.getElementById("page-"+p).classList.add("active");
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
-  document.documentElement.classList.toggle("on-records",p==="records");
+  document.documentElement.classList.toggle("fin-full",p==="records"||p==="stats");
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
   document.getElementById("navAddBtn").classList.toggle("on",p==="records");
@@ -39,36 +39,38 @@ function bindWeekSwipe(){
   el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
   el.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)shiftWeek(dx<0?1:-1);},{passive:true});
 }
-function greeting(){const h=new Date().getHours();return h<5?"夜深了":h<11?"早安":h<14?"午安":h<18?"午安":"晚安";}
+function greeting(){const h=new Date().getHours();return h<5?"夜深了":h<11?"早安":h<18?"午安":"晚安";}
 function renderRecords(){
-  document.documentElement.classList.add("on-records");
-  const period=ui.period||"week";
-  const d=dashData(period);
-  const sym=curInfo(DB.config.baseCur).symbol;
-  const recent=DB.records.slice().sort((a,b)=>b.date<a.date?1:b.date>a.date?-1:(b._t||0)-(a._t||0)).slice(0,8);
-  const pl={week:"本週",month:"本月",year:"今年"};
-  const html=`<div class="fin">
-    <div class="fin-top">
-      <div class="fin-ava">${IC("coins")}</div>
-      <button class="fin-bell" onclick="go('settings')">${IC("bell")}</button>
+  document.documentElement.classList.add("fin-full");
+  const sel=ui.selDate,mo=sel.slice(0,7);
+  let mexp=0;recsInMonth(mo).forEach(r=>{if(r.type==="expense")mexp+=baseAmt(r);});
+  const cmp=spentCompare(mo,parseInt(sel.slice(8,10),10));
+  const day=DB.records.filter(r=>r.date===sel).sort((a,b)=>(b._t||0)-(a._t||0));
+  let dexp=0,dinc=0;day.forEach(r=>{if(r.type==="income")dinc+=baseAmt(r);else if(r.type==="expense")dexp+=baseAmt(r);});
+  const rows=day.length
+    ?`<div class="hv-rows">${day.map(homeRow).join("")}</div>`
+    :`<div class="hv-empty">這天還沒有記錄<br>點 ＋ 新增一筆</div>`;
+  const html=`<div class="homev2">
+    <div class="hv-top">
+      <div class="hv-head">
+        <div class="hv-date">${sel.replace(/-/g,"/")}</div>
+        <div class="hv-actions">
+          <div class="hv-circ hv-cal" aria-label="跳到日期">${IC("calendar")}<input type="date" value="${sel}" onchange="selectDay(this.value)"></div>
+          <button class="hv-circ" onclick="homeSearch()" aria-label="搜尋">${IC("search")}</button>
+        </div>
+      </div>
+      ${homeStrip(sel)}
+      <div class="hv-spent" onclick="go('stats')">
+        <div class="hv-spent-l">本月支出</div>
+        <div class="hv-spent-amt">${fmt(mexp)}</div>
+        ${cmp?`<div class="hv-spent-cmp ${cmp.cls}">${cmp.arrow} ${cmp.text}</div>`:``}
+      </div>
     </div>
-    <div class="fin-hello">哈囉 👋<br>${greeting()},來記帳</div>
-    <div class="fin-seg">
-      ${[["week","週"],["month","月"],["year","年"]].map(([k,t])=>`<button class="${period===k?"on":""}" onclick="setPeriod('${k}')">${t}</button>`).join("")}
-    </div>
-    <div class="fin-card lime" onclick="go('stats')">
-      <div class="fin-ch"><span class="fin-cic">${IC("hand-coins")}</span><span class="fin-ct">支出總覽</span><span class="fin-cbtns"><span class="fin-cbtn arr">${IC("arrow-up-right")}</span></span></div>
-      <div class="fin-amt">${fmt(d.total)}</div>
-      ${finChart(d.series,d.labels,d.hiIdx)}
-    </div>
-    <div class="fin-card blue">
-      <div class="fin-ch"><span class="fin-cic">${IC("chart-pie")}</span><span class="fin-ct">熱門分類</span><span class="fin-cbtns"><span class="fin-cbtn arr">${IC("arrow-up-right")}</span></span></div>
-      ${d.cats.length?`<div class="fin-cats">${d.cats.map(finCatBars).join("")}</div>`:`<div class="fin-empty">${pl[period]}尚無支出</div>`}
-    </div>
-    <div class="fin-sec">最近交易</div>
-    <div class="fin-recent">${recent.length?recent.map(homeRow).join(""):`<div class="fin-empty">還沒有記錄 · 點 ＋ 新增一筆</div>`}</div>
+    <div class="hv-list">${rows}</div>
+    ${day.length?`<div class="hv-total"><span>Total</span><span>${fmt(dinc-dexp,true)}</span></div>`:""}
   </div>`;
   document.getElementById("page-records").innerHTML=html;
+  bindWeekSwipe();
 }
 function setPeriod(p){ui.period=p;render();}
 function periodRange(period){
@@ -195,47 +197,29 @@ function hex2(hex){ // translucent bg from hex
 
 /* =================== stats page =================== */
 function renderStats(){
-  const recs=recsInMonth(ui.month);
-  let inc=0,exp=0;recs.forEach(r=>{if(r.type==="income")inc+=baseAmt(r);else if(r.type==="expense")exp+=baseAmt(r);});
-  let html=`<div class="sumstrip">
-    <div class="cell"><div class="lbl">收入</div><div class="val inc">${fmt(inc)}</div></div>
-    <div class="cell"><div class="lbl">支出</div><div class="val exp">${fmt(exp)}</div></div>
-    <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(inc-exp)}</div></div>
+  document.documentElement.classList.add("fin-full");
+  const period=ui.period||"week";
+  const d=dashData(period);
+  const html=`<div class="fin">
+    <div class="fin-top">
+      <div class="fin-ava">${IC("chart-pie")}</div>
+      <button class="fin-bell" onclick="go('settings')">${IC("bell")}</button>
+    </div>
+    <div class="fin-hello">支出分析</div>
+    <div class="fin-seg">
+      ${[["week","週"],["month","月"],["year","年"]].map(([k,t])=>`<button class="${period===k?"on":""}" onclick="setPeriod('${k}')">${t}</button>`).join("")}
+    </div>
+    <div class="fin-card lime">
+      <div class="fin-ch"><span class="fin-cic">${IC("hand-coins")}</span><span class="fin-ct">支出總覽</span></div>
+      <div class="fin-amt">${fmt(d.total)}</div>
+      ${finChart(d.series,d.labels,d.hiIdx)}
+    </div>
+    <div class="fin-card blue">
+      <div class="fin-ch"><span class="fin-cic">${IC("chart-pie")}</span><span class="fin-ct">熱門分類</span></div>
+      ${d.cats.length?`<div class="fin-cats">${d.cats.map(finCatBars).join("")}</div>`:`<div class="fin-empty">此期間尚無支出</div>`}
+    </div>
+    <div class="fin-tail"></div>
   </div>`;
-  html+=`<div class="seg">
-    <button class="${ui.statType==="expense"?"on":""}" onclick="ui.statType='expense';ui.statMain=null;render()">支出分類</button>
-    <button class="${ui.statType==="income"?"on":""}" onclick="ui.statType='income';ui.statMain=null;render()">收入分類</button>
-  </div>`;
-  // category breakdown (roll up to main, drill into subs)
-  const recsT=recs.filter(r=>r.type===ui.statType);
-  let items=[],tot=0,back="";
-  if(ui.statMain){
-    const m=catOf(ui.statMain);const bySub={};
-    recsT.forEach(r=>{const c=catOf(r.categoryId),mm=mainOf(c);if(!mm||mm.id!==ui.statMain)return;const v=baseAmt(r);bySub[r.categoryId]=(bySub[r.categoryId]||0)+v;tot+=v;});
-    items=Object.entries(bySub).map(([id,v],i)=>{const c=catOf(id);return {id,name:c?(c.id===ui.statMain?"（整體）":c.name):"未分類",icon:catIcon(c),v,color:COLORS[i%COLORS.length]};}).sort((a,b)=>b.v-a.v);
-    back=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button onclick="ui.statMain=null;render()" style="color:var(--accent);font-weight:600">‹ 返回</button><span style="font-weight:700;display:inline-flex;align-items:center;gap:6px">${m?IC(m.icon)+esc(m.name):""}</span></div>`;
-  }else{
-    const byMain={};
-    recsT.forEach(r=>{const c=catOf(r.categoryId),m=mainOf(c);if(!m)return;const v=baseAmt(r);byMain[m.id]=(byMain[m.id]||0)+v;tot+=v;});
-    items=Object.entries(byMain).map(([id,v])=>{const m=catOf(id);return {id,name:m?m.name:"未分類",icon:m?m.icon:"❓",v,color:m?m.color:"#999",drill:m?subCats(m.id).length>0:false};}).sort((a,b)=>b.v-a.v);
-  }
-  html+=`<div class="chartcard">${back}<div class="donut-wrap">`;
-  if(tot<=0){html+=`<div class="empty" style="padding:30px 0">這個月沒有${ui.statType==="expense"?"支出":"收入"}資料</div>`;}
-  else{
-    html+=donutSVG(items.map(x=>({value:x.v,color:x.color})),tot);
-    html+=`<div class="legend">`;
-    items.forEach(x=>{const pct=x.v/tot*100;
-      html+=`<div class="legrow" ${x.drill?`onclick="ui.statMain='${x.id}';render()"`:""}>
-        <span class="dot" style="background:${x.color}"></span>
-        <span class="lname">${IC(x.icon)} ${esc(x.name)}${x.drill?' <span style="color:var(--text3)">›</span>':""}</span>
-        <span class="lpct">${pct.toFixed(1)}%</span>
-        <span class="lamt">${fmt(x.v)}</span></div>`;
-    });
-    html+=`</div>`;
-  }
-  html+=`</div></div>`;
-  // 6-month trend
-  html+=`<div class="chartcard"><h3>近 6 個月${ui.statType==="expense"?"支出":"收入"}趨勢</h3>${trendChart(ui.statType)}</div>`;
   document.getElementById("page-stats").innerHTML=html;
 }
 function donutSVG(slices,total){
