@@ -49,7 +49,7 @@ function renderRecords(){
   let dexp=0,dinc=0;day.forEach(r=>{if(r.type==="income")dinc+=baseAmt(r);else if(r.type==="expense")dexp+=baseAmt(r);});
   const rows=day.length
     ?`<div class="hv-rows">${day.map(homeRow).join("")}</div>`
-    :`<div class="hv-empty">這天還沒有記錄<br>點 ＋ 新增一筆</div>`;
+    :`<div class="hv-empty">No records yet<br>Tap ＋ to add one</div>`;
   const html=`<div class="homev2">
     <div class="hv-top">
       <div class="hv-head">
