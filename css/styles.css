@@ -310,7 +310,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 html.on-records .topbar{display:none}
 html.on-records .pages{padding-bottom:0}
 .homev2{
-  --cream:#f3f1e9; --sage:#c7dac2; --lime:#d2e03e; --lime-sel:#eef1dd; --lime-ring:#b4ba86;
+  --cream:#f3f1e9; --sage:#c7dac2; --lime:#d2e03e; --lime-sel:#eaeedd; --lime-ring:#9ba29a;
   --ink:#202c1c; --muted:#6a7862; --grn:#3f7d50; --hairline:rgba(32,44,28,.12);
   margin:0 -14px; min-height:100dvh; display:flex; flex-direction:column; background:var(--sage);
 }
@@ -323,10 +323,10 @@ html.on-records .pages{padding-bottom:0}
 .hv-cal{position:relative; overflow:hidden; cursor:pointer}
 .hv-cal input{position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; padding:0; margin:0; cursor:pointer}
 .hv-circ:active{background:rgba(32,44,28,.06)}
-.hv-strip{display:flex; align-items:center; background:var(--lime); border-radius:28px; padding:4px 12px; touch-action:pan-y; user-select:none}
-.hv-day{flex:1; display:flex; align-items:center; justify-content:center; height:40px; cursor:pointer}
-.hv-day .hv-n{min-width:38px; height:38px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:var(--ink); border-radius:50%; font-variant-numeric:tabular-nums}
-.hv-day.sel .hv-n{width:64px; height:64px; min-width:64px; background:var(--lime-sel); box-shadow:inset 0 0 0 2px var(--lime-ring)}
+.hv-strip{display:flex; align-items:center; background:var(--lime); border-radius:26px; padding:6px 12px; touch-action:pan-y; user-select:none}
+.hv-day{flex:1; display:flex; align-items:center; justify-content:center; height:46px; cursor:pointer}
+.hv-day .hv-n{min-width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:var(--ink); border-radius:50%; font-variant-numeric:tabular-nums}
+.hv-day.sel .hv-n{width:46px; height:46px; min-width:46px; background:var(--lime-sel); box-shadow:inset 0 0 0 2px var(--lime-ring)}
 .hv-spent{margin-top:22px; cursor:pointer}
 .hv-spent-l{font-size:13px; color:var(--muted)}
 .hv-spent-amt{font-size:40px; font-weight:700; color:var(--ink); letter-spacing:-.5px; line-height:1.1; font-variant-numeric:tabular-nums; margin-top:3px}
