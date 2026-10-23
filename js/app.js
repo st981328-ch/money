@@ -15,7 +15,7 @@ function go(p){
   render();
 }
 /* center + : jump to records when elsewhere, else open the add sheet */
-function navAdd(){ if(ui.page!=="records") go("records"); else openAdd(); }
+function navAdd(){ openAdd(); }
 function shiftMonth(d){
   let[y,m]=ui.month.split("-").map(Number);m+=d;
   if(m<1){m=12;y--;}if(m>12){m=1;y++;}
@@ -61,13 +61,12 @@ function renderRecords(){
       </div>
       ${homeStrip(sel)}
       <div class="hv-spent" onclick="go('stats')">
-        <div class="hv-spent-l">本月支出</div>
+        <div class="hv-spent-l">Spent this month</div>
         <div class="hv-spent-amt">${fmt(mexp)}</div>
         ${cmp?`<div class="hv-spent-cmp ${cmp.cls}">${cmp.arrow} ${cmp.text}</div>`:``}
       </div>
     </div>
     <div class="hv-list">${rows}</div>
-    ${day.length?`<div class="hv-total"><span>Total</span><span>${fmt(dinc-dexp,true)}</span></div>`:""}
   </div>`;
   document.getElementById("page-records").innerHTML=html;
   bindWeekSwipe();
@@ -120,12 +119,14 @@ function homeStrip(sel){
   const[y,m,d]=sel.split("-").map(Number);const dt=new Date(y,m-1,d);
   const off=(dt.getDay()===0?6:dt.getDay()-1);
   const mon=new Date(y,m-1,d-off);const today=todayStr();
-  let cells="";
+  const wl=["M","T","W","T","F","S","S"];
+  let labels="",cells="";
   for(let i=0;i<7;i++){
     const cd=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i);const ds=dstr(cd);
+    labels+=`<div class="hv-wl ${i===6?"sun":""}">${wl[i]}</div>`;
     cells+=`<div class="hv-day ${ds===sel?"sel":""} ${ds===today?"today":""}" onclick="selectDay('${ds}')"><span class="hv-n">${cd.getDate()}</span></div>`;
   }
-  return `<div class="hv-strip" id="weekstrip">${cells}</div>`;
+  return `<div class="hv-wlabels">${labels}</div><div class="hv-strip" id="weekstrip">${cells}</div>`;
 }
 function homeRow(r){
   let name,icon,amt,amtcls="";
@@ -149,9 +150,10 @@ function spentCompare(mo,dayCutoff){
   const cur=sum(mo),pre=sum(prev);
   if(pre<=0)return null;
   const pct=Math.round((cur-pre)/pre*100);const pm=parseInt(prev.slice(5,7),10);
-  if(pct<0)return{cls:"down",arrow:"↘",text:`比 ${pm} 月同期少 ${Math.abs(pct)}%`};
-  if(pct>0)return{cls:"up",arrow:"↗",text:`比 ${pm} 月同期多 ${pct}%`};
-  return{cls:"flat",arrow:"→",text:`與 ${pm} 月同期持平`};
+  const MN=["January","February","March","April","May","June","July","August","September","October","November","December"][pm-1];
+  if(pct<0)return{cls:"down",arrow:"↘",text:`${Math.abs(pct)}% less than this time in ${MN}`};
+  if(pct>0)return{cls:"up",arrow:"↗",text:`${pct}% more than this time in ${MN}`};
+  return{cls:"flat",arrow:"→",text:`same as this time in ${MN}`};
 }
 function homeSearch(){toast("搜尋功能稍後加入");}
 function fmtDay(d){
