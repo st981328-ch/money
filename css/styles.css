@@ -458,34 +458,39 @@ html.adding .mask{background:transparent}
   background:rgba(114,114,114,0.66);
   -webkit-backdrop-filter:blur(15px) saturate(1.05); backdrop-filter:blur(15px) saturate(1.05);
 }
-.addsheet .sheet-body{padding:2px 20px 24px; overflow-x:hidden}
-.av-head{display:flex; align-items:center; gap:5px; padding:18px 20px 14px; flex-shrink:0}
+.addsheet .sheet-body{padding:0 20px 24px; overflow-x:hidden}
+/* header: ✕ (x20) ─ title ─ 📅 ✓ (gap 5, right edge x382); circles 40×40 */
+.av-head{display:flex; align-items:center; gap:5px; padding:25px 20px 0; flex-shrink:0}
 .av-head .av-title{flex:1; text-align:center; font-size:18px; font-weight:700; color:#182b25}
-.av-circ{width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; color:#182b25; flex:0 0 auto}
+.av-circ{width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; color:#182b25; flex:0 0 auto}
 .av-circ .gi{width:20px; height:20px}
-.av-circ.ok{background:#dee514}
+.av-circ.ok{background:#dee514; -webkit-backdrop-filter:none; backdrop-filter:none}
 .av-circ:active{opacity:.7}
-.av-tabs{display:flex; gap:0; margin:2px 0 20px}
-.av-tabs button{flex:0 0 60px; height:30px; border-radius:15px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); color:#182b25; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center}
-.av-tabs button.ico .gi{width:16px; height:16px}
+/* tabs: 60×30 rx15, adjacent (gap 0); active #fff, inactive #d9d9d9 */
+.av-tabs{display:flex; gap:0; margin:14.5px 0 20.5px}
+.av-tabs button{flex:0 0 60px; height:30px; border-radius:15px; background:#d9d9d9; color:#182b25; font-size:16px; font-weight:700; letter-spacing:.3px; display:flex; align-items:center; justify-content:center}
+.av-tabs button.ico .gi{width:20px; height:20px}
 .av-tabs button.on{background:#fff}
-.av-catwrap{max-height:117px; overflow-y:auto; margin-bottom:22px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+/* category tiles: 6 cols, 56×56, 5px gap; active lime, inactive white50% */
+.av-catwrap{max-height:117px; overflow-y:auto; margin-bottom:25px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
 .av-catwrap::-webkit-scrollbar{display:none}
 .av-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:5px}
-.av-cat{aspect-ratio:1; border-radius:14px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; color:#182b25}
-.av-cat .gi{width:26px; height:26px}
-.av-cat.on{background:#dee514}
+.av-cat{aspect-ratio:1; border-radius:12px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(2.5px); backdrop-filter:blur(2.5px); display:flex; align-items:center; justify-content:center; color:#182b25}
+.av-cat .gi{width:28px; height:28px}
+.av-cat.on{background:#dee514; -webkit-backdrop-filter:none; backdrop-filter:none}
 .av-cat:active{filter:brightness(.95)}
-.av-amtrow{display:flex; align-items:center; gap:10px; padding:0 0 12px; border-bottom:1px solid rgba(24,43,37,0.3); margin-bottom:22px}
+/* amount row: TWD 60×30 + ⊕ 30×30 (gap 10), big amount right; divider below */
+.av-amtrow{display:flex; align-items:center; gap:10px; padding:0 0 14px; border-bottom:1px solid rgba(24,43,37,0.3); margin-bottom:28px}
 .av-cur{display:flex; align-items:center; gap:10px; flex:0 0 auto}
-.av-curpill{width:60px; height:30px; border-radius:15px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); font-size:14px; font-weight:700; color:#182b25}
-.av-curadd{width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; color:#182b25}
+.av-curpill{width:60px; height:30px; border-radius:15px; background:#fff; font-size:14px; font-weight:700; color:#182b25}
+.av-curadd{width:30px; height:30px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:#182b25}
 .av-curadd .gi{width:15px; height:15px}
 .av-amt{flex:1; text-align:right; font-size:44px; font-weight:800; color:#182b25; letter-spacing:-1px; font-variant-numeric:tabular-nums; overflow:hidden; white-space:nowrap}
-.av-row{display:flex; gap:10px; margin-bottom:10px}
-.av-row>.av-pill{flex:1}
-.av-menuwrap{flex:1; position:relative}
-.av-pill{width:100%; height:35px; border-radius:17.5px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); color:#182b25; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+/* date/time + project/recur pills: 2 per row, h35 rx17.5, #d9d9d9 (gap 0) */
+.av-row{display:flex; gap:0; margin-bottom:10px}
+.av-row>.av-pill, .av-menuwrap{flex:1 1 0; min-width:0}
+.av-menuwrap{position:relative}
+.av-pill{width:100%; height:35px; border-radius:17.5px; background:#d9d9d9; color:#182b25; font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .av-pill .gi{width:16px; height:16px; flex:0 0 auto}
 .av-pill.set{background:#dee514}
 .av-menu{position:absolute; bottom:calc(100% + 6px); left:0; right:0; background:#fff; border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,.25); z-index:80; overflow-y:auto; max-height:230px; display:none}
@@ -493,8 +498,9 @@ html.adding .mask{background:transparent}
 .av-mi{padding:12px 16px; font-size:15px; color:#182b25}
 .av-mi.on{background:#f0efe8; font-weight:700}
 .av-mi:active{background:#eceae2}
-.av-note{width:100%; border:1.5px solid rgba(24,43,37,0.4); border-radius:30px; background:rgba(255,255,255,0.18); padding:16px 18px; font-size:15px; color:#182b25; resize:none; margin:2px 0 14px; font-family:inherit}
-.av-note::placeholder{color:rgba(24,43,37,0.55); font-weight:600}
+/* NOTE: rx29.75 outlined, transparent */
+.av-note{width:100%; height:120px; border:1px solid rgba(24,43,37,0.5); border-radius:29.75px; background:transparent; padding:16px 20px; font-size:15px; color:#182b25; resize:none; margin:10px 0 10.5px; font-family:inherit}
+.av-note::placeholder{color:rgba(24,43,37,0.5); font-weight:600}
 .av-delete{width:100%; height:48px; border-radius:16px; background:#ff2e01; color:#fff; font-size:16px; font-weight:700; letter-spacing:.5px}
 .av-delete:active{filter:brightness(.92)}
 .av-native{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px}
