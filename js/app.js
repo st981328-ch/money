@@ -112,10 +112,12 @@ function homeRow(r){
     amt=(r.type==="income"?"+":"−")+fmt(baseAmt(r));
     if(r.type==="income")amtcls="inc";
   }
+  const proj=r.projectId?projOf(r.projectId):null;
+  const tag=proj?`<span class="hv-ptag">${esc(proj.name)}</span>`:"";
   return `<div class="hv-row" onclick="openAdd('${r.id}')">
     <span class="hv-ic">${icon}</span>
     <span class="hv-name">${esc(name)}</span>
-    <span class="hv-amt ${amtcls}">${amt}</span></div>`;
+    ${tag}<span class="hv-amt ${amtcls}">${amt}</span></div>`;
 }
 function spentCompare(mo,dayCutoff){
   const[y,m]=mo.split("-").map(Number);
@@ -224,10 +226,12 @@ function statDetail(recs){
   let h="";
   Object.keys(groups).sort().reverse().forEach(d=>{
     const rows=groups[d].map(r=>{
-      let nm,cls="",sign="−";
-      if(r.type==="transfer"){nm=r.note||"轉帳";}
-      else{const c=catOf(r.categoryId);nm=r.note||(c?c.name:"未分類");if(r.type==="income"){sign="+";cls="inc";}}
-      return `<div class="sv-item" onclick="openAdd('${r.id}')"><span class="sv-iname">${esc(nm)}</span><span class="sv-iamt ${cls}">${sign}${fmt(baseAmt(r))}</span></div>`;
+      let nm,cls="",sign="−",ic;
+      if(r.type==="transfer"){nm=r.note||"轉帳";ic=IC("arrow-left-right");}
+      else{const c=catOf(r.categoryId);nm=r.note||(c?c.name:"未分類");ic=IC(catIcon(c));if(r.type==="income"){sign="+";cls="inc";}}
+      const proj=r.projectId?projOf(r.projectId):null;
+      const tag=proj?`<span class="sv-ptag">${esc(proj.name)}</span>`:"";
+      return `<div class="sv-item" onclick="openAdd('${r.id}')"><span class="sv-ic">${ic}</span><span class="sv-iname">${esc(nm)}</span>${tag}<span class="sv-iamt ${cls}">${sign}${fmt(baseAmt(r))}</span></div>`;
     }).join("");
     h+=`<div class="sv-dhead">${fmtDay(d)}</div>${rows}`;
   });

@@ -248,7 +248,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .toast.show{opacity:1}
 
 /* === center + nav button === */
-.nav button.navadd{flex:0 0 68px;width:68px;height:68px;border-radius:50%;background:#fff;box-shadow:0 5px 16px rgba(0,0,0,.14);transform:translateY(-20px);color:#182b25;font-size:33px;font-weight:300;z-index:2}
+.nav button.navadd{flex:0 0 68px;width:68px;height:68px;border-radius:50%;background:#dee514;box-shadow:0 5px 16px rgba(0,0,0,.18);transform:translateY(-20px);color:#182b25;font-size:34px;font-weight:400;z-index:2}
 .nav button.navadd:active{transform:translateY(-20px) scale(.94)}
 .nav button.navadd.on{color:#182b25}
 
@@ -340,6 +340,7 @@ html.fin-full .pages{padding-bottom:0}
 .hv-name{flex:1; min-width:0; font-size:16px; font-weight:600; color:var(--ink); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
 .hv-amt{font-size:16px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; flex:0 0 auto; margin-top:1px}
 .hv-amt.inc{color:var(--grn)}
+.hv-ptag{flex:0 0 auto; font-size:11px; font-weight:600; color:var(--ink); border:1px solid rgba(24,43,37,.45); border-radius:11px; padding:2px 9px; white-space:nowrap; max-width:110px; overflow:hidden; text-overflow:ellipsis}
 .hv-total{position:fixed; left:0; right:0; bottom:calc(var(--nav-h) + var(--safe-b) + 16px); max-width:560px; margin:0 auto; z-index:20; display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:var(--sage); border-top:1px solid rgba(32,44,28,.3); font-weight:700; font-size:17px; color:var(--ink); font-variant-numeric:tabular-nums}
 .hv-total span:first-child{letter-spacing:.4px}
 .hv-empty{padding:48px 0; text-align:center; color:var(--muted); font-size:14px; line-height:1.7}
@@ -407,10 +408,10 @@ html.fin-full .app{background:#f6f5f0}
 .sv-month button .gi{width:22px; height:22px}
 .sv-month button:active{background:rgba(0,0,0,.07)}
 .sv-month span{font-size:17px; font-weight:700; color:var(--ink)}
-.sv-tabs{display:flex; gap:7px; overflow-x:auto; padding:0 20px 2px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+.sv-tabs{display:flex; gap:6px; overflow-x:auto; padding:0 20px 2px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
 .sv-tabs::-webkit-scrollbar{display:none}
-.sv-tabs button{flex:0 0 auto; height:38px; padding:0 16px; border-radius:19px; border:1.5px solid #dddfd7; background:transparent; color:var(--ink); font-size:15px; font-weight:600}
-.sv-tabs button.on{background:#fff; border-color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.sv-tabs button{flex:0 0 auto; height:38px; padding:0 12px; border-radius:19px; border:1.5px solid transparent; background:#e7e6e1; color:var(--ink); font-size:14.5px; font-weight:600}
+.sv-tabs button.on{background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .sv-body{padding:18px 20px calc(var(--nav-h) + var(--safe-b) + 24px)}
 /* overview summary bars */
 .sv-sums{display:flex; flex-direction:column; gap:15px}
@@ -438,6 +439,11 @@ html.fin-full .app{background:#f6f5f0}
 .sv-idate,.sv-icnt{font-size:13px; color:var(--muted); white-space:nowrap}
 .sv-iamt{font-size:16px; font-weight:700; color:var(--ink); white-space:nowrap}
 .sv-iamt.inc{color:#47b58e}
+.sv-ic{color:var(--ink); display:inline-flex; align-items:center; flex:0 0 auto; font-size:16px}
+.sv-ic::before{content:"[ "}
+.sv-ic::after{content:" ]"}
+.sv-ic .gi{width:20px; height:20px}
+.sv-ptag{flex:0 0 auto; font-size:11px; font-weight:600; color:var(--ink); border:1px solid rgba(24,43,37,.45); border-radius:11px; padding:2px 9px; white-space:nowrap; max-width:110px; overflow:hidden; text-overflow:ellipsis}
 .sv-dhead{font-size:13px; font-weight:600; color:var(--muted); padding:16px 2px 2px}
 .sv-catwrap{display:flex; justify-content:center; padding:6px 0 10px}
 .sv-catwrap svg{width:200px; height:200px}
