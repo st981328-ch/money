@@ -455,7 +455,7 @@ html.adding .mask{background:transparent}
 .sheet.full.addsheet{
   top:calc(env(safe-area-inset-top,0px) + 6px); height:auto; bottom:0;
   border-radius:30px 30px 0 0; color:#182b25;
-  background:rgba(118,118,118,0.9);
+  background:rgba(112,112,112,0.75);
   -webkit-backdrop-filter:blur(30px) saturate(1.05); backdrop-filter:blur(30px) saturate(1.05);
 }
 .addsheet .sheet-body{padding:0 20px 24px; overflow-x:hidden}
@@ -505,5 +505,12 @@ html.adding .mask{background:transparent}
 .av-delete{width:100%; height:48px; border-radius:16px; background:#ff2e01; color:#fff; font-size:16px; font-weight:700; letter-spacing:.5px}
 .av-delete:active{filter:brightness(.92)}
 .av-native{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; left:-9999px}
-.av-keypad{position:absolute; left:0; right:0; bottom:0; transform:translateY(112%); transition:transform .25s cubic-bezier(.4,0,.2,1); box-shadow:0 -6px 24px rgba(0,0,0,.18); border-radius:20px 20px 0 0; z-index:60; background:rgba(240,239,232,0.92); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px)}
+.av-keypad{position:absolute; left:0; right:0; bottom:0; transform:translateY(112%); transition:transform .25s cubic-bezier(.4,0,.2,1); box-shadow:0 -6px 24px rgba(0,0,0,.3); border-radius:20px 20px 0 0; z-index:60; background:#1e1e20}
 .av-keypad.show{transform:translateY(0)}
+/* when the keypad is up, give the form scroll room so NOTE/DELETE are reachable above it */
+.addsheet.kpopen .sheet-body{padding-bottom:300px}
+.av-keypad button{background:#2e2e33; color:#fff; box-shadow:none}
+.av-keypad button:active{background:#3c3c42}
+.av-keypad button.op{color:#dee514; font-weight:800}
+.av-keypad button.done{background:#2e2e33; color:#fff; box-shadow:inset 0 0 0 2px #dee514}
+.av-keypad button.done:active{background:#3c3c42}

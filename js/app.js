@@ -590,6 +590,7 @@ function openAdd(editId){
   el.appendChild(kp);
   bindAdd(el);
   renderAddDynamic(el);
+  enableSheetDrag(el);
   if(!r)toggleKeypad(true);   // new entry: keypad up for immediate amount input
 }
 function addBody(editing){
@@ -618,7 +619,7 @@ function addBody(editing){
       <div class="av-menuwrap"><button type="button" class="av-pill" id="projpill" onclick="toggleAvMenu('proj')"></button><div class="av-menu" id="projmenu"></div></div>
       <div class="av-menuwrap"><button type="button" class="av-pill" id="recurpill" onclick="toggleAvMenu('recur')"></button><div class="av-menu" id="recurmenu"></div></div>
     </div>
-    <textarea class="av-note" id="f_note" placeholder="NOTE" rows="4">${esc(addState.note)}</textarea>
+    <textarea class="av-note" id="f_note" placeholder="NOTE" rows="4" onfocus="toggleKeypad(false)">${esc(addState.note)}</textarea>
     ${editing?`<button class="av-delete" onclick="deleteRecord()">DELETE</button>`:""}
     <input type="date" id="f_date" class="av-native" value="${addState.date}">
     <input type="time" id="f_time" class="av-native" value="${addState.time}">`;
@@ -661,7 +662,18 @@ function pickField(id){const e=document.getElementById(id);if(!e)return;if(e.sho
 function toggleKeypad(show){
   const kp=document.querySelector(".av-keypad");if(!kp)return;
   if(show===undefined)kp.classList.toggle("show");else kp.classList.toggle("show",!!show);
-  const amt=document.getElementById("amtbtn");if(amt)amt.classList.toggle("on",kp.classList.contains("show"));
+  const on=kp.classList.contains("show");
+  if(kp.parentElement)kp.parentElement.classList.toggle("kpopen",on);
+  const amt=document.getElementById("amtbtn");if(amt)amt.classList.toggle("on",on);
+}
+/* drag the header down to dismiss the add sheet */
+function enableSheetDrag(el){
+  const head=el.querySelector(".av-head");if(!head)return;
+  let startY=0,dy=0,dragging=false;
+  head.addEventListener("touchstart",e=>{if(e.target.closest("button"))return;startY=e.touches[0].clientY;dragging=true;dy=0;el.style.transition="none";},{passive:true});
+  head.addEventListener("touchmove",e=>{if(!dragging)return;dy=e.touches[0].clientY-startY;if(dy<0)dy=0;el.style.transform="translateY("+dy+"px)";if(dy>0&&e.cancelable)e.preventDefault();},{passive:false});
+  const end=()=>{if(!dragging)return;dragging=false;el.style.transition="";if(dy>110){el.style.transform="translateY(100%)";setTimeout(closeTopSheet,0);}else{el.style.transform="";}};
+  head.addEventListener("touchend",end);head.addEventListener("touchcancel",end);
 }
 let _avMenuCloser=null;
 function toggleAvMenu(which){
