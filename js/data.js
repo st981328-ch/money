@@ -2,7 +2,7 @@
 /* data layer: storage, model, helpers */
 /* one-time lossless migration from the app's earlier storage keys */
 (function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
-const APP_VERSION="2026.10.24-ao";
+const APP_VERSION="2026.10.24-ap";
 const STORE_KEY="tally_data";
 const SYNC_DESC="Tally Sync — do not delete";
 const SYNC_FILE="tally_data.json";
@@ -94,7 +94,7 @@ const COLORS=["#e5484d","#f59e0b","#eab308","#30a46c","#06b6d4","#3b82f6","#5b6c
 /* line-icon registry (Lucide, ISC license) — key -> inner svg markup */
 
 let DB=load();
-let ui={page:"records",month:curMonth(),selDate:todayStr(),statType:"expense",statMain:null,projView:"card",projYear:null};
+let ui={page:"records",month:curMonth(),selDate:todayStr(),statType:"expense",statMain:null,projView:"card",projYear:null,statTab:"overview"};
 
 function curMonth(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}

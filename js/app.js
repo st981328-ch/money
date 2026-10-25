@@ -71,49 +71,23 @@ function renderRecords(){
   document.getElementById("page-records").innerHTML=html;
   bindWeekSwipe();
 }
-function setPeriod(p){ui.period=p;render();}
-function periodRange(period){
-  const now=new Date();const y=now.getFullYear(),m=now.getMonth(),dd=now.getDate();
-  if(period==="year")return {start:new Date(y,0,1),end:new Date(y,11,31),unit:"month"};
-  if(period==="month")return {start:new Date(y,m,1),end:new Date(y,m+1,0),unit:"day"};
-  const off=(now.getDay()===0?6:now.getDay()-1);const mon=new Date(y,m,dd-off);
-  return {start:mon,end:new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6),unit:"wday"};
+const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
+const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#47b58e","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];
+function setStatTab(t){ui.statTab=t;render();}
+function monthRange(m){const[y,mo]=m.split("-").map(Number);const last=new Date(y,mo,0).getDate();const p=n=>String(n).padStart(2,"0");return `${y}/${p(mo)}/01 – ${y}/${p(mo)}/${p(last)}`;}
+function statCats(recs){
+  const by={};
+  recs.forEach(r=>{if(r.type!=="expense")return;const m=mainOf(catOf(r.categoryId));if(!m)return;const o=(by[m.id]=by[m.id]||{c:m,v:0,n:0});o.v+=baseAmt(r);o.n++;});
+  return Object.values(by).sort((a,b)=>b.v-a.v);
 }
-function dashData(period){
-  const r=periodRange(period);const s=dstr(r.start),e=dstr(r.end);
-  const recs=DB.records.filter(x=>x.type==="expense"&&x.date>=s&&x.date<=e);
-  let total=0;const byCat={};
-  recs.forEach(x=>{const v=baseAmt(x);total+=v;const mc=mainOf(catOf(x.categoryId));if(mc)byCat[mc.id]=(byCat[mc.id]||0)+v;});
-  let series=[],labels=[];
-  if(r.unit==="wday"){const wl=["一","二","三","四","五","六","日"];
-    for(let i=0;i<7;i++){const cd=new Date(r.start.getFullYear(),r.start.getMonth(),r.start.getDate()+i);const ds=dstr(cd);let v=0;recs.forEach(x=>{if(x.date===ds)v+=baseAmt(x);});series.push(v);labels.push(wl[i]);}
-  }else if(r.unit==="day"){const days=r.end.getDate();
-    for(let i=1;i<=days;i++){const ds=`${r.start.getFullYear()}-${String(r.start.getMonth()+1).padStart(2,"0")}-${String(i).padStart(2,"0")}`;let v=0;recs.forEach(x=>{if(x.date===ds)v+=baseAmt(x);});series.push(v);labels.push((i===1||i%7===0||i===days)?String(i):"");}
-  }else{for(let i=0;i<12;i++){const mm=`${r.start.getFullYear()}-${String(i+1).padStart(2,"0")}`;let v=0;recs.forEach(x=>{if(x.date.slice(0,7)===mm)v+=baseAmt(x);});series.push(v);labels.push(String(i+1));}}
-  const hiIdx=series.indexOf(Math.max(...series,0));
-  const cats=Object.entries(byCat).map(([id,v])=>({c:catOf(id),v,pct:total>0?Math.round(v/total*100):0})).filter(x=>x.c).sort((a,b)=>b.v-a.v).slice(0,3);
-  return {total,series,labels,hiIdx,cats};
-}
-function finChart(series,labels,hiIdx){
-  const W=300,H=118,n=series.length,max=Math.max(1,...series);
-  const xs=i=>(n<=1?W/2:W*i/(n-1)),ys=v=>H-6-(H-22)*(v/max);
-  const pts=series.map((v,i)=>[xs(i),ys(v)]);
-  const line=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
-  const area=line+` L${W} ${H} L0 ${H} Z`;
-  const hx=xs(hiIdx),hy=ys(series[hiIdx]||0);
-  const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="fin-svg">
-    <defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="7" stroke="#1a2a12" stroke-width="2.4" opacity=".28"/></pattern></defs>
-    <path d="${area}" fill="url(#hatch)"/>
-    <path d="${line}" fill="none" stroke="#1a2a12" stroke-width="2" vector-effect="non-scaling-stroke"/>
-    <line x1="${hx.toFixed(1)}" y1="${hy.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${H}" stroke="#1a2a12" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+function ringDonut(pct,color){
+  const r=42.5,C=2*Math.PI*r,on=Math.max(0,Math.min(100,pct))/100*C;
+  return `<svg class="sv-donut" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="#e8e8e8" stroke-width="15"/>
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="15"
+      stroke-dasharray="${on.toFixed(2)} ${(C-on).toFixed(2)}" transform="rotate(-90 50 50)"/>
+    <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="#182b25">${pct.toFixed(1)}%</text>
   </svg>`;
-  const tip=(series[hiIdx]>0)?`<div class="fin-tip" style="left:${(hx/W*100).toFixed(1)}%">${fmt(series[hiIdx])}</div>`:"";
-  return `<div class="fin-chart">${tip}${svg}<div class="fin-xl">${labels.map(t=>`<span>${t}</span>`).join("")}</div></div>`;
-}
-function finCatBars(x){
-  const n=15,seed=(x.c.name.charCodeAt(0)||5);let bars="";
-  for(let i=0;i<n;i++){const h=16+((i*13+seed)%70)/100*30;const on=(i/n*100)<=x.pct;bars+=`<rect x="${(i*4).toFixed(1)}" y="${(46-h).toFixed(1)}" width="2.3" height="${h.toFixed(1)}" rx="1.1" fill="#16271a" opacity="${on?1:0.2}"/>`;}
-  return `<div class="fin-cat"><svg viewBox="0 0 ${n*4} 46" class="fin-catbars">${bars}</svg><div class="fin-catn">${esc(x.c.name)}</div><div class="fin-catp">${x.pct}%</div></div>`;
 }
 function homeStrip(sel){
   const[y,m,d]=sel.split("-").map(Number);const dt=new Date(y,m-1,d);
@@ -200,29 +174,111 @@ function hex2(hex){ // translucent bg from hex
 /* =================== stats page =================== */
 function renderStats(){
   document.documentElement.classList.add("fin-full");
-  const period=ui.period||"week";
-  const d=dashData(period);
-  const html=`<div class="fin">
-    <div class="fin-top">
-      <div class="fin-ava">${IC("chart-pie")}</div>
-      <button class="fin-bell" onclick="go('settings')">${IC("bell")}</button>
+  const tab=ui.statTab||"overview";
+  const recs=recsInMonth(ui.month);
+  const top=`<div class="sv-top">
+      <div class="sv-title">Monthly Report</div>
+      <div class="sv-icon">${IC("bars")}</div>
     </div>
-    <div class="fin-hello">支出分析</div>
-    <div class="fin-seg">
-      ${[["week","週"],["month","月"],["year","年"]].map(([k,t])=>`<button class="${period===k?"on":""}" onclick="setPeriod('${k}')">${t}</button>`).join("")}
+    <div class="sv-month">
+      <button onclick="shiftMonth(-1)" aria-label="上個月">${IC("arrow-left")}</button>
+      <span>${monthRange(ui.month)}</span>
+      <button onclick="shiftMonth(1)" aria-label="下個月">${IC("arrow-right")}</button>
     </div>
-    <div class="fin-card lime">
-      <div class="fin-ch"><span class="fin-cic">${IC("hand-coins")}</span><span class="fin-ct">支出總覽</span></div>
-      <div class="fin-amt">${fmt(d.total)}</div>
-      ${finChart(d.series,d.labels,d.hiIdx)}
+    <div class="sv-tabs">${STAT_TABS.map(([k,t])=>`<button class="${tab===k?"on":""}" onclick="setStatTab('${k}')">${t}</button>`).join("")}</div>`;
+  let body;
+  if(tab==="detail")body=statDetail(recs);
+  else if(tab==="category")body=statCategory(recs);
+  else if(tab==="rank")body=statRank(recs);
+  else if(tab==="project")body=statProject(recs);
+  else if(tab==="name")body=statName(recs);
+  else body=statOverview(recs);
+  document.getElementById("page-stats").innerHTML=`<div class="statv2">${top}<div class="sv-body">${body}</div></div>`;
+}
+function statOverview(recs){
+  let exp=0,inc=0,expN=0,incN=0;
+  recs.forEach(r=>{const v=baseAmt(r);if(r.type==="expense"){exp+=v;expN++;}else if(r.type==="income"){inc+=v;incN++;}});
+  const total=inc-exp,maxv=Math.max(exp,inc,Math.abs(total),1);
+  const bar=(label,cnt,val,frac,color,sign)=>`<div class="sv-sum">
+      <span class="sv-slabel">${label}</span><span class="sv-sbadge">${cnt}</span>
+      <div class="sv-sbar"><div style="width:${(frac*100).toFixed(1)}%;background:${color}"></div></div>
+      <span class="sv-samt" style="color:${color}">${sign}${fmt(val)}</span></div>`;
+  const top3=statCats(recs).slice(0,3);
+  const donuts=top3.length
+    ?top3.map((x,i)=>`<div class="sv-dcol">${ringDonut(exp>0?x.v/exp*100:0,DONUT_PALETTE[i])}
+        <div class="sv-dname">${esc(x.c.name)}</div><div class="sv-damt">${fmt(x.v)}</div></div>`).join("")
+    :`<div class="sv-empty">本月尚無支出</div>`;
+  return `<div class="sv-sums">
+      ${bar("EXP",expN,exp,exp/maxv,"#ff2e01","−")}
+      ${bar("INC",incN,inc,inc/maxv,"#47b58e","+")}
+      <div class="sv-divider"></div>
+      ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"#47b58e":"#ff2e01",total>=0?"+":"−")}
     </div>
-    <div class="fin-card blue">
-      <div class="fin-ch"><span class="fin-cic">${IC("chart-pie")}</span><span class="fin-ct">熱門分類</span></div>
-      ${d.cats.length?`<div class="fin-cats">${d.cats.map(finCatBars).join("")}</div>`:`<div class="fin-empty">此期間尚無支出</div>`}
-    </div>
-    <div class="fin-tail"></div>
-  </div>`;
-  document.getElementById("page-stats").innerHTML=html;
+    <div class="sv-h">Type</div>
+    <div class="sv-donuts">${donuts}</div>`;
+}
+function statDetail(recs){
+  if(!recs.length)return `<div class="sv-empty">本月尚無記錄</div>`;
+  const sorted=[...recs].sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0));
+  const groups={};sorted.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
+  let h="";
+  Object.keys(groups).sort().reverse().forEach(d=>{
+    const rows=groups[d].map(r=>{
+      let nm,cls="",sign="−";
+      if(r.type==="transfer"){nm=r.note||"轉帳";}
+      else{const c=catOf(r.categoryId);nm=r.note||(c?c.name:"未分類");if(r.type==="income"){sign="+";cls="inc";}}
+      return `<div class="sv-item" onclick="openAdd('${r.id}')"><span class="sv-iname">${esc(nm)}</span><span class="sv-iamt ${cls}">${sign}${fmt(baseAmt(r))}</span></div>`;
+    }).join("");
+    h+=`<div class="sv-dhead">${fmtDay(d)}</div>${rows}`;
+  });
+  return `<div class="sv-list">${h}</div>`;
+}
+function statCategory(recs){
+  const cats=statCats(recs);if(!cats.length)return `<div class="sv-empty">本月尚無支出</div>`;
+  const exp=cats.reduce((s,x)=>s+x.v,0);
+  const slices=cats.map((x,i)=>({value:x.v,color:DONUT_PALETTE[i%DONUT_PALETTE.length]}));
+  const list=cats.map((x,i)=>`<div class="sv-item">
+      <span class="sv-dot" style="background:${DONUT_PALETTE[i%DONUT_PALETTE.length]}"></span>
+      <span class="sv-iname">${esc(x.c.name)}</span>
+      <span class="sv-ipct">${(x.v/exp*100).toFixed(1)}%</span>
+      <span class="sv-iamt">${fmt(x.v)}</span></div>`).join("");
+  return `<div class="sv-catwrap">${donutSVG(slices,exp)}</div><div class="sv-list">${list}</div>`;
+}
+function statRank(recs){
+  const exp=recs.filter(r=>r.type==="expense").sort((a,b)=>baseAmt(b)-baseAmt(a)).slice(0,30);
+  if(!exp.length)return `<div class="sv-empty">本月尚無支出</div>`;
+  const list=exp.map((r,i)=>{const c=catOf(r.categoryId);const nm=r.note||(c?c.name:"未分類");
+    return `<div class="sv-item" onclick="openAdd('${r.id}')">
+      <span class="sv-rank">${i+1}</span>
+      <span class="sv-iname">${esc(nm)}</span>
+      <span class="sv-idate">${r.date.slice(5).replace("-","/")}</span>
+      <span class="sv-iamt">${fmt(baseAmt(r))}</span></div>`;}).join("");
+  return `<div class="sv-list">${list}</div>`;
+}
+function statProject(recs){
+  const by={};
+  recs.forEach(r=>{if(r.type!=="expense")return;const k=r.projectId||"__none";by[k]=(by[k]||0)+baseAmt(r);});
+  const keys=Object.keys(by);if(!keys.length)return `<div class="sv-empty">本月尚無支出</div>`;
+  const exp=keys.reduce((s,k)=>s+by[k],0);
+  const list=keys.sort((a,b)=>by[b]-by[a]).map((k,i)=>{
+    const nm=k==="__none"?"（未歸專案）":((projOf(k)||{}).name||"專案");
+    return `<div class="sv-item">
+      <span class="sv-dot" style="background:${DONUT_PALETTE[i%DONUT_PALETTE.length]}"></span>
+      <span class="sv-iname">${esc(nm)}</span>
+      <span class="sv-ipct">${exp>0?(by[k]/exp*100).toFixed(1):0}%</span>
+      <span class="sv-iamt">${fmt(by[k])}</span></div>`;}).join("");
+  return `<div class="sv-list">${list}</div>`;
+}
+function statName(recs){
+  const by={};
+  recs.forEach(r=>{if(r.type!=="expense")return;const nm=(r.note||"").trim()||"（無備註）";const o=(by[nm]=by[nm]||{v:0,n:0});o.v+=baseAmt(r);o.n++;});
+  const arr=Object.entries(by).map(([nm,o])=>({nm,v:o.v,n:o.n})).sort((a,b)=>b.v-a.v).slice(0,40);
+  if(!arr.length)return `<div class="sv-empty">本月尚無支出</div>`;
+  const list=arr.map(x=>`<div class="sv-item">
+      <span class="sv-iname">${esc(x.nm)}</span>
+      <span class="sv-icnt">${x.n} 筆</span>
+      <span class="sv-iamt">${fmt(x.v)}</span></div>`).join("");
+  return `<div class="sv-list">${list}</div>`;
 }
 function donutSVG(slices,total){
   const R=68,r=44,cx=90,cy=90;let a0=-Math.PI/2;
@@ -246,23 +302,6 @@ function arc(cx,cy,R,r,a0,a1,color){
   const[x1,y1]=p(R,a0),[x2,y2]=p(R,a1),[x3,y3]=p(r,a1),[x4,y4]=p(r,a0);
   return `<path d="M${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${r} ${r} 0 ${large} 0 ${x4} ${y4} Z" fill="${color}"/>`;
 }
-function trendChart(type){
-  const months=[];let[y,m]=ui.month.split("-").map(Number);
-  for(let i=5;i>=0;i--){let yy=y,mm=m-i;while(mm<1){mm+=12;yy--;}months.push(yy+"-"+String(mm).padStart(2,"0"));}
-  const vals=months.map(mo=>{let s=0;DB.records.forEach(r=>{if(r.type===type&&inMonth(r.date,mo))s+=baseAmt(r);});return s;});
-  const max=Math.max(1,...vals);
-  let bars="";
-  months.forEach((mo,i)=>{
-    const h=vals[i]/max*100;const cur=(mo===ui.month);
-    bars+=`<div class="bcol">
-      <div class="bval">${vals[i]?kfmt(vals[i]):""}</div>
-      <div class="bbar" style="height:${h}%;background:${cur?"var(--accent)":"color-mix(in srgb,var(--accent) 40%,transparent)"}"></div>
-      <div class="blbl">${parseInt(mo.split("-")[1])}月</div></div>`;
-  });
-  return `<div class="barchart">${bars}</div>`;
-}
-function kfmt(n){if(n>=10000)return (n/10000).toFixed(n>=100000?0:1)+"萬";if(n>=1000)return (n/1000).toFixed(0)+"k";return Math.round(n);}
-
 /* =================== budgets page =================== */
 function budSpent(catId,recs){
   const c=catOf(catId);if(!c)return 0;const isMain=!c.parent;let s=0;
