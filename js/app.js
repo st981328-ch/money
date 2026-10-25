@@ -679,15 +679,15 @@ function toggleAvMenu(which){
 }
 function closeAvMenus(){document.querySelectorAll(".av-menu.show").forEach(m=>m.classList.remove("show"));if(_avMenuCloser){document.removeEventListener("click",_avMenuCloser);_avMenuCloser=null;}}
 function dateLabel(ds){
-  if(ds===todayStr())return "TODAY ("+["SUN","MON","TUE","WED","THU","FRI","SAT"][new Date(ds+"T00:00").getDay()]+")";
+  if(ds===todayStr())return "TODAY ( "+["SUN","MON","TUE","WED","THU","FRI","SAT"][new Date(ds+"T00:00").getDay()]+" )";
   const[y,m,d]=ds.split("-");return y+"/"+m+"/"+d;
 }
 function updateAddPills(el){
   if(!el)return;
   const dp=el.querySelector("#datepill");if(dp)dp.textContent=dateLabel(addState.date);
-  const tp=el.querySelector("#timepill");if(tp)tp.innerHTML=IC("clock")+"<span>"+addState.time+"</span>";
+  const tp=el.querySelector("#timepill");if(tp)tp.textContent=addState.time;
   const pp=el.querySelector("#projpill");if(pp){const p=addState.projectId?projOf(addState.projectId):null;pp.textContent=p?p.name:"PROJECT";pp.classList.toggle("set",!!p);}
-  const rp=el.querySelector("#recurpill");if(rp){rp.innerHTML=IC("sync")+"<span>"+recurLabel(addState.recur)+"</span>";rp.classList.toggle("set",addState.recur!=="none");}
+  const rp=el.querySelector("#recurpill");if(rp){rp.textContent=recurLabel(addState.recur).toUpperCase();rp.classList.toggle("set",addState.recur!=="none");}
   const df=el.querySelector("#f_date");if(df)df.value=addState.date;
   const tf=el.querySelector("#f_time");if(tf)tf.value=addState.time;
 }
