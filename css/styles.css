@@ -455,8 +455,8 @@ html.adding .mask{background:transparent}
 .sheet.full.addsheet{
   top:calc(env(safe-area-inset-top,0px) + 6px); height:auto; bottom:0;
   border-radius:30px 30px 0 0; color:#182b25;
-  background:rgba(114,114,114,0.66);
-  -webkit-backdrop-filter:blur(15px) saturate(1.05); backdrop-filter:blur(15px) saturate(1.05);
+  background:rgba(118,118,118,0.9);
+  -webkit-backdrop-filter:blur(30px) saturate(1.05); backdrop-filter:blur(30px) saturate(1.05);
 }
 .addsheet .sheet-body{padding:0 20px 24px; overflow-x:hidden}
 /* header: ✕ (x20) ─ title ─ 📅 ✓ (gap 5, right edge x382); circles 40×40 */
@@ -466,25 +466,27 @@ html.adding .mask{background:transparent}
 .av-circ .gi{width:20px; height:20px}
 .av-circ:active{opacity:.7}
 /* tabs: 60×30 rx15, adjacent (gap 0); active #fff, inactive #d9d9d9 */
-.av-tabs{display:flex; gap:0; margin:14.5px 0 20.5px}
+.av-tabs{display:flex; gap:0; margin:14.5px 0 0}
 .av-tabs button{flex:0 0 60px; height:30px; border-radius:15px; background:#d9d9d9; color:#182b25; font-size:16px; font-weight:700; letter-spacing:.3px; display:flex; align-items:center; justify-content:center}
 .av-tabs button.ico .gi{width:20px; height:20px}
 .av-tabs button.on{background:#fff}
-/* category tiles: 6 cols, 56×56, 5px gap; active lime, inactive white50% */
-.av-catwrap{max-height:117px; overflow-y:auto; margin-bottom:25px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+/* light divider lines (below tabs, below tiles) */
+.av-div{height:1px; background:rgba(255,255,255,0.5); margin:13px 0}
+/* category tiles: 6 cols, 56×56, 5px gap, square; active lime, inactive white50% */
+.av-catwrap{max-height:117px; overflow-y:auto; margin:0; -webkit-overflow-scrolling:touch; scrollbar-width:none}
 .av-catwrap::-webkit-scrollbar{display:none}
 .av-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:5px}
-.av-cat{aspect-ratio:1; border-radius:10px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(2.5px); backdrop-filter:blur(2.5px); display:flex; align-items:center; justify-content:center; color:#182b25}
+.av-cat{aspect-ratio:1; border-radius:3px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(2.5px); backdrop-filter:blur(2.5px); display:flex; align-items:center; justify-content:center; color:#182b25}
 .av-cat .gi{width:26px; height:26px}
 .av-cat.on{background:#dee514; -webkit-backdrop-filter:none; backdrop-filter:none}
 .av-cat:active{filter:brightness(.95)}
-/* amount row: TWD 60×30 + ⊕ 30×30 (gap 10), big amount right; divider below */
-.av-amtrow{display:flex; align-items:center; gap:10px; padding:0 0 14px; border-bottom:1px solid rgba(24,43,37,0.3); margin-bottom:28px}
+/* amount row: TWD 60×30 + ⊕ 30×30 (gap 10), big WHITE amount right; divider below */
+.av-amtrow{display:flex; align-items:center; gap:10px; padding:13px 0 16px; border-bottom:1px solid rgba(255,255,255,0.5); margin-bottom:24px}
 .av-cur{display:flex; align-items:center; gap:10px; flex:0 0 auto}
 .av-curpill{width:60px; height:30px; border-radius:15px; background:#fff; font-size:14px; font-weight:700; color:#182b25}
 .av-curadd{width:30px; height:30px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:#182b25}
 .av-curadd .gi{width:15px; height:15px}
-.av-amt{flex:1; text-align:right; font-size:44px; font-weight:800; color:#182b25; letter-spacing:-1px; font-variant-numeric:tabular-nums; overflow:hidden; white-space:nowrap}
+.av-amt{flex:1; text-align:right; font-size:52px; font-weight:800; color:#fff; letter-spacing:-1px; font-variant-numeric:tabular-nums; overflow:hidden; white-space:nowrap}
 /* date/time + project/recur pills: 2 per row, h35 rx17.5, #d9d9d9 (gap 0) */
 .av-row{display:flex; gap:0; margin-bottom:10px}
 .av-row>.av-pill, .av-menuwrap{flex:1 1 0; min-width:0}

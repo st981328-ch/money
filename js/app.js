@@ -580,7 +580,6 @@ function openAdd(editId){
   const head=`<div class="av-head">
       <button class="av-circ" onclick="closeTopSheet()" aria-label="關閉">${IC("x")}</button>
       <span class="av-title">${r?"Edit Transaction":"Add Transaction"}</span>
-      <button class="av-circ" onclick="pickField('f_date')" aria-label="日期">${IC("calendar")}</button>
       <button class="av-circ ok" onclick="saveRecord()" aria-label="儲存">${IC("check")}</button>
     </div>`;
   const el=openSheet("","",{full:true,customHead:head});
@@ -599,7 +598,9 @@ function addBody(editing){
       <button data-t="expense">EXP</button>
       <button data-t="income">INC</button>
     </div>
+    <div class="av-div"></div>
     <div id="catarea" class="av-catwrap"></div>
+    <div class="av-div"></div>
     <div class="av-amtrow">
       <div class="av-cur">
         <button type="button" class="av-curpill" id="curpill" onclick="toggleCurMenu()">${addState.cur}</button>
