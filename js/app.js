@@ -556,69 +556,76 @@ function closeAllSheets(){while(sheetStack.length)closeTopSheet();}
 
 /* =================== add / edit record =================== */
 let addState=null;
+function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+const RECUR_OPTS=[["none","One-time"],["weekly","每週"],["monthly","每月"],["yearly","每年"]];
+function recurLabel(v){const o=RECUR_OPTS.find(x=>x[0]===v);return o?o[1]:"One-time";}
 function openAdd(editId){
   let r=editId?DB.records.find(x=>x.id===editId):null;
   addState={
     id:r?r.id:null,
-    type:r?r.type:"expense",
+    type:r?(r.type==="income"?"income":"expense"):"expense",
     expr:r?String(r.amount):"0",
     cur:r?(r.cur||DB.config.baseCur):DB.config.baseCur,
     rate:r?(r.rate!=null?r.rate:curInfo(r.cur||DB.config.baseCur).rate):1,
     categoryId:r?r.categoryId:null,
-    accountId:r?r.accountId:(DB.accounts[0]&&DB.accounts[0].id),
-    toAccountId:r?r.toAccountId:(DB.accounts[1]&&DB.accounts[1].id),
     date:r?r.date:todayStr(),
+    time:r?(r.time||nowHM()):nowHM(),
     note:r?r.note||"":"",
-    tags:r?(r.tags||[]).slice():[],
     projectId:r?(r.projectId||""):"",
-    tab:r?r.type:"suggest",
+    recur:r?(r.recur||"none"):"none",
+    tab:r?(r.type==="income"?"income":"expense"):"suggest",
   };
-  if(!addState.categoryId&&addState.type!=="transfer"){const m=mainCats(addState.type)[0];if(m){const s=subCats(m.id)[0];addState.categoryId=s?s.id:m.id;}}
-  addState.catMain=(addState.categoryId?((mainOf(catOf(addState.categoryId))||{}).id):((mainCats(addState.type)[0]||{}).id))||null;
-  const head=`<div class="sheet-h full-h"><button class="iconbtn" onclick="closeTopSheet()">✕</button><span class="st">${r?"編輯記錄":"新增記錄"}</span><button class="iconbtn ok" onclick="saveRecord()">✓</button></div>`;
-  const el=openSheet(r?"編輯記錄":"新增記錄","",{full:true,customHead:head});
+  if(!addState.categoryId){const m=mainCats(addState.type)[0];if(m){const s=subCats(m.id)[0];addState.categoryId=s?s.id:m.id;}}
+  const head=`<div class="av-head">
+      <button class="av-circ" onclick="closeTopSheet()" aria-label="關閉">${IC("x")}</button>
+      <span class="av-title">${r?"Edit Transaction":"Add Transaction"}</span>
+      <button class="av-circ" onclick="pickField('f_date')" aria-label="日期">${IC("calendar")}</button>
+      <button class="av-circ ok" onclick="saveRecord()" aria-label="儲存">${IC("check")}</button>
+    </div>`;
+  const el=openSheet("","",{full:true,customHead:head});
+  el.classList.add("addsheet");
   el.querySelector(".sheet-body").innerHTML=addBody(!!r);
-  // keypad outside scroll body
-  const kp=document.createElement("div");kp.className="keypad";kp.innerHTML=keypadHtml();
+  const kp=document.createElement("div");kp.className="keypad av-keypad";kp.innerHTML=keypadHtml();
   el.appendChild(kp);
   bindAdd(el);
   renderAddDynamic(el);
+  if(!r)toggleKeypad(true);   // new entry: keypad up for immediate amount input
 }
 function addBody(editing){
-  return `<div class="addtabs" id="addtabs">
-    <button data-t="suggest">建議</button>
-    <button data-t="expense">支出</button>
-    <button data-t="income">收入</button>
-    <button data-t="transfer">轉帳</button></div>
-  <div class="amtrow">
-    <div class="curpick"><button type="button" class="curpill" id="curpill" onclick="toggleCurMenu()">${addState.cur}</button><div class="curmenu" id="curmenu"></div></div>
-    <span class="num" id="amtnum">0</span>
-  </div>
-  <div id="curarea"></div>
-  <div id="catarea"></div>
-  <div id="formarea"></div>
-  ${editing?`<button class="btn danger sm" style="margin-top:16px" onclick="deleteRecord()">刪除這筆記錄</button>`:""}`;
-}
-function stdForm(){
-  return `<div class="fieldrow">
-      <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
-      ${projField()}
+  return `<div class="av-tabs" id="addtabs">
+      <button data-t="suggest" class="ico">${IC("heart")}</button>
+      <button data-t="expense">EXP</button>
+      <button data-t="income">INC</button>
     </div>
-    <div class="field"><label>備註</label><textarea id="f_note" placeholder="備註" rows="3">${esc(addState.note)}</textarea></div>`;
+    <div id="catarea" class="av-catwrap"></div>
+    <div class="av-amtrow">
+      <div class="av-cur">
+        <button type="button" class="av-curpill" id="curpill" onclick="toggleCurMenu()">${addState.cur}</button>
+        <button type="button" class="av-curadd" onclick="toggleCurMenu()" aria-label="貨幣">${IC("plus")}</button>
+        <div class="curmenu" id="curmenu"></div>
+      </div>
+      <button type="button" class="av-amt" id="amtbtn" onclick="toggleKeypad(true)"><span id="amtnum">0</span></button>
+    </div>
+    <div id="curarea"></div>
+    <div class="av-row">
+      <button type="button" class="av-pill" id="datepill" onclick="pickField('f_date')"></button>
+      <button type="button" class="av-pill" id="timepill" onclick="pickField('f_time')"></button>
+    </div>
+    <div class="av-row">
+      <div class="av-menuwrap"><button type="button" class="av-pill" id="projpill" onclick="toggleAvMenu('proj')"></button><div class="av-menu" id="projmenu"></div></div>
+      <div class="av-menuwrap"><button type="button" class="av-pill" id="recurpill" onclick="toggleAvMenu('recur')"></button><div class="av-menu" id="recurmenu"></div></div>
+    </div>
+    <textarea class="av-note" id="f_note" placeholder="NOTE" rows="4">${esc(addState.note)}</textarea>
+    ${editing?`<button class="av-delete" onclick="deleteRecord()">DELETE</button>`:""}
+    <input type="date" id="f_date" class="av-native" value="${addState.date}">
+    <input type="time" id="f_time" class="av-native" value="${addState.time}">`;
 }
-function bindStdForm(formarea){}
 function suggestedCats(){
   const cnt={};DB.records.forEach(r=>{if(r.type==="expense"&&r.categoryId)cnt[r.categoryId]=(cnt[r.categoryId]||0)+1;});
   let arr=Object.keys(cnt).map(id=>({id,n:cnt[id],c:catOf(id)})).filter(x=>x.c).sort((a,b)=>b.n-a.n).slice(0,10);
   const have=new Set(arr.map(x=>x.id));
   if(arr.length<10)for(const m of mainCats("expense")){const subs=subCats(m.id);const pick=subs[0]||m;if(!have.has(pick.id)){arr.push({c:pick});have.add(pick.id);}if(arr.length>=10)break;}
   return arr.map(x=>x.c);
-}
-function renderSuggest(el){
-  const catarea=el.querySelector("#catarea");
-  const cats=suggestedCats();
-  catarea.innerHTML=`<div class="catgrid" id="suggrid">`+cats.map(c=>{const col=catColor(c);return `<div class="cat ${c.id===addState.categoryId?"on":""}" data-cid="${c.id}"><div class="cic" style="background:${col};color:#fff">${IC(catIcon(c))}</div><div class="cl">${esc(c.name)}</div></div>`;}).join("")+`</div>`;
-  catarea.querySelector("#suggrid").onclick=(e)=>{const t=e.target.closest("[data-cid]");if(!t)return;const cat=catOf(t.dataset.cid);if(!cat)return;addState.categoryId=cat.id;addState.type=mainOf(cat).type;addState.catMain=mainOf(cat).id;catarea.querySelectorAll("#suggrid .cat").forEach(x=>x.classList.toggle("on",x.dataset.cid===addState.categoryId));};
 }
 function keypadHtml(){
   return `<button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="back">⌫</button>
@@ -633,17 +640,74 @@ function bindAdd(el){
     if(addState.tab==="expense"||addState.tab==="income"){
       addState.type=addState.tab;
       const c=catOf(addState.categoryId);
-      if(!c||c.type!==addState.type){const m=mainCats(addState.type)[0];addState.catMain=m?m.id:null;const s=m?subCats(m.id)[0]:null;addState.categoryId=s?s.id:(m?m.id:null);}
-    }else if(addState.tab==="transfer"){addState.type="transfer";}
-    else if(addState.tab==="suggest"){addState.type="expense";}
+      if(!c||c.type!==addState.type){const m=mainCats(addState.type)[0];const s=m?subCats(m.id)[0]:null;addState.categoryId=s?s.id:(m?m.id:null);}
+    }else if(addState.tab==="suggest"){addState.type="expense";}
     renderAddDynamic(el);
   };
   el.querySelector(".keypad").onclick=(e)=>{
     const b=e.target.closest("button[data-k]");if(!b)return;
     const k=b.dataset.k;
-    if(k==="done"){saveRecord();return;}
+    if(k==="done"){toggleKeypad(false);return;}
     keyPress(k);updateAmtDisplay(el);
   };
+  const fd=el.querySelector("#f_date");if(fd)fd.onchange=e=>{addState.date=e.target.value;updateAddPills(el);};
+  const ft=el.querySelector("#f_time");if(ft)ft.onchange=e=>{addState.time=e.target.value;updateAddPills(el);};
+  const fn=el.querySelector("#f_note");if(fn)fn.oninput=e=>addState.note=e.target.value;
+}
+function pickField(id){const e=document.getElementById(id);if(!e)return;if(e.showPicker){try{e.showPicker();return;}catch(x){}}e.focus();e.click();}
+function toggleKeypad(show){
+  const kp=document.querySelector(".av-keypad");if(!kp)return;
+  if(show===undefined)kp.classList.toggle("show");else kp.classList.toggle("show",!!show);
+  const amt=document.getElementById("amtbtn");if(amt)amt.classList.toggle("on",kp.classList.contains("show"));
+}
+let _avMenuCloser=null;
+function toggleAvMenu(which){
+  closeAvMenus();
+  const menu=document.getElementById(which==="proj"?"projmenu":"recurmenu");if(!menu)return;
+  if(which==="proj"){
+    menu.innerHTML=`<div class="av-mi ${!addState.projectId?"on":""}" data-pv="">${"（無專案）"}</div>`+
+      DB.projects.map(p=>`<div class="av-mi ${addState.projectId===p.id?"on":""}" data-pv="${p.id}">${esc(p.name)}</div>`).join("");
+    menu.onclick=e=>{const t=e.target.closest("[data-pv]");if(!t)return;addState.projectId=t.dataset.pv;closeAvMenus();updateAddPills(sheetStack[sheetStack.length-1]);};
+  }else{
+    menu.innerHTML=RECUR_OPTS.map(([v,l])=>`<div class="av-mi ${addState.recur===v?"on":""}" data-rv="${v}">${l}</div>`).join("");
+    menu.onclick=e=>{const t=e.target.closest("[data-rv]");if(!t)return;addState.recur=t.dataset.rv;closeAvMenus();updateAddPills(sheetStack[sheetStack.length-1]);};
+  }
+  menu.classList.add("show");
+  setTimeout(()=>{_avMenuCloser=(e)=>{if(!e.target.closest(".av-menuwrap"))closeAvMenus();};document.addEventListener("click",_avMenuCloser);},0);
+}
+function closeAvMenus(){document.querySelectorAll(".av-menu.show").forEach(m=>m.classList.remove("show"));if(_avMenuCloser){document.removeEventListener("click",_avMenuCloser);_avMenuCloser=null;}}
+function dateLabel(ds){
+  if(ds===todayStr())return "TODAY ("+["SUN","MON","TUE","WED","THU","FRI","SAT"][new Date(ds+"T00:00").getDay()]+")";
+  const[y,m,d]=ds.split("-");return y+"/"+m+"/"+d;
+}
+function updateAddPills(el){
+  if(!el)return;
+  const dp=el.querySelector("#datepill");if(dp)dp.textContent=dateLabel(addState.date);
+  const tp=el.querySelector("#timepill");if(tp)tp.innerHTML=IC("clock")+"<span>"+addState.time+"</span>";
+  const pp=el.querySelector("#projpill");if(pp){const p=addState.projectId?projOf(addState.projectId):null;pp.textContent=p?p.name:"PROJECT";pp.classList.toggle("set",!!p);}
+  const rp=el.querySelector("#recurpill");if(rp){rp.innerHTML=IC("sync")+"<span>"+recurLabel(addState.recur)+"</span>";rp.classList.toggle("set",addState.recur!=="none");}
+  const df=el.querySelector("#f_date");if(df)df.value=addState.date;
+  const tf=el.querySelector("#f_time");if(tf)tf.value=addState.time;
+}
+function renderAddCats(el){
+  const area=el.querySelector("#catarea");
+  let cats=(addState.tab==="suggest")?suggestedCats():[];
+  if(addState.tab!=="suggest"){mainCats(addState.type).forEach(m=>{cats.push(m);subCats(m.id).forEach(s=>cats.push(s));});}
+  area.innerHTML=`<div class="av-grid" id="avgrid">`+cats.map(c=>
+    `<button type="button" class="av-cat ${c.id===addState.categoryId?"on":""}" data-cid="${c.id}" title="${esc(c.name)}">${IC(catIcon(c))}</button>`
+  ).join("")+`</div>`;
+  area.querySelector("#avgrid").onclick=e=>{
+    const b=e.target.closest("[data-cid]");if(!b)return;const cat=catOf(b.dataset.cid);if(!cat)return;
+    addState.categoryId=cat.id;addState.type=mainOf(cat).type;
+    area.querySelectorAll(".av-cat").forEach(x=>x.classList.toggle("on",x.dataset.cid===addState.categoryId));
+  };
+}
+function renderAddDynamic(el){
+  el.querySelectorAll("#addtabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===addState.tab));
+  renderCurArea(el);
+  updateAmtDisplay(el);
+  renderAddCats(el);
+  updateAddPills(el);
 }
 let _curMenuCloser=null;
 function toggleCurMenu(){
@@ -669,67 +733,10 @@ function renderCurArea(el){
   const fr=area.querySelector("#f_rate");if(fr)fr.oninput=e=>{addState.rate=parseFloat(e.target.value)||0;const bp=area.querySelector("#basePrev");if(bp)bp.textContent=fmt(evalExpr(addState.expr)*(addState.rate||0));};
 }
 function updateAmtDisplay(el){
-  el.querySelector("#amtnum").textContent=dispExpr();
+  const sym=(curInfo(addState.cur)||{}).symbol||"$";
+  el.querySelector("#amtnum").textContent=sym+dispExpr();
   const bp=el.querySelector("#basePrev");if(bp)bp.textContent=fmt(evalExpr(addState.expr)*(addState.rate||0));
 }
-function renderCatPicker(el){
-  const catarea=el.querySelector("#catarea");
-  const mains=mainCats(addState.type);
-  const main=catOf(addState.catMain);
-  const subs=addState.catMain?subCats(addState.catMain):[];
-  let h=`<div class="mainchips" id="mainchips">`+mains.map(m=>`<button class="mchip ${m.id===addState.catMain?"on":""}" data-main="${m.id}"><span class="mci" style="background:${m.color};color:#fff">${IC(m.icon)}</span>${esc(m.name)}</button>`).join("")
-    +`<button class="mchip addm" data-addmain="1"><span class="mci">＋</span>大類</button></div>`;
-  h+=`<div class="catgrid" id="subgrid">`;
-  if(main){
-    h+=`<div class="cat ${addState.categoryId===main.id?"on":""}" data-cid="${main.id}"><div class="cic" style="background:${main.color};color:#fff">${IC(main.icon)}</div><div class="cl">整體</div></div>`;
-    subs.forEach(s=>{const col=catColor(s);h+=`<div class="cat ${s.id===addState.categoryId?"on":""}" data-cid="${s.id}"><div class="cic" style="background:${col};color:#fff">${IC(catIcon(s))}</div><div class="cl">${esc(s.name)}</div></div>`;});
-    h+=`<div class="cat addc" data-addsub="1"><div class="cic">＋</div><div class="cl">細項</div></div>`;
-  }
-  h+=`</div>`;
-  catarea.innerHTML=h;
-  catarea.querySelector("#mainchips").onclick=(e)=>{
-    const am=e.target.closest("[data-addmain]");if(am){openEditCat(null,addState.type,()=>openAdd(addState.id),null);closeTopSheetSilent();return;}
-    const mb=e.target.closest("[data-main]");if(!mb)return;
-    addState.catMain=mb.dataset.main;addState.categoryId=mb.dataset.main;
-    renderCatPicker(el);
-  };
-  catarea.querySelector("#subgrid").onclick=(e)=>{
-    const as=e.target.closest("[data-addsub]");if(as){openEditCat(null,addState.type,()=>openAdd(addState.id),addState.catMain);closeTopSheetSilent();return;}
-    const c=e.target.closest("[data-cid]");if(!c)return;
-    addState.categoryId=c.dataset.cid;
-    catarea.querySelectorAll("#subgrid .cat").forEach(x=>x.classList.toggle("on",x.dataset.cid===addState.categoryId));
-  };
-}
-function renderAddDynamic(el){
-  el.querySelectorAll("#addtabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===addState.tab));
-  renderCurArea(el);
-  updateAmtDisplay(el);
-  const catarea=el.querySelector("#catarea"),formarea=el.querySelector("#formarea");
-  if(addState.tab==="transfer"){
-    catarea.innerHTML="";
-    formarea.innerHTML=`
-      <div class="fieldrow">
-        <div class="field"><label>從</label><div class="selwrap"><select id="f_from">${accOpts(addState.accountId)}</select></div></div>
-        <div class="field"><label>到</label><div class="selwrap"><select id="f_to">${accOpts(addState.toAccountId)}</select></div></div>
-      </div>
-      <div class="field"><label>日期</label><input type="date" id="f_date" value="${addState.date}"></div>
-      ${projField()}
-      <div class="field"><label>備註</label><textarea id="f_note" placeholder="備註" rows="3">${esc(addState.note)}</textarea></div>`;
-    formarea.querySelector("#f_from").onchange=e=>addState.accountId=e.target.value;
-    formarea.querySelector("#f_to").onchange=e=>addState.toAccountId=e.target.value;
-  }else{
-    if(addState.tab==="suggest")renderSuggest(el);else renderCatPicker(el);
-    formarea.innerHTML=stdForm();
-    bindStdForm(formarea);
-  }
-  const fd=formarea.querySelector("#f_date");if(fd)fd.onchange=e=>addState.date=e.target.value;
-  const fn=formarea.querySelector("#f_note");if(fn)fn.oninput=e=>addState.note=e.target.value;
-  const fp=formarea.querySelector("#f_proj");if(fp)fp.onchange=e=>addState.projectId=e.target.value;
-}
-function closeTopSheetSilent(){const el=sheetStack.pop();if(el)el.remove();if(!sheetStack.length)document.getElementById("mask").classList.remove("show");}
-function accOpts(sel){return DB.accounts.map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${emojiOrBlank(a.icon)}${esc(a.name)}</option>`).join("");}
-function projOpts(sel){return `<option value="">無</option>`+DB.projects.map(p=>`<option value="${p.id}" ${p.id===sel?"selected":""}>${emojiOrBlank(p.icon||"📁")}${esc(p.name)}</option>`).join("");}
-function projField(){return DB.projects.length?`<div class="field"><label>專案</label><div class="selwrap"><select id="f_proj">${projOpts(addState.projectId)}</select></div></div>`:"";}
 
 /* keypad expr */
 function keyPress(k){
@@ -767,17 +774,41 @@ function dispExpr(){
 function saveRecord(){
   const amt=Math.round(evalExpr(addState.expr)*100)/100;
   if(!amt||amt<=0){toast("請輸入金額");return;}
-  if(addState.type==="transfer"){
-    if(addState.accountId===addState.toAccountId){toast("轉出與轉入帳戶需不同");return;}
-  }else if(!addState.categoryId){toast("請選擇分類");return;}
+  if(!addState.categoryId){toast("請選擇分類");return;}
   let r=addState.id?DB.records.find(x=>x.id===addState.id):null;
   if(!r){r={id:uid(),_t:Date.now()};DB.records.push(r);}
-  r.type=addState.type;r.amount=amt;r.date=addState.date;r.note=addState.note.trim();
+  r.type=addState.type;r.amount=amt;r.date=addState.date;r.time=addState.time;r.note=addState.note.trim();
   r.cur=addState.cur;r.rate=(addState.cur===DB.config.baseCur)?1:(addState.rate||curInfo(addState.cur).rate||1);
+  r.categoryId=addState.categoryId;
   if(addState.projectId)r.projectId=addState.projectId;else delete r.projectId;
-  if(addState.type==="transfer"){r.accountId=addState.accountId;r.toAccountId=addState.toAccountId;delete r.categoryId;delete r.tags;}
-  else{r.accountId=addState.accountId;r.categoryId=addState.categoryId;r.tags=addState.tags.slice();delete r.toAccountId;}
+  if(addState.recur&&addState.recur!=="none")r.recur=addState.recur;else delete r.recur;
+  delete r.accountId;delete r.toAccountId;delete r.tags;
+  applyRecurring();
   save();closeTopSheet();render();toast(addState.id?"已更新":"已記錄");
+}
+/* recurrence engine: materialize due copies of recurring templates up to today */
+function nextRecurDate(ds,recur){
+  const[y,m,d]=ds.split("-").map(Number);let dt;
+  if(recur==="weekly")dt=new Date(y,m-1,d+7);
+  else if(recur==="yearly")dt=new Date(y+1,m-1,d);
+  else dt=new Date(y,m,d); // monthly (JS clamps e.g. Jan31->Mar? use day-safe)
+  if(recur==="monthly"){dt=new Date(y,m,Math.min(d,new Date(y,m+1,0).getDate()));}
+  return dstr(dt);
+}
+function applyRecurring(){
+  const today=todayStr();let changed=false;
+  DB.records.slice().forEach(r=>{
+    if(!r.recur||r.recur==="none"||r.recurParent)return;   // only user templates
+    let d=nextRecurDate(r.date,r.recur);let guard=0;
+    while(d<=today&&guard++<600){
+      if(!DB.records.some(x=>x.recurParent===r.id&&x.date===d)){
+        const c=Object.assign({},r);c.id=uid();c.date=d;c.recurParent=r.id;c._t=Date.now()+guard;delete c.recur;
+        DB.records.push(c);changed=true;
+      }
+      d=nextRecurDate(d,r.recur);
+    }
+  });
+  return changed;
 }
 function deleteRecord(){
   if(!addState||!addState.id)return;
