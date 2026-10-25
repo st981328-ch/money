@@ -549,6 +549,7 @@ function openSheet(title,bodyHtml,opts){
 function closeTopSheet(){
   const el=sheetStack.pop();if(!el)return;
   el.classList.remove("show");
+  if(el.classList.contains("addsheet"))document.documentElement.classList.remove("adding");
   if(!sheetStack.length)document.getElementById("mask").classList.remove("show");
   setTimeout(()=>el.remove(),300);
 }
@@ -584,6 +585,7 @@ function openAdd(editId){
     </div>`;
   const el=openSheet("","",{full:true,customHead:head});
   el.classList.add("addsheet");
+  document.documentElement.classList.add("adding");
   el.querySelector(".sheet-body").innerHTML=addBody(!!r);
   const kp=document.createElement("div");kp.className="keypad av-keypad";kp.innerHTML=keypadHtml();
   el.appendChild(kp);
