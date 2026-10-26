@@ -594,7 +594,7 @@ function openAdd(editId){
 }
 function addBody(editing){
   return `<div class="av-tabs" id="addtabs">
-      <button data-t="suggest" class="ico">${IC("heart")}</button>
+      <button data-t="suggest" class="ico">${IC("heart-o")}</button>
       <button data-t="expense">EXP</button>
       <button data-t="income">INC</button>
     </div>
@@ -783,7 +783,7 @@ function renderAddCats(el){
   if(!addState.catPicking&&sel){   // collapsed: show the single selected category, one row
     const m=mainOf(sel),col=catColor(sel)||"#cfcfcf";
     area.style.maxHeight="";
-    area.innerHTML=`<button type="button" class="av-selbox" onclick="reopenCat()"><span class="av-tile" style="background:${col}">${IC(catIcon(sel))}</span><span class="av-selname">${esc(catLabel(m))}${m&&m!==sel?' › '+esc(sel.name):''}</span><span class="pilchev">${IC("chevron-down")}</span></button>`;
+    area.innerHTML=`<button type="button" class="av-selbox" onclick="reopenCat()"><span class="av-tile" style="background:${col}">${IC(catIcon(sel))}</span><span class="av-selname">${esc(catLabel(m))}${m&&m!==sel?' › '+esc(catLabel(sel)):''}</span><span class="pilchev">${IC("chevron-down")}</span></button>`;
     return;
   }
   let items,back=null;
