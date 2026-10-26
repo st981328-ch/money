@@ -473,13 +473,16 @@ html.adding .mask{background:transparent}
 /* light divider lines (below tabs, below tiles) */
 .av-div{height:1px; background:rgba(255,255,255,0.5); margin:13px 0}
 /* category tiles: 6 cols, 56×56, 5px gap, square; active lime, inactive white50% */
-.av-catwrap{max-height:117px; overflow-y:auto; margin:0; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+.av-catwrap{max-height:188px; overflow-y:auto; margin:0; -webkit-overflow-scrolling:touch; scrollbar-width:none}
 .av-catwrap::-webkit-scrollbar{display:none}
-.av-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:5px}
-.av-cat{aspect-ratio:1; border-radius:3px; background:rgba(255,255,255,0.5); -webkit-backdrop-filter:blur(2.5px); backdrop-filter:blur(2.5px); display:flex; align-items:center; justify-content:center; color:#182b25}
-.av-cat .gi{width:26px; height:26px}
-.av-cat.on{background:#dee514; -webkit-backdrop-filter:none; backdrop-filter:none}
-.av-cat:active{filter:brightness(.95)}
+.av-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:5px}
+.av-cat{display:flex; flex-direction:column; align-items:center; gap:5px; background:none; padding:0; min-width:0; color:#182b25}
+.av-tile{width:100%; aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#182b25}
+.av-tile .gi{width:30px; height:30px}
+.av-lbl{font-size:11px; font-weight:600; color:#182b25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; line-height:1.2}
+.av-cat.on .av-tile{box-shadow:0 0 0 3px #182b25}
+.av-cat:active .av-tile{filter:brightness(.9)}
+.av-back .av-tile{background:rgba(255,255,255,0.5)!important}
 /* amount row: TWD 60×30 + ⊕ 30×30 (gap 10), big WHITE amount right; divider below */
 .av-amtrow{display:flex; align-items:flex-start; gap:10px; padding:13px 0 16px; border-bottom:1px solid rgba(255,255,255,0.5); margin-bottom:24px}
 .av-amt{line-height:1}
@@ -492,8 +495,10 @@ html.adding .mask{background:transparent}
 .av-row{display:flex; gap:0; margin-bottom:10px}
 .av-row>.av-pill, .av-menuwrap{flex:1 1 0; min-width:0}
 .av-menuwrap{position:relative}
-.av-pill{width:100%; height:35px; border-radius:17.5px; background:#d9d9d9; color:#182b25; font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.av-pill .gi{width:16px; height:16px; flex:0 0 auto}
+.av-pill{position:relative; width:100%; height:35px; border-radius:17.5px; background:#d9d9d9; color:#182b25; font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; padding:0 28px; white-space:nowrap; overflow:hidden}
+.av-pill .piltxt{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pilchev{position:absolute; right:12px; top:50%; transform:translateY(-50%); display:flex; color:#182b25; opacity:.5}
+.pilchev .gi{width:16px; height:16px}
 .av-pill.set{background:#dee514}
 .av-menu{position:absolute; bottom:calc(100% + 6px); left:0; right:0; background:#fff; border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,.25); z-index:80; overflow-y:auto; max-height:230px; display:none}
 .av-menu.show{display:block}

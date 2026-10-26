@@ -573,6 +573,7 @@ function openAdd(editId){
     projectId:r?(r.projectId||""):"",
     payMode:"once", instN:3, instRate:0,
     recurEvery:"month", recurN:12,
+    catDrill:null,
     tab:r?(r.type==="income"?"income":"expense"):"suggest",
   };
   if(!addState.categoryId){const m=mainCats(addState.type)[0];if(m){const s=subCats(m.id)[0];addState.categoryId=s?s.id:m.id;}}
@@ -622,10 +623,11 @@ function addBody(editing){
     ${editing?`<button class="av-delete" onclick="deleteRecord()">DELETE</button>`:""}`;
 }
 function suggestedCats(){
-  const cnt={};DB.records.forEach(r=>{if(r.type==="expense"&&r.categoryId)cnt[r.categoryId]=(cnt[r.categoryId]||0)+1;});
-  let arr=Object.keys(cnt).map(id=>({id,n:cnt[id],c:catOf(id)})).filter(x=>x.c).sort((a,b)=>b.n-a.n).slice(0,10);
+  // most-used SUB categories, ranked by frequency
+  const cnt={};DB.records.forEach(r=>{if(r.categoryId)cnt[r.categoryId]=(cnt[r.categoryId]||0)+1;});
+  let arr=Object.keys(cnt).map(id=>({id,n:cnt[id],c:catOf(id)})).filter(x=>x.c&&x.c.parent).sort((a,b)=>b.n-a.n).slice(0,15);
   const have=new Set(arr.map(x=>x.id));
-  if(arr.length<10)for(const m of mainCats("expense")){const subs=subCats(m.id);const pick=subs[0]||m;if(!have.has(pick.id)){arr.push({c:pick});have.add(pick.id);}if(arr.length>=10)break;}
+  if(arr.length<10){outer:for(const m of mainCats("expense")){for(const s of subCats(m.id)){if(!have.has(s.id)){arr.push({c:s});have.add(s.id);}if(arr.length>=10)break outer;}}}
   return arr.map(x=>x.c);
 }
 function keypadHtml(){
@@ -637,11 +639,11 @@ function keypadHtml(){
 function bindAdd(el){
   el.querySelector("#addtabs").onclick=(e)=>{
     const b=e.target.closest("button[data-t]");if(!b)return;
-    addState.tab=b.dataset.t;
+    addState.tab=b.dataset.t;addState.catDrill=null;
     if(addState.tab==="expense"||addState.tab==="income"){
       addState.type=addState.tab;
       const c=catOf(addState.categoryId);
-      if(!c||c.type!==addState.type){const m=mainCats(addState.type)[0];const s=m?subCats(m.id)[0]:null;addState.categoryId=s?s.id:(m?m.id:null);}
+      if(!c||c.type!==addState.type)addState.categoryId=null;
     }else if(addState.tab==="suggest"){addState.type="expense";}
     renderAddDynamic(el);
   };
@@ -756,10 +758,13 @@ function dateLabel(ds){
 }
 function updateAddPills(el){
   if(!el)return;
-  const dp=el.querySelector("#datepill");if(dp)dp.textContent=dateLabel(addState.date);
-  const tp=el.querySelector("#timepill");if(tp)tp.textContent=addState.time;
-  const pp=el.querySelector("#projpill");if(pp){const p=addState.projectId?projOf(addState.projectId):null;pp.textContent=p?p.name:"PROJECT";pp.classList.toggle("set",!!p);}
-  const rp=el.querySelector("#recurpill");if(rp){rp.textContent=payModeLabel();rp.classList.toggle("set",addState.payMode!=="once");}
+  const chev=`<span class="pilchev">${IC("chevron-down")}</span>`;
+  const set=(id,txt,on)=>{const e=el.querySelector(id);if(!e)return;e.innerHTML=`<span class="piltxt">${esc(txt)}</span>`+chev;if(on!==undefined)e.classList.toggle("set",on);};
+  set("#datepill",dateLabel(addState.date));
+  set("#timepill",addState.time);
+  const p=addState.projectId?projOf(addState.projectId):null;
+  set("#projpill",p?p.name:"PROJECT",!!p);
+  set("#recurpill",payModeLabel(),addState.payMode!=="once");
 }
 const EVERY_OPTS=[["day","每日"],["week","每週"],["month","每月"],["year","每年"]];
 function everyLabel(v){const o=EVERY_OPTS.find(x=>x[0]===v);return o?o[1]:"每月";}
@@ -768,16 +773,28 @@ function payModeLabel(){
   if(addState.payMode==="recurring")return everyLabel(addState.recurEvery)+" ×"+addState.recurN;
   return "ONE-TIME";
 }
+function catTile(c){
+  const on=c.id===addState.categoryId;const col=catColor(c)||"#cfcfcf";
+  return `<button type="button" class="av-cat ${on?"on":""}" data-cid="${c.id}" title="${esc(c.name)}"><span class="av-tile" style="background:${col}">${IC(catIcon(c))}</span><span class="av-lbl">${esc(c.name)}</span></button>`;
+}
 function renderAddCats(el){
   const area=el.querySelector("#catarea");
-  let cats=(addState.tab==="suggest")?suggestedCats():[];
-  if(addState.tab!=="suggest"){mainCats(addState.type).forEach(m=>{cats.push(m);subCats(m.id).forEach(s=>cats.push(s));});}
-  area.innerHTML=`<div class="av-grid" id="avgrid">`+cats.map(c=>
-    `<button type="button" class="av-cat ${c.id===addState.categoryId?"on":""}" data-cid="${c.id}" title="${esc(c.name)}">${IC(catIcon(c))}</button>`
-  ).join("")+`</div>`;
+  let items,back=null;
+  if(addState.tab==="suggest"){items=suggestedCats();}
+  else if(addState.catDrill){items=subCats(addState.catDrill);back=catOf(addState.catDrill);}
+  else{items=mainCats(addState.type);}
+  let h=`<div class="av-grid ${back?"drilled":""}" id="avgrid">`;
+  if(back){const bc=catColor(back)||"#cfcfcf";h+=`<button type="button" class="av-cat av-back" data-back="1"><span class="av-tile" style="background:${bc}">${IC("arrow-left")}</span><span class="av-lbl">${esc(back.name)}</span></button>`;}
+  h+=items.map(catTile).join("")+`</div>`;
+  area.innerHTML=h;
   area.querySelector("#avgrid").onclick=e=>{
+    if(e.target.closest("[data-back]")){addState.catDrill=null;renderAddCats(el);return;}
     const b=e.target.closest("[data-cid]");if(!b)return;const cat=catOf(b.dataset.cid);if(!cat)return;
-    addState.categoryId=cat.id;addState.type=mainOf(cat).type;
+    if(!cat.parent){ // main: drill into subs, or select if it has none
+      const subs=subCats(cat.id);
+      if(subs.length){addState.catDrill=cat.id;addState.type=cat.type;renderAddCats(el);return;}
+      addState.categoryId=cat.id;addState.type=cat.type;
+    }else{addState.categoryId=cat.id;addState.type=mainOf(cat).type;}
     area.querySelectorAll(".av-cat").forEach(x=>x.classList.toggle("on",x.dataset.cid===addState.categoryId));
   };
 }
