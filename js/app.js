@@ -572,11 +572,10 @@ function openAdd(editId){
     note:r?r.note||"":"",
     projectId:r?(r.projectId||""):"",
     payMode:"once", instN:3, instRate:0,
+    catDrill:null, catPicking:!r,
     recurEvery:"month", recurN:12,
-    catDrill:null,
     tab:r?(r.type==="income"?"income":"expense"):"suggest",
   };
-  if(!addState.categoryId){const m=mainCats(addState.type)[0];if(m){const s=subCats(m.id)[0];addState.categoryId=s?s.id:m.id;}}
   const head=`<div class="av-head">
       <button class="av-circ" onclick="closeTopSheet()" aria-label="關閉">${IC("x")}</button>
       <span class="av-title">${r?"Edit Transaction":"Add Transaction"}</span>
@@ -639,7 +638,7 @@ function keypadHtml(){
 function bindAdd(el){
   el.querySelector("#addtabs").onclick=(e)=>{
     const b=e.target.closest("button[data-t]");if(!b)return;
-    addState.tab=b.dataset.t;addState.catDrill=null;
+    addState.tab=b.dataset.t;addState.catDrill=null;addState.catPicking=true;
     if(addState.tab==="expense"||addState.tab==="income"){
       addState.type=addState.tab;
       const c=catOf(addState.categoryId);
@@ -774,28 +773,37 @@ function payModeLabel(){
   return "ONE-TIME";
 }
 function catTile(c){
-  const on=c.id===addState.categoryId;const col=catColor(c)||"#cfcfcf";
-  return `<button type="button" class="av-cat ${on?"on":""}" data-cid="${c.id}" title="${esc(c.name)}"><span class="av-tile" style="background:${col}">${IC(catIcon(c))}</span><span class="av-lbl">${esc(c.name)}</span></button>`;
+  const col=catColor(c)||"#cfcfcf";
+  return `<button type="button" class="av-cat" data-cid="${c.id}" title="${esc(c.name)}"><span class="av-tile" style="background:${col}">${IC(catIcon(c))}</span><span class="av-lbl">${esc(catLabel(c))}</span></button>`;
 }
+function reopenCat(){addState.catPicking=true;addState.catDrill=null;const el=sheetStack[sheetStack.length-1];if(el)renderAddCats(el);}
 function renderAddCats(el){
   const area=el.querySelector("#catarea");
+  const sel=addState.categoryId?catOf(addState.categoryId):null;
+  if(!addState.catPicking&&sel){   // collapsed: show the single selected category, one row
+    const m=mainOf(sel),col=catColor(sel)||"#cfcfcf";
+    area.style.maxHeight="";
+    area.innerHTML=`<button type="button" class="av-selbox" onclick="reopenCat()"><span class="av-tile" style="background:${col}">${IC(catIcon(sel))}</span><span class="av-selname">${esc(catLabel(m))}${m&&m!==sel?' › '+esc(sel.name):''}</span><span class="pilchev">${IC("chevron-down")}</span></button>`;
+    return;
+  }
   let items,back=null;
   if(addState.tab==="suggest"){items=suggestedCats();}
   else if(addState.catDrill){items=subCats(addState.catDrill);back=catOf(addState.catDrill);}
   else{items=mainCats(addState.type);}
   let h=`<div class="av-grid ${back?"drilled":""}" id="avgrid">`;
-  if(back){const bc=catColor(back)||"#cfcfcf";h+=`<button type="button" class="av-cat av-back" data-back="1"><span class="av-tile" style="background:${bc}">${IC("arrow-left")}</span><span class="av-lbl">${esc(back.name)}</span></button>`;}
+  if(back){const bc=catColor(back)||"#cfcfcf";h+=`<button type="button" class="av-cat av-back" data-back="1"><span class="av-tile" style="background:${bc}">${IC("arrow-left")}</span><span class="av-lbl">${esc(catLabel(back))}</span></button>`;}
   h+=items.map(catTile).join("")+`</div>`;
   area.innerHTML=h;
+  requestAnimationFrame(()=>{const f=area.querySelector(".av-cat");if(f)area.style.maxHeight=(f.offsetHeight*2+6)+"px";});
   area.querySelector("#avgrid").onclick=e=>{
     if(e.target.closest("[data-back]")){addState.catDrill=null;renderAddCats(el);return;}
     const b=e.target.closest("[data-cid]");if(!b)return;const cat=catOf(b.dataset.cid);if(!cat)return;
-    if(!cat.parent){ // main: drill into subs, or select if it has none
+    if(!cat.parent){ // main: drill into subs, or select directly if it has none
       const subs=subCats(cat.id);
       if(subs.length){addState.catDrill=cat.id;addState.type=cat.type;renderAddCats(el);return;}
       addState.categoryId=cat.id;addState.type=cat.type;
     }else{addState.categoryId=cat.id;addState.type=mainOf(cat).type;}
-    area.querySelectorAll(".av-cat").forEach(x=>x.classList.toggle("on",x.dataset.cid===addState.categoryId));
+    addState.catPicking=false;renderAddCats(el);   // collapse to the selected one
   };
 }
 function renderAddDynamic(el){

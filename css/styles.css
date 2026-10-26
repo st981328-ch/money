@@ -480,9 +480,15 @@ html.adding .mask{background:transparent}
 .av-tile{width:100%; aspect-ratio:1; border-radius:0; display:flex; align-items:center; justify-content:center; color:#182b25}
 .av-tile .gi{width:24px; height:24px}
 .av-lbl{font-size:11px; font-weight:600; color:#182b25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; line-height:1.2}
-.av-cat.on .av-tile{box-shadow:0 0 0 3px #182b25}
 .av-cat:active .av-tile{filter:brightness(.9)}
 .av-back .av-tile{background:rgba(255,255,255,0.5)!important}
+.av-grid{animation:avcat .2s ease}
+.av-selbox{display:flex; align-items:center; gap:14px; width:100%; padding:0; background:none; position:relative; animation:avcat .2s ease}
+.av-selbox .av-tile{width:52px; height:52px; flex:0 0 auto}
+.av-selbox .av-tile .gi{width:22px; height:22px}
+.av-selname{font-size:16px; font-weight:700; color:#182b25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; min-width:0}
+.av-selbox .pilchev{opacity:.55}
+@keyframes avcat{from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:none}}
 /* amount row: TWD 60×30 + ⊕ 30×30 (gap 10), big WHITE amount right; divider below */
 .av-amtrow{display:flex; align-items:flex-start; gap:10px; padding:13px 0 16px; border-bottom:1px solid rgba(255,255,255,0.5); margin-bottom:24px}
 .av-amt{line-height:1}
