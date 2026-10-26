@@ -481,7 +481,8 @@ html.adding .mask{background:transparent}
 .av-cat.on{background:#dee514; -webkit-backdrop-filter:none; backdrop-filter:none}
 .av-cat:active{filter:brightness(.95)}
 /* amount row: TWD 60×30 + ⊕ 30×30 (gap 10), big WHITE amount right; divider below */
-.av-amtrow{display:flex; align-items:center; gap:10px; padding:13px 0 16px; border-bottom:1px solid rgba(255,255,255,0.5); margin-bottom:24px}
+.av-amtrow{display:flex; align-items:flex-start; gap:10px; padding:13px 0 16px; border-bottom:1px solid rgba(255,255,255,0.5); margin-bottom:24px}
+.av-amt{line-height:1}
 .av-cur{display:flex; align-items:center; gap:10px; flex:0 0 auto}
 .av-curpill{width:60px; height:30px; border-radius:15px; background:#fff; font-size:14px; font-weight:700; color:#182b25}
 .av-curadd{width:30px; height:30px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:#182b25}
@@ -514,3 +515,42 @@ html.adding .mask{background:transparent}
 .av-keypad button.op{color:#dee514; font-weight:800}
 .av-keypad button.done{background:#2e2e33; color:#fff; box-shadow:inset 0 0 0 2px #dee514}
 .av-keypad button.done:active{background:#3c3c42}
+/* ---- add-sheet frosted popups (date/time/project/payment) ---- */
+.av-pop-ov{position:fixed; inset:0; z-index:95; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.22); opacity:0; transition:opacity .18s}
+.av-pop-ov.show{opacity:1}
+.av-pop{width:100%; max-width:360px; max-height:82vh; overflow-y:auto; border-radius:24px; padding:20px; color:#182b25; background:rgba(112,112,112,0.75); -webkit-backdrop-filter:blur(30px) saturate(1.05); backdrop-filter:blur(30px) saturate(1.05); box-shadow:0 20px 50px rgba(0,0,0,.3); transform:scale(.94); transition:transform .18s; scrollbar-width:none}
+.av-pop::-webkit-scrollbar{display:none}
+.av-pop-ov.show .av-pop{transform:scale(1)}
+.avp-title{font-size:17px; font-weight:800; color:#182b25; text-align:center; margin-bottom:16px}
+.avp-h{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; font-size:17px; font-weight:800; color:#182b25}
+.avp-nav{width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.5); display:flex; align-items:center; justify-content:center; color:#182b25}
+.avp-nav .gi{width:20px; height:20px}
+.avp-confirm{width:100%; height:46px; margin-top:18px; border-radius:14px; background:#dee514; color:#182b25; font-size:16px; font-weight:800}
+.avp-confirm:active{filter:brightness(.95)}
+.dp-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px}
+.dp-w{text-align:center; font-size:12px; font-weight:700; color:rgba(24,43,37,.6); padding:4px 0}
+.dp-d{aspect-ratio:1; border-radius:50%; font-size:15px; font-weight:600; color:#182b25; display:flex; align-items:center; justify-content:center}
+.dp-d.today{color:#ff2e01}
+.dp-d.on{background:#dee514; color:#182b25; font-weight:800}
+.dp-d:active{background:rgba(255,255,255,.4)}
+.tp-cols{display:flex; align-items:center; justify-content:center; gap:4px; height:210px}
+.tp-col{height:100%; overflow-y:auto; scroll-snap-type:y mandatory; width:76px; text-align:center; scrollbar-width:none}
+.tp-col::-webkit-scrollbar{display:none}
+.tp-i{padding:12px 0; font-size:20px; font-weight:600; color:rgba(24,43,37,.4); scroll-snap-align:center; cursor:pointer}
+.tp-i.on{color:#182b25; font-weight:800; font-size:24px}
+.tp-sep{font-size:24px; font-weight:800; color:#182b25}
+.pp-list{display:flex; flex-direction:column; gap:6px; max-height:52vh; overflow-y:auto}
+.pp-i{text-align:left; padding:14px 16px; border-radius:12px; background:rgba(255,255,255,0.4); font-size:15px; font-weight:600; color:#182b25}
+.pp-i.on{background:#dee514; font-weight:800}
+.rp-segs{display:flex; gap:8px; margin-bottom:16px}
+.rp-seg{flex:1; height:40px; border-radius:20px; background:rgba(255,255,255,0.4); color:#182b25; font-size:15px; font-weight:700}
+.rp-seg.on{background:#fff}
+.rp-evs{display:flex; gap:6px; margin-bottom:14px}
+.rp-ev{flex:1; height:38px; border-radius:19px; background:rgba(255,255,255,0.4); color:#182b25; font-size:14px; font-weight:700}
+.rp-ev.on{background:#fff}
+.rp-row{display:flex; align-items:center; justify-content:space-between; padding:10px 2px; font-size:15px; font-weight:600; color:#182b25}
+.rp-step{display:flex; align-items:center; gap:14px}
+.rp-step button{width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.5); color:#182b25; font-size:20px; font-weight:700; display:flex; align-items:center; justify-content:center}
+.rp-step b{min-width:36px; text-align:center; font-size:18px; font-weight:800}
+.rp-calc{margin-top:10px; padding:12px 14px; border-radius:12px; background:rgba(255,255,255,0.28); font-size:14px; color:#182b25; text-align:center; line-height:1.55}
+.rp-calc b{font-size:16px}

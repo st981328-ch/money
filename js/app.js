@@ -558,8 +558,6 @@ function closeAllSheets(){while(sheetStack.length)closeTopSheet();}
 /* =================== add / edit record =================== */
 let addState=null;
 function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
-const RECUR_OPTS=[["none","One-time"],["weekly","每週"],["monthly","每月"],["yearly","每年"]];
-function recurLabel(v){const o=RECUR_OPTS.find(x=>x[0]===v);return o?o[1]:"One-time";}
 function openAdd(editId){
   let r=editId?DB.records.find(x=>x.id===editId):null;
   addState={
@@ -573,7 +571,8 @@ function openAdd(editId){
     time:r?(r.time||nowHM()):nowHM(),
     note:r?r.note||"":"",
     projectId:r?(r.projectId||""):"",
-    recur:r?(r.recur||"none"):"none",
+    payMode:"once", instN:3, instRate:0,
+    recurEvery:"month", recurN:12,
     tab:r?(r.type==="income"?"income":"expense"):"suggest",
   };
   if(!addState.categoryId){const m=mainCats(addState.type)[0];if(m){const s=subCats(m.id)[0];addState.categoryId=s?s.id:m.id;}}
@@ -612,17 +611,15 @@ function addBody(editing){
     </div>
     <div id="curarea"></div>
     <div class="av-row">
-      <button type="button" class="av-pill" id="datepill" onclick="pickField('f_date')"></button>
-      <button type="button" class="av-pill" id="timepill" onclick="pickField('f_time')"></button>
+      <button type="button" class="av-pill" id="datepill" onclick="openDatePicker()"></button>
+      <button type="button" class="av-pill" id="timepill" onclick="openTimePicker()"></button>
     </div>
     <div class="av-row">
-      <div class="av-menuwrap"><button type="button" class="av-pill" id="projpill" onclick="toggleAvMenu('proj')"></button><div class="av-menu" id="projmenu"></div></div>
-      <div class="av-menuwrap"><button type="button" class="av-pill" id="recurpill" onclick="toggleAvMenu('recur')"></button><div class="av-menu" id="recurmenu"></div></div>
+      <button type="button" class="av-pill" id="projpill" onclick="openProjPicker()"></button>
+      <button type="button" class="av-pill" id="recurpill" onclick="openRecurPicker()"></button>
     </div>
     <textarea class="av-note" id="f_note" placeholder="NOTE" rows="4" onfocus="toggleKeypad(false)">${esc(addState.note)}</textarea>
-    ${editing?`<button class="av-delete" onclick="deleteRecord()">DELETE</button>`:""}
-    <input type="date" id="f_date" class="av-native" value="${addState.date}">
-    <input type="time" id="f_time" class="av-native" value="${addState.time}">`;
+    ${editing?`<button class="av-delete" onclick="deleteRecord()">DELETE</button>`:""}`;
 }
 function suggestedCats(){
   const cnt={};DB.records.forEach(r=>{if(r.type==="expense"&&r.categoryId)cnt[r.categoryId]=(cnt[r.categoryId]||0)+1;});
@@ -654,11 +651,8 @@ function bindAdd(el){
     if(k==="done"){toggleKeypad(false);return;}
     keyPress(k);updateAmtDisplay(el);
   };
-  const fd=el.querySelector("#f_date");if(fd)fd.onchange=e=>{addState.date=e.target.value;updateAddPills(el);};
-  const ft=el.querySelector("#f_time");if(ft)ft.onchange=e=>{addState.time=e.target.value;updateAddPills(el);};
   const fn=el.querySelector("#f_note");if(fn)fn.oninput=e=>addState.note=e.target.value;
 }
-function pickField(id){const e=document.getElementById(id);if(!e)return;if(e.showPicker){try{e.showPicker();return;}catch(x){}}e.focus();e.click();}
 function toggleKeypad(show){
   const kp=document.querySelector(".av-keypad");if(!kp)return;
   if(show===undefined)kp.classList.toggle("show");else kp.classList.toggle("show",!!show);
@@ -675,22 +669,87 @@ function enableSheetDrag(el){
   const end=()=>{if(!dragging)return;dragging=false;el.style.transition="";if(dy>110){el.style.transform="translateY(100%)";setTimeout(closeTopSheet,0);}else{el.style.transform="";}};
   head.addEventListener("touchend",end);head.addEventListener("touchcancel",end);
 }
-let _avMenuCloser=null;
-function toggleAvMenu(which){
-  closeAvMenus();
-  const menu=document.getElementById(which==="proj"?"projmenu":"recurmenu");if(!menu)return;
-  if(which==="proj"){
-    menu.innerHTML=`<div class="av-mi ${!addState.projectId?"on":""}" data-pv="">${"（無專案）"}</div>`+
-      DB.projects.map(p=>`<div class="av-mi ${addState.projectId===p.id?"on":""}" data-pv="${p.id}">${esc(p.name)}</div>`).join("");
-    menu.onclick=e=>{const t=e.target.closest("[data-pv]");if(!t)return;addState.projectId=t.dataset.pv;closeAvMenus();updateAddPills(sheetStack[sheetStack.length-1]);};
-  }else{
-    menu.innerHTML=RECUR_OPTS.map(([v,l])=>`<div class="av-mi ${addState.recur===v?"on":""}" data-rv="${v}">${l}</div>`).join("");
-    menu.onclick=e=>{const t=e.target.closest("[data-rv]");if(!t)return;addState.recur=t.dataset.rv;closeAvMenus();updateAddPills(sheetStack[sheetStack.length-1]);};
-  }
-  menu.classList.add("show");
-  setTimeout(()=>{_avMenuCloser=(e)=>{if(!e.target.closest(".av-menuwrap"))closeAvMenus();};document.addEventListener("click",_avMenuCloser);},0);
+/* ---------- frosted popups for the add sheet (date / time / project / payment) ---------- */
+function openAvPopup(html){
+  closeAvPopup();
+  const ov=document.createElement("div");ov.className="av-pop-ov";ov.id="avpop";
+  ov.innerHTML=`<div class="av-pop">${html}</div>`;
+  ov.addEventListener("click",e=>{if(e.target===ov)closeAvPopup();});
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add("show"));
+  return ov;
 }
-function closeAvMenus(){document.querySelectorAll(".av-menu.show").forEach(m=>m.classList.remove("show"));if(_avMenuCloser){document.removeEventListener("click",_avMenuCloser);_avMenuCloser=null;}}
+function closeAvPopup(){const ov=document.getElementById("avpop");if(ov){ov.classList.remove("show");setTimeout(()=>ov.remove(),180);}}
+function avpopBody(){const ov=document.getElementById("avpop");return ov?ov.querySelector(".av-pop"):null;}
+function refreshAddSheet(){const el=sheetStack[sheetStack.length-1];if(el)updateAddPills(el);}
+function shiftYM(ym,d){let[y,m]=ym.split("-").map(Number);m+=d;if(m<1){m=12;y--;}if(m>12){m=1;y++;}return y+"-"+String(m).padStart(2,"0");}
+function addMonthsStr(ds,k){let[y,m,d]=ds.split("-").map(Number);m+=k;while(m>12){m-=12;y++;}const last=new Date(y,m,0).getDate();return y+"-"+String(m).padStart(2,"0")+"-"+String(Math.min(d,last)).padStart(2,"0");}
+function addEveryStr(ds,every,k){let[y,m,d]=ds.split("-").map(Number);
+  if(every==="day")return dstr(new Date(y,m-1,d+k));
+  if(every==="week")return dstr(new Date(y,m-1,d+7*k));
+  if(every==="year")return dstr(new Date(y+k,m-1,d));
+  return addMonthsStr(ds,k);
+}
+/* date picker — month calendar */
+let _dpYM="";
+function openDatePicker(){_dpYM=addState.date.slice(0,7);openAvPopup(datePopupHtml());}
+function datePrevMonth(){_dpYM=shiftYM(_dpYM,-1);const b=avpopBody();if(b)b.innerHTML=datePopupHtml();}
+function dateNextMonth(){_dpYM=shiftYM(_dpYM,1);const b=avpopBody();if(b)b.innerHTML=datePopupHtml();}
+function pickDate(ds){addState.date=ds;refreshAddSheet();closeAvPopup();}
+function datePopupHtml(){
+  const[y,m]=_dpYM.split("-").map(Number);
+  const off=(new Date(y,m-1,1).getDay()===0?6:new Date(y,m-1,1).getDay()-1);
+  const days=new Date(y,m,0).getDate();const today=todayStr();
+  let cells=["一","二","三","四","五","六","日"].map(w=>`<div class="dp-w">${w}</div>`).join("");
+  for(let i=0;i<off;i++)cells+=`<div></div>`;
+  for(let d=1;d<=days;d++){const ds=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    cells+=`<button class="dp-d ${ds===addState.date?"on":""} ${ds===today?"today":""}" onclick="pickDate('${ds}')">${d}</button>`;}
+  return `<div class="avp-h"><button class="avp-nav" onclick="datePrevMonth()">${IC("arrow-left")}</button><span>${y} / ${m}</span><button class="avp-nav" onclick="dateNextMonth()">${IC("arrow-right")}</button></div><div class="dp-grid">${cells}</div>`;
+}
+/* time picker — hour + minute columns */
+let _tp={h:0,m:0};
+function openTimePicker(){const[h,mi]=addState.time.split(":").map(Number);_tp={h:h||0,m:mi||0};openAvPopup(timePopupHtml());setTimeout(()=>{scrollTimeCol("tp-h",_tp.h);scrollTimeCol("tp-m",_tp.m);},30);}
+function timePopupHtml(){
+  let hh="",mm="";
+  for(let i=0;i<24;i++)hh+=`<div class="tp-i ${i===_tp.h?"on":""}" data-h="${i}">${String(i).padStart(2,"0")}</div>`;
+  for(let i=0;i<60;i++)mm+=`<div class="tp-i ${i===_tp.m?"on":""}" data-m="${i}">${String(i).padStart(2,"0")}</div>`;
+  return `<div class="avp-title">選擇時間</div><div class="tp-cols"><div class="tp-col" id="tp-h" onclick="tpPick(event,'h')">${hh}</div><div class="tp-sep">:</div><div class="tp-col" id="tp-m" onclick="tpPick(event,'m')">${mm}</div></div><button class="avp-confirm" onclick="confirmTime()">確認</button>`;
+}
+function scrollTimeCol(id,idx){const c=document.getElementById(id);if(!c)return;const el=c.children[idx];if(el)c.scrollTop=el.offsetTop-c.clientHeight/2+el.clientHeight/2;}
+function tpPick(e,which){const t=e.target.closest("[data-"+which+"]");if(!t)return;const v=+t.dataset[which];_tp[which]=v;const c=t.parentElement;c.querySelectorAll(".tp-i").forEach(x=>x.classList.toggle("on",x===t));scrollTimeCol(c.id,v);}
+function confirmTime(){addState.time=String(_tp.h).padStart(2,"0")+":"+String(_tp.m).padStart(2,"0");refreshAddSheet();closeAvPopup();}
+/* project picker */
+function openProjPicker(){
+  const rows=`<button class="pp-i ${!addState.projectId?"on":""}" onclick="pickProj('')">（無專案）</button>`+
+    DB.projects.map(p=>`<button class="pp-i ${addState.projectId===p.id?"on":""}" onclick="pickProj('${p.id}')">${esc(p.name)}</button>`).join("");
+  openAvPopup(`<div class="avp-title">選擇專案</div><div class="pp-list">${rows}</div>`);
+}
+function pickProj(id){addState.projectId=id;refreshAddSheet();closeAvPopup();}
+/* payment type picker — one-time / installment / recurring */
+function openRecurPicker(){openAvPopup(recurPopupHtml());}
+function setPayMode(m){addState.payMode=m;const b=avpopBody();if(b)b.innerHTML=recurPopupHtml();}
+function setRecurEvery(v){addState.recurEvery=v;const b=avpopBody();if(b)b.innerHTML=recurPopupHtml();}
+function recurAdj(field,delta,min,max){addState[field]=Math.max(min,Math.min(max,(addState[field]||0)+delta));const b=avpopBody();if(b)b.innerHTML=recurPopupHtml();}
+function confirmRecurPicker(){refreshAddSheet();closeAvPopup();}
+function recurPopupHtml(){
+  const amt=Math.round(evalExpr(addState.expr)*100)/100;
+  const seg=[["once","一次"],["installment","分期"],["recurring","週期"]].map(([k,t])=>`<button class="rp-seg ${addState.payMode===k?"on":""}" onclick="setPayMode('${k}')">${t}</button>`).join("");
+  let body;
+  if(addState.payMode==="installment"){
+    const total=Math.round(amt*(1+addState.instRate/100)*100)/100, per=Math.round(total/addState.instN*100)/100;
+    body=`<div class="rp-row"><span>期數</span><div class="rp-step"><button onclick="recurAdj('instN',-1,2,60)">−</button><b>${addState.instN}</b><button onclick="recurAdj('instN',1,2,60)">＋</button></div></div>
+      <div class="rp-row"><span>利率 %</span><div class="rp-step"><button onclick="recurAdj('instRate',-1,0,99)">−</button><b>${addState.instRate}</b><button onclick="recurAdj('instRate',1,0,99)">＋</button></div></div>
+      <div class="rp-calc">總額 ${fmt(total)}　每期 <b>${fmt(per)}</b> × ${addState.instN} 個月</div>`;
+  }else if(addState.payMode==="recurring"){
+    const ev=EVERY_OPTS.map(([k,t])=>`<button class="rp-ev ${addState.recurEvery===k?"on":""}" onclick="setRecurEvery('${k}')">${t}</button>`).join("");
+    body=`<div class="rp-evs">${ev}</div>
+      <div class="rp-row"><span>次數</span><div class="rp-step"><button onclick="recurAdj('recurN',-1,2,120)">−</button><b>${addState.recurN}</b><button onclick="recurAdj('recurN',1,2,120)">＋</button></div></div>
+      <div class="rp-calc">從 ${addState.date.replace(/-/g,"/")} 起,${everyLabel(addState.recurEvery)}一筆 ${fmt(amt)},共 ${addState.recurN} 筆</div>`;
+  }else{
+    body=`<div class="rp-calc">單次消費。</div>`;
+  }
+  return `<div class="avp-title">消費類型</div><div class="rp-segs">${seg}</div>${body}<button class="avp-confirm" onclick="confirmRecurPicker()">確認</button>`;
+}
 function dateLabel(ds){
   if(ds===todayStr())return "TODAY ( "+["SUN","MON","TUE","WED","THU","FRI","SAT"][new Date(ds+"T00:00").getDay()]+" )";
   const[y,m,d]=ds.split("-");return y+"/"+m+"/"+d;
@@ -700,9 +759,14 @@ function updateAddPills(el){
   const dp=el.querySelector("#datepill");if(dp)dp.textContent=dateLabel(addState.date);
   const tp=el.querySelector("#timepill");if(tp)tp.textContent=addState.time;
   const pp=el.querySelector("#projpill");if(pp){const p=addState.projectId?projOf(addState.projectId):null;pp.textContent=p?p.name:"PROJECT";pp.classList.toggle("set",!!p);}
-  const rp=el.querySelector("#recurpill");if(rp){rp.textContent=recurLabel(addState.recur).toUpperCase();rp.classList.toggle("set",addState.recur!=="none");}
-  const df=el.querySelector("#f_date");if(df)df.value=addState.date;
-  const tf=el.querySelector("#f_time");if(tf)tf.value=addState.time;
+  const rp=el.querySelector("#recurpill");if(rp){rp.textContent=payModeLabel();rp.classList.toggle("set",addState.payMode!=="once");}
+}
+const EVERY_OPTS=[["day","每日"],["week","每週"],["month","每月"],["year","每年"]];
+function everyLabel(v){const o=EVERY_OPTS.find(x=>x[0]===v);return o?o[1]:"每月";}
+function payModeLabel(){
+  if(addState.payMode==="installment")return "分期 ×"+addState.instN;
+  if(addState.payMode==="recurring")return everyLabel(addState.recurEvery)+" ×"+addState.recurN;
+  return "ONE-TIME";
 }
 function renderAddCats(el){
   const area=el.querySelector("#catarea");
@@ -790,41 +854,29 @@ function saveRecord(){
   const amt=Math.round(evalExpr(addState.expr)*100)/100;
   if(!amt||amt<=0){toast("請輸入金額");return;}
   if(!addState.categoryId){toast("請選擇分類");return;}
-  let r=addState.id?DB.records.find(x=>x.id===addState.id):null;
-  if(!r){r={id:uid(),_t:Date.now()};DB.records.push(r);}
-  r.type=addState.type;r.amount=amt;r.date=addState.date;r.time=addState.time;r.note=addState.note.trim();
-  r.cur=addState.cur;r.rate=(addState.cur===DB.config.baseCur)?1:(addState.rate||curInfo(addState.cur).rate||1);
-  r.categoryId=addState.categoryId;
-  if(addState.projectId)r.projectId=addState.projectId;else delete r.projectId;
-  if(addState.recur&&addState.recur!=="none")r.recur=addState.recur;else delete r.recur;
-  delete r.accountId;delete r.toAccountId;delete r.tags;
-  applyRecurring();
-  save();closeTopSheet();render();toast(addState.id?"已更新":"已記錄");
+  const rate=(addState.cur===DB.config.baseCur)?1:(addState.rate||curInfo(addState.cur).rate||1);
+  const mk=over=>{const o=Object.assign({id:uid(),type:addState.type,amount:amt,date:addState.date,time:addState.time,
+    note:addState.note.trim(),cur:addState.cur,rate:rate,categoryId:addState.categoryId,_t:Date.now()},over);
+    if(addState.projectId)o.projectId=addState.projectId;return o;};
+  if(!addState.id&&addState.payMode==="installment"){
+    const N=addState.instN,total=amt*(1+addState.instRate/100),per=Math.round(total/N*100)/100,gid=uid();
+    const base=addState.note.trim()||((catOf(addState.categoryId)||{}).name||"");
+    for(let k=0;k<N;k++)DB.records.push(mk({id:uid(),amount:per,date:addMonthsStr(addState.date,k),note:base+" ("+(k+1)+"/"+N+")",instGroup:gid,_t:Date.now()+k}));
+    toast("分 "+N+" 期已建立");
+  }else if(!addState.id&&addState.payMode==="recurring"){
+    const N=addState.recurN,gid=uid();
+    for(let k=0;k<N;k++)DB.records.push(mk({id:uid(),date:addEveryStr(addState.date,addState.recurEvery,k),recurGroup:gid,_t:Date.now()+k}));
+    toast(everyLabel(addState.recurEvery)+" × "+N+" 筆已建立");
+  }else{
+    let r=addState.id?DB.records.find(x=>x.id===addState.id):null;
+    if(r){const o=mk({id:r.id,_t:r._t});delete r.accountId;delete r.toAccountId;delete r.tags;delete r.recur;
+      Object.keys(o).forEach(k=>r[k]=o[k]);if(!addState.projectId)delete r.projectId;}
+    else DB.records.push(mk({}));
+    toast(addState.id?"已更新":"已記錄");
+  }
+  save();closeTopSheet();render();
 }
-/* recurrence engine: materialize due copies of recurring templates up to today */
-function nextRecurDate(ds,recur){
-  const[y,m,d]=ds.split("-").map(Number);let dt;
-  if(recur==="weekly")dt=new Date(y,m-1,d+7);
-  else if(recur==="yearly")dt=new Date(y+1,m-1,d);
-  else dt=new Date(y,m,d); // monthly (JS clamps e.g. Jan31->Mar? use day-safe)
-  if(recur==="monthly"){dt=new Date(y,m,Math.min(d,new Date(y,m+1,0).getDate()));}
-  return dstr(dt);
-}
-function applyRecurring(){
-  const today=todayStr();let changed=false;
-  DB.records.slice().forEach(r=>{
-    if(!r.recur||r.recur==="none"||r.recurParent)return;   // only user templates
-    let d=nextRecurDate(r.date,r.recur);let guard=0;
-    while(d<=today&&guard++<600){
-      if(!DB.records.some(x=>x.recurParent===r.id&&x.date===d)){
-        const c=Object.assign({},r);c.id=uid();c.date=d;c.recurParent=r.id;c._t=Date.now()+guard;delete c.recur;
-        DB.records.push(c);changed=true;
-      }
-      d=nextRecurDate(d,r.recur);
-    }
-  });
-  return changed;
-}
+function applyRecurring(){return false;}
 function deleteRecord(){
   if(!addState||!addState.id)return;
   DB.records=DB.records.filter(x=>x.id!==addState.id);
