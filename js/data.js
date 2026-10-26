@@ -2,7 +2,7 @@
 /* data layer: storage, model, helpers */
 /* one-time lossless migration from the app's earlier storage keys */
 (function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
-const APP_VERSION="2026.10.26-ay";
+const APP_VERSION="2026.10.26-az";
 const STORE_KEY="tally_data";
 const SYNC_DESC="Tally Sync — do not delete";
 const SYNC_FILE="tally_data.json";
@@ -148,8 +148,22 @@ function projOf(id){return DB.projects.find(p=>p.id===id);}
 function mainCats(type){return DB.categories.filter(c=>c.type===type&&!c.parent);}
 function subCats(mainId){return DB.categories.filter(c=>c.parent===mainId);}
 function mainOf(cat){return (cat&&cat.parent)?(catOf(cat.parent)||cat):cat;}
-function catColor(cat){if(!cat)return "#999";if(cat.color)return cat.color;const m=cat.parent?catOf(cat.parent):null;return (m&&m.color)||"#999";}
-function catIcon(cat){if(!cat)return "❓";if(cat.icon)return cat.icon;if(cat.parent&&typeof SUB_ICON_MAP!=="undefined"&&SUB_ICON_MAP[cat.name])return SUB_ICON_MAP[cat.name];const m=cat.parent?catOf(cat.parent):null;return (m&&m.icon)||"📦";}
+/* designed skin (colour + icon) per main category, straight from the Figma tiles */
+const CAT_SKIN={
+  "飲食":["#FBEF97","cat-food"],"餐飲":["#FBEF97","cat-food"],
+  "交通":["#B6E8E7","cat-transit"],
+  "娛樂":["#D53128","cat-fun"],
+  "個人":["#CCC9B6","cat-personal"],
+  "醫療":["#D14C35","cat-health"],
+  "家居":["#6C84C0","cat-home"],"居家":["#6C84C0","cat-home"],
+  "購物":["#F1A258","cat-shop"],
+  "家庭":["#FF9A93","cat-family"],
+  "生活":["#68773E","cat-life"],
+  "學習":["#C7E3B5","cat-study"],"教育":["#C7E3B5","cat-study"],
+};
+function catSkin(cat){const m=cat?(cat.parent?catOf(cat.parent):cat):null;return (m&&CAT_SKIN[m.name])||null;}
+function catColor(cat){if(!cat)return "#999";const sk=catSkin(cat);if(sk)return sk[0];if(cat.color)return cat.color;const m=cat.parent?catOf(cat.parent):null;return (m&&m.color)||"#999";}
+function catIcon(cat){if(!cat)return "❓";if(!cat.parent){const sk=CAT_SKIN[cat.name];if(sk)return sk[1];}if(cat.icon)return cat.icon;if(cat.parent&&typeof SUB_ICON_MAP!=="undefined"&&SUB_ICON_MAP[cat.name])return SUB_ICON_MAP[cat.name];const m=cat.parent?catOf(cat.parent):null;return (m&&CAT_SKIN[m.name]?CAT_SKIN[m.name][1]:(m&&m.icon))||"📦";}
 function monthLabel(m){const[y,mo]=m.split("-");return y+"年"+parseInt(mo)+"月";}
 function inMonth(dateStr,m){return dateStr&&dateStr.slice(0,7)===m;}
 function recsInMonth(m){return DB.records.filter(r=>inMonth(r.date,m));}

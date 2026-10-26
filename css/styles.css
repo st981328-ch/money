@@ -477,8 +477,8 @@ html.adding .mask{background:transparent}
 .av-catwrap::-webkit-scrollbar{display:none}
 .av-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:5px}
 .av-cat{display:flex; flex-direction:column; align-items:center; gap:5px; background:none; padding:0; min-width:0; color:#182b25}
-.av-tile{width:100%; aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#182b25}
-.av-tile .gi{width:30px; height:30px}
+.av-tile{width:100%; aspect-ratio:1; border-radius:0; display:flex; align-items:center; justify-content:center; color:#182b25}
+.av-tile .gi{width:24px; height:24px}
 .av-lbl{font-size:11px; font-weight:600; color:#182b25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; line-height:1.2}
 .av-cat.on .av-tile{box-shadow:0 0 0 3px #182b25}
 .av-cat:active .av-tile{filter:brightness(.9)}
