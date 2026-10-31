@@ -455,12 +455,12 @@ function renderProjects(){
         <div class="pv-rtotal">${fmt(s.exp)}</div></div>`).join("");
     body=`<div class="pv-list">${rows||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
   }else{
-    // masonry grid of floating cover cards; tapping one morphs into the detail (hero transition)
+    // masonry grid of floating cover cards, each with a small casual tilt; tapping one morphs into the detail
     const cards=list.map(({p})=>{
-      const cap=`<div class="pc-cap">${esc(p.name)}</div>`;
-      if(p.cover)return `<div class="projcard img" data-pname="${esc(p.name)}" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
+      const cap=`<div class="pc-cap">${esc(p.name)}</div>`,t=projTilt(p.id);
+      if(p.cover)return `<div class="projcard img" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
       const letter=esc((p.name||"?").trim().charAt(0)||"?");
-      return `<div class="projcard plain" data-pname="${esc(p.name)}" style="background:${p.color||"#8b5cf6"}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
+      return `<div class="projcard plain" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${p.color||"#8b5cf6"};--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
     }).join("");
     body=`<div class="projgrid">${cards||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
   }
@@ -470,6 +470,8 @@ function renderProjects(){
     </div></div>`;
 }
 function setProjActive(pid){ui.projActive=pid;render();}
+/* stable small tilt per project id (~ -2.6deg .. +2.6deg) for a casual, tossed-card look */
+function projTilt(id){let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))>>>0;return (((h%9)-4)*0.65).toFixed(2);}
 function pickCover(pid){
   const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
   inp.onchange=()=>{
@@ -542,15 +544,12 @@ function openProjectHero(pid,srcEl){
   _pheroSrc=srcEl||null;
   requestAnimationFrame(()=>{
     if(_rMotion||!srcEl){info.classList.add("in");return;}
-    const first=srcEl.getBoundingClientRect(),last=cover.getBoundingClientRect();
-    if(!first.width||!last.width){info.classList.add("in");return;}
-    const sx=first.width/last.width,sy=first.height/last.height;
-    cover.style.transformOrigin="top left";
-    cover.style.transform=`translate(${first.left-last.left}px,${first.top-last.top}px) scale(${sx},${sy})`;
+    const t=_pheroFlip(srcEl,cover);        // start the cover overlapping the tilted card
+    if(!t){info.classList.add("in");return;}
     srcEl.style.visibility="hidden";
     requestAnimationFrame(()=>{
       cover.style.transition="transform .44s cubic-bezier(.2,.8,.25,1)";
-      cover.style.transform="";
+      cover.style.transform="";             // morph up to the header and straighten
       info.classList.add("in");
     });
     cover.addEventListener("transitionend",()=>{cover.style.transition="";cover.style.transform="";},{once:true});
@@ -562,20 +561,28 @@ function closeProjectHero(){
   const cover=ov.querySelector("#pheroCover"),info=ov.querySelector("#pheroInfo"),src=_pheroSrc;
   const done=()=>{if(src)src.style.visibility="";ov.remove();document.documentElement.classList.remove("phero-open");_pheroSrc=null;};
   info.classList.remove("in");
-  if(!_rMotion&&src&&cover){
-    const first=src.getBoundingClientRect(),last=cover.getBoundingClientRect();
-    if(first.width&&last.width){
-      const sx=first.width/last.width,sy=first.height/last.height;
-      ov.querySelector(".phero-top").style.opacity="0";
-      cover.style.transformOrigin="top left";
-      cover.style.transition="transform .36s cubic-bezier(.4,0,.2,1)";
-      requestAnimationFrame(()=>{cover.style.transform=`translate(${first.left-last.left}px,${first.top-last.top}px) scale(${sx},${sy})`;});
-      cover.addEventListener("transitionend",done,{once:true});
-      setTimeout(done,460);
-      return;
-    }
+  if(!_rMotion&&src&&cover&&src.offsetWidth){
+    ov.querySelector(".phero-top").style.opacity="0";
+    cover.style.transition="transform .36s cubic-bezier(.4,0,.2,1)";
+    requestAnimationFrame(()=>{_pheroFlip(src,cover);});   // shrink + tilt back into the grid slot
+    cover.addEventListener("transitionend",done,{once:true});
+    setTimeout(done,460);
+    return;
   }
   ov.style.transition="opacity .22s ease";ov.style.opacity="0";setTimeout(done,240);
+}
+/* position `cover` exactly over the (tilted) source card via a center-origin FLIP transform.
+   Returns false if it can't be measured. Animate the cover's transform to '' to morph to the header. */
+function _pheroFlip(srcEl,cover){
+  const first=srcEl.getBoundingClientRect(),last=cover.getBoundingClientRect();
+  const fw=srcEl.offsetWidth,fh=srcEl.offsetHeight;
+  if(!fw||!last.width)return false;
+  const fcx=first.left+first.width/2,fcy=first.top+first.height/2;
+  const lcx=last.left+last.width/2,lcy=last.top+last.height/2;
+  const rot=parseFloat(srcEl.dataset.rot)||0;
+  cover.style.transformOrigin="center center";
+  cover.style.transform=`translate(${fcx-lcx}px,${fcy-lcy}px) scale(${fw/last.width},${fh/last.height}) rotate(${rot}deg)`;
+  return true;
 }
 let projState=null;
 function openProjectEdit(pid){

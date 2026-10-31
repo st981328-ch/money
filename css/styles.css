@@ -384,8 +384,8 @@ html.fin-full .pages{padding-bottom:0}
 /* card mode */
 /* masonry grid of floating cover cards */
 .projgrid{columns:2; column-gap:12px}
-.projgrid .projcard{break-inside:avoid; margin:0 0 12px; position:relative; border-radius:14px; overflow:hidden; cursor:pointer; background:var(--card-grey); box-shadow:0 6px 16px rgba(0,0,0,.14); transition:transform .16s ease, box-shadow .16s ease}
-.projgrid .projcard:active{transform:scale(.97); box-shadow:0 3px 10px rgba(0,0,0,.14)}
+.projgrid .projcard{break-inside:avoid; margin:0 0 14px; position:relative; border-radius:14px; overflow:hidden; cursor:pointer; background:var(--card-grey); box-shadow:0 6px 16px rgba(0,0,0,.15); transform:rotate(var(--rot,0deg)); transition:transform .18s ease, box-shadow .18s ease}
+.projgrid .projcard:active{transform:rotate(var(--rot,0deg)) scale(.96); box-shadow:0 3px 10px rgba(0,0,0,.14)}
 .projgrid .projcard img{display:block; width:100%; height:auto}
 .projgrid .projcard.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
 .projgrid .projcard .pc-letter{font-size:48px; font-weight:800; color:rgba(255,255,255,.92)}
