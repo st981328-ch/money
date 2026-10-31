@@ -82,12 +82,13 @@ function statCats(recs){
   return Object.values(by).sort((a,b)=>b.v-a.v);
 }
 function ringDonut(pct,color){
-  const r=42.5,C=2*Math.PI*r,on=Math.max(0,Math.min(100,pct))/100*C;
+  const r=42.5,C=2*Math.PI*r,p=Math.max(0,Math.min(100,pct)),on=p/100*C;
+  // renders empty (dashoffset=C); animateStatCharts() sweeps it to data-off and counts the number up
   return `<svg class="sv-donut" viewBox="0 0 100 100">
     <circle cx="50" cy="50" r="${r}" fill="none" stroke="#e8e8e8" stroke-width="15"/>
-    <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="15"
-      stroke-dasharray="${on.toFixed(2)} ${(C-on).toFixed(2)}" transform="rotate(-90 50 50)"/>
-    <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="#182b25">${pct.toFixed(1)}%</text>
+    <circle class="sv-arc" cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="15"
+      stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" data-off="${(C-on).toFixed(2)}" transform="rotate(-90 50 50)"/>
+    <text class="sv-num" x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="#182b25" data-pct="${p.toFixed(1)}">0.0%</text>
   </svg>`;
 }
 function homeStrip(sel){
@@ -197,6 +198,27 @@ function renderStats(){
   else if(tab==="name")body=statName(recs);
   else body=statOverview(recs);
   document.getElementById("page-stats").innerHTML=`<div class="statv2">${top}<div class="sv-body">${body}</div></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(animateStatCharts));
+}
+/* ---- entrance animations for the analytics charts: ring sweep + count-up + bar fill ---- */
+let _statGen=0;
+function _countUp(el,to,dur){
+  if(_rMotion){el.textContent=to.toFixed(1)+"%";return;}
+  const gen=_statGen,start=performance.now();
+  const step=now=>{
+    if(gen!==_statGen||!el.isConnected)return;
+    const t=Math.min(1,(now-start)/dur),e=1-Math.pow(1-t,3);   // easeOutCubic
+    el.textContent=(to*e).toFixed(1)+"%";
+    if(t<1)requestAnimationFrame(step);else el.textContent=to.toFixed(1)+"%";
+  };
+  requestAnimationFrame(step);
+}
+function animateStatCharts(){
+  _statGen++;   // invalidates any count-up still running from a previous render
+  const root=document.getElementById("page-stats");if(!root)return;
+  root.querySelectorAll(".sv-arc").forEach(el=>{void el.getBoundingClientRect();el.style.strokeDashoffset=el.dataset.off;});
+  root.querySelectorAll(".sv-sfill").forEach(el=>{void el.getBoundingClientRect();el.style.width=el.dataset.w;});
+  root.querySelectorAll(".sv-num").forEach(el=>_countUp(el,parseFloat(el.dataset.pct)||0,950));
 }
 function statOverview(recs){
   let exp=0,inc=0,expN=0,incN=0;
@@ -204,7 +226,7 @@ function statOverview(recs){
   const total=inc-exp,maxv=Math.max(exp,inc,Math.abs(total),1);
   const bar=(label,cnt,val,frac,color,sign)=>`<div class="sv-sum">
       <span class="sv-slabel">${label}</span><span class="sv-sbadge">${cnt}</span>
-      <div class="sv-sbar"><div style="width:${(frac*100).toFixed(1)}%;background:${color}"></div></div>
+      <div class="sv-sbar"><div class="sv-sfill" style="width:0;background:${color}" data-w="${(frac*100).toFixed(1)}%"></div></div>
       <span class="sv-samt" style="color:${color}">${sign}${fmt(val)}</span></div>`;
   const top3=statCats(recs).slice(0,3);
   const donuts=top3.length
