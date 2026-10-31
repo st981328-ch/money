@@ -59,10 +59,10 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
 /* summary strip */
 .sumstrip{display:flex;background:var(--card);border-radius:16px;box-shadow:var(--shadow);margin:4px 0 14px;overflow:hidden}
-.sumstrip .cell{flex:1;padding:13px 10px;text-align:center;position:relative}
+.sumstrip .cell{flex:1;min-width:0;padding:13px 6px;text-align:center;position:relative}
 .sumstrip .cell+.cell::before{content:"";position:absolute;left:0;top:22%;height:56%;width:1px;background:var(--line)}
 .sumstrip .lbl{font-size:12px;color:var(--text2);margin-bottom:3px}
-.sumstrip .val{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.sumstrip .val{font-size:15px;font-weight:700;letter-spacing:-.4px;white-space:nowrap}
 .val.exp{color:var(--expense)}.val.inc{color:var(--text)}
 
 /* record list */
