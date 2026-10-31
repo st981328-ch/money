@@ -382,20 +382,36 @@ html.fin-full .pages{padding-bottom:0}
 .pv-search input{width:100%; height:42px; margin:2px 0 8px; border-radius:21px; border:1.5px solid #dddfd7; background:#fff; padding:0 18px; font-size:15px; color:var(--ink)}
 .pv-body{padding:8px 20px calc(var(--nav-h) + var(--safe-b) + 24px)}
 /* card mode */
-.projwrap{display:flex; flex-direction:column; gap:10px}
-.projcard{position:relative; border-radius:20px; overflow:hidden; cursor:pointer; background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; transition:height .3s cubic-bezier(.4,0,.2,1)}
-.projcard.img::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.16), rgba(0,0,0,.42)); z-index:1}
-.projcard.collapsed{height:120px}
-.projcard.active{height:300px}
-.pc-name{position:relative; z-index:2; text-align:center; font-weight:800; padding:0 22px; letter-spacing:.5px}
-.projcard.img .pc-name{color:#fff; text-shadow:0 2px 14px rgba(0,0,0,.5)}
-.projcard.plain .pc-name{color:var(--ink)}
-.projcard.collapsed .pc-name{font-size:21px}
-.projcard.active .pc-name{font-size:34px; line-height:1.12}
-.pc-cam{position:absolute; top:14px; right:14px; z-index:3; width:38px; height:38px; border-radius:50%; background:rgba(0,0,0,.3); color:#fff; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.4)}
-.projcard.plain .pc-cam{background:rgba(0,0,0,.1); color:var(--ink); border-color:rgba(0,0,0,.12)}
-.pc-cam .gi{width:18px; height:18px}
-.pc-cam:active{filter:brightness(.85)}
+/* masonry grid of floating cover cards */
+.projgrid{columns:2; column-gap:12px}
+.projgrid .projcard{break-inside:avoid; margin:0 0 12px; position:relative; border-radius:14px; overflow:hidden; cursor:pointer; background:var(--card-grey); box-shadow:0 6px 16px rgba(0,0,0,.14); transition:transform .16s ease, box-shadow .16s ease}
+.projgrid .projcard:active{transform:scale(.97); box-shadow:0 3px 10px rgba(0,0,0,.14)}
+.projgrid .projcard img{display:block; width:100%; height:auto}
+.projgrid .projcard.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
+.projgrid .projcard .pc-letter{font-size:48px; font-weight:800; color:rgba(255,255,255,.92)}
+.projgrid .projcard .pc-cap{position:absolute; left:0; right:0; bottom:0; z-index:1; padding:24px 12px 11px; color:#fff; font-weight:700; font-size:13.5px; line-height:1.25; background:linear-gradient(transparent, rgba(0,0,0,.62))}
+
+/* hero / container-transform project detail */
+.phero-open{overflow:hidden}
+.phero{position:fixed; inset:0; z-index:70; background:#f6f5f0; color:#182b25; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:calc(var(--safe-b) + 32px)}
+.phero-top{position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px; background:linear-gradient(#f6f5f0 62%, rgba(246,245,240,0)); transition:opacity .2s ease}
+.phero-ico{width:40px; height:40px; border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; color:#182b25}
+.phero-ico:active{filter:brightness(.92)}
+.phero-ico .gi{width:18px; height:18px}
+.phero-cover{position:relative; margin:2px auto 0; width:58%; max-width:244px; border-radius:16px; overflow:hidden; box-shadow:0 16px 36px rgba(0,0,0,.26); background:var(--card-grey,#d9d9d9); will-change:transform}
+.phero-cover img{display:block; width:100%; height:auto}
+.phero-cover.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
+.phero-cover.plain .pc-letter{font-size:76px; font-weight:800; color:rgba(255,255,255,.92)}
+.phc-cam{position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.34); color:#fff; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.4)}
+.phc-cam .gi{width:16px; height:16px}
+.phc-cam:active{filter:brightness(.85)}
+.phero-info{opacity:0; transform:translateY(8px); transition:opacity .34s ease, transform .34s ease; padding:0 20px}
+.phero-info.in{opacity:1; transform:none}
+.phero-name{text-align:center; font-weight:800; font-size:25px; margin:16px 0 2px}
+.phero-date{text-align:center; color:#737a74; font-size:13px; margin-bottom:14px}
+.phero-del{display:block; width:100%; margin:20px auto 0; padding:13px; border-radius:12px; background:transparent; color:#e5484d; font-weight:600; font-size:14px}
+.phero-del:active{background:rgba(229,72,77,.08)}
+@media (prefers-reduced-motion:reduce){.phero-info{transition:none}}
 /* list mode */
 .pv-list{display:flex; flex-direction:column}
 .pv-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 2px; border-bottom:0.5px solid var(--line); cursor:pointer}

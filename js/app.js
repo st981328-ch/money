@@ -450,20 +450,19 @@ function renderProjects(){
   if(ui.projYear)list=list.filter(x=>projInYear(x.p.id,ui.projYear));
   let body;
   if(ui.projView==="list"){
-    const rows=list.map(({p,s,dr})=>`<div class="pv-row" data-pname="${esc(p.name)}" onclick="openProjectDetail('${p.id}')">
+    const rows=list.map(({p,s,dr})=>`<div class="pv-row" data-pname="${esc(p.name)}" onclick="openProjectHero('${p.id}')">
         <div class="pv-rinfo"><div class="pv-rname">${esc(p.name)}</div><div class="pv-rdate">${fmtRange(dr)}</div></div>
         <div class="pv-rtotal">${fmt(s.exp)}</div></div>`).join("");
     body=`<div class="pv-list">${rows||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
   }else{
-    if(list.length&&(!ui.projActive||!list.some(x=>x.p.id===ui.projActive)))ui.projActive=list[0].p.id;
+    // masonry grid of floating cover cards; tapping one morphs into the detail (hero transition)
     const cards=list.map(({p})=>{
-      const active=p.id===ui.projActive,hasImg=!!p.cover;
-      const bg=hasImg?`background-image:url('${p.cover}')`:"background-color:var(--card-grey)";
-      return `<div class="projcard ${active?"active":"collapsed"} ${hasImg?"img":"plain"}" data-pname="${esc(p.name)}" style="${bg}" onclick="${active?`openProjectDetail('${p.id}')`:`setProjActive('${p.id}')`}">
-        ${active?`<button class="pc-cam" onclick="event.stopPropagation();pickCover('${p.id}')" aria-label="更換封面">${IC("image")}</button>`:""}
-        <div class="pc-name">${esc(p.name)}</div></div>`;
+      const cap=`<div class="pc-cap">${esc(p.name)}</div>`;
+      if(p.cover)return `<div class="projcard img" data-pname="${esc(p.name)}" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
+      const letter=esc((p.name||"?").trim().charAt(0)||"?");
+      return `<div class="projcard plain" data-pname="${esc(p.name)}" style="background:${p.color||"#8b5cf6"}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
     }).join("");
-    body=`<div class="projwrap">${cards||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
+    body=`<div class="projgrid">${cards||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
   }
   document.getElementById("page-projects").innerHTML=`<div class="projv2">${top}
     <div class="pv-body">${body}
@@ -489,16 +488,13 @@ function pickCover(pid){
   };
   inp.click();
 }
-function openProjectDetail(pid){
-  const p=projOf(pid);if(!p)return;
-  const s=projStats(pid);
+function projDetailBody(pid){
+  const p=projOf(pid),s=projStats(pid);
   const recs=DB.records.filter(r=>r.projectId===pid).sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0));
   let body=`<div class="sumstrip" style="margin-top:0">
     <div class="cell"><div class="lbl">收入</div><div class="val inc">${fmt(s.inc)}</div></div>
     <div class="cell"><div class="lbl">支出</div><div class="val exp">${fmt(s.exp)}</div></div>
-    <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(s.net)}</div></div></div>
-    <button class="btn ghost sm" onclick="openProjectEdit('${pid}')">編輯專案</button>`;
-  // category breakdown
+    <div class="cell"><div class="lbl">結餘</div><div class="val">${fmt(s.net)}</div></div></div>`;
   const arr=Object.entries(s.byCat).map(([id,v])=>({c:catOf(id),v})).filter(x=>x.c).sort((a,b)=>b.v-a.v);
   if(arr.length){
     body+=`<div class="card-h" style="padding:14px 2px 2px">支出分類</div><div class="card" style="padding:4px 14px">`;
@@ -506,7 +502,6 @@ function openProjectDetail(pid){
       body+=`<div class="legrow"><span class="dot" style="background:${col}"></span><span class="lname">${IC(catIcon(x.c))} ${esc(x.c.name)}</span><span class="lpct">${pct.toFixed(0)}%</span><span class="lamt">${fmt(x.v)}</span></div>`;});
     body+=`</div>`;
   }
-  // records
   body+=`<div class="card-h" style="padding:14px 2px 2px">明細 (${recs.length})</div>`;
   if(!recs.length){body+=`<div class="empty" style="padding:24px">此專案尚無記錄</div>`;}
   else{
@@ -516,7 +511,71 @@ function openProjectDetail(pid){
       groups[d].forEach(r=>body+=recRow(r));body+=`</div></div>`;
     });
   }
-  openSheet(p.name,body,{del:"deleteProject('"+pid+"')"});
+  body+=`<button class="phero-del" onclick="deleteProject('${pid}')">刪除專案</button>`;
+  return body;
+}
+/* hero / container-transform detail: the tapped cover card morphs up into the header */
+let _pheroSrc=null;
+function openProjectHero(pid,srcEl){
+  const p=projOf(pid);if(!p)return;
+  haptic("tap");
+  const hasCover=!!p.cover,dr=projDateRange(pid);
+  const letter=esc((p.name||"?").trim().charAt(0)||"?");
+  const inner=hasCover?`<img src="${p.cover}" alt="" draggable="false">`:`<span class="pc-letter">${letter}</span>`;
+  const ov=document.createElement("div");ov.className="phero";ov.id="phero";
+  ov.innerHTML=`<div class="phero-top">
+      <button class="phero-ico" onclick="closeProjectHero()" aria-label="關閉">${IC("x")}</button>
+      <button class="phero-ico" onclick="openProjectEdit('${pid}')" aria-label="編輯">${IC("pencil")}</button>
+    </div>
+    <div class="phero-cover ${hasCover?"img":"plain"}" id="pheroCover" style="${hasCover?"":"background:"+(p.color||"#8b5cf6")}">
+      ${inner}
+      <button class="phc-cam" onclick="pickCover('${pid}')" aria-label="更換封面">${IC("image")}</button>
+    </div>
+    <div class="phero-info" id="pheroInfo">
+      <div class="phero-name">${esc(p.name)}</div>
+      <div class="phero-date">${fmtRange(dr)}</div>
+      ${projDetailBody(pid)}
+    </div>`;
+  document.body.appendChild(ov);
+  document.documentElement.classList.add("phero-open");
+  const cover=ov.querySelector("#pheroCover"),info=ov.querySelector("#pheroInfo");
+  _pheroSrc=srcEl||null;
+  requestAnimationFrame(()=>{
+    if(_rMotion||!srcEl){info.classList.add("in");return;}
+    const first=srcEl.getBoundingClientRect(),last=cover.getBoundingClientRect();
+    if(!first.width||!last.width){info.classList.add("in");return;}
+    const sx=first.width/last.width,sy=first.height/last.height;
+    cover.style.transformOrigin="top left";
+    cover.style.transform=`translate(${first.left-last.left}px,${first.top-last.top}px) scale(${sx},${sy})`;
+    srcEl.style.visibility="hidden";
+    requestAnimationFrame(()=>{
+      cover.style.transition="transform .44s cubic-bezier(.2,.8,.25,1)";
+      cover.style.transform="";
+      info.classList.add("in");
+    });
+    cover.addEventListener("transitionend",()=>{cover.style.transition="";cover.style.transform="";},{once:true});
+  });
+}
+function closeProjectHero(){
+  const ov=document.getElementById("phero");if(!ov)return;
+  haptic("tap");
+  const cover=ov.querySelector("#pheroCover"),info=ov.querySelector("#pheroInfo"),src=_pheroSrc;
+  const done=()=>{if(src)src.style.visibility="";ov.remove();document.documentElement.classList.remove("phero-open");_pheroSrc=null;};
+  info.classList.remove("in");
+  if(!_rMotion&&src&&cover){
+    const first=src.getBoundingClientRect(),last=cover.getBoundingClientRect();
+    if(first.width&&last.width){
+      const sx=first.width/last.width,sy=first.height/last.height;
+      ov.querySelector(".phero-top").style.opacity="0";
+      cover.style.transformOrigin="top left";
+      cover.style.transition="transform .36s cubic-bezier(.4,0,.2,1)";
+      requestAnimationFrame(()=>{cover.style.transform=`translate(${first.left-last.left}px,${first.top-last.top}px) scale(${sx},${sy})`;});
+      cover.addEventListener("transitionend",done,{once:true});
+      setTimeout(done,460);
+      return;
+    }
+  }
+  ov.style.transition="opacity .22s ease";ov.style.opacity="0";setTimeout(done,240);
 }
 let projState=null;
 function openProjectEdit(pid){
@@ -548,6 +607,7 @@ function deleteProject(pid){
   if(!confirm(n?`此專案有 ${n} 筆記錄，刪除專案後這些記錄會保留、只是取消歸屬。確定？`:"確定刪除此專案？"))return;
   DB.records.forEach(r=>{if(r.projectId===pid)delete r.projectId;});
   DB.projects=DB.projects.filter(p=>p.id!==pid);
+  const ph=document.getElementById("phero");if(ph){ph.remove();document.documentElement.classList.remove("phero-open");_pheroSrc=null;}
   save();closeTopSheet();go("projects");toast("已刪除");
 }
 
