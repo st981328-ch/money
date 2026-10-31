@@ -260,16 +260,34 @@ function statDetail(recs){
   });
   return `<div class="sv-list">${h}</div>`;
 }
+let _pieMeta=[],_pieSel=-1,_pieTotal=0;
 function statCategory(recs){
   const cats=statCats(recs);if(!cats.length)return `<div class="sv-empty">本月尚無支出</div>`;
   const exp=cats.reduce((s,x)=>s+x.v,0);
-  const slices=cats.map((x,i)=>({value:x.v,color:DONUT_PALETTE[i%DONUT_PALETTE.length]}));
-  const list=cats.map((x,i)=>`<div class="sv-item">
+  _pieSel=-1;_pieTotal=exp;
+  _pieMeta=cats.map((x,i)=>({name:x.c.name,v:x.v,pct:exp>0?x.v/exp*100:0,color:DONUT_PALETTE[i%DONUT_PALETTE.length]}));
+  const slices=_pieMeta.map(m=>({value:m.v,color:m.color}));
+  const list=cats.map((x,i)=>`<div class="sv-item sv-catrow" data-i="${i}" onclick="selectPieSlice(${i})">
       <span class="sv-dot" style="background:${DONUT_PALETTE[i%DONUT_PALETTE.length]}"></span>
       <span class="sv-iname">${esc(x.c.name)}</span>
-      <span class="sv-ipct">${(x.v/exp*100).toFixed(1)}%</span>
+      <span class="sv-ipct">${(exp>0?x.v/exp*100:0).toFixed(1)}%</span>
       <span class="sv-iamt">${fmt(x.v)}</span></div>`).join("");
   return `<div class="sv-catwrap">${donutSVG(slices,exp)}</div><div class="sv-list">${list}</div>`;
+}
+/* tap a pie slice (or its list row) to reveal that category + its share in the centre */
+function selectPieSlice(i){
+  const svg=document.querySelector("#page-stats .sv-catwrap svg");if(!svg||!_pieMeta[i])return;
+  _pieSel=(_pieSel===i)?-1:i;
+  haptic("tap");
+  svg.querySelectorAll(".sv-slice").forEach(el=>{const si=+el.dataset.i;
+    el.classList.toggle("sel",si===_pieSel);
+    el.classList.toggle("dim",_pieSel>=0&&si!==_pieSel);});
+  document.querySelectorAll("#page-stats .sv-catrow").forEach(el=>el.classList.toggle("sel",+el.dataset.i===_pieSel));
+  const top=document.getElementById("pieCTop"),bot=document.getElementById("pieCBot");
+  if(!top||!bot)return;
+  // use inline style.fill — a presentation `fill` attribute loses to the `.sv-catwrap text` CSS rule
+  if(_pieSel<0){top.textContent="共";top.style.fill="";bot.textContent=fmt(_pieTotal);bot.style.fill="";}
+  else{const m=_pieMeta[_pieSel];top.textContent=m.name;top.style.fill=m.color;bot.textContent=m.pct.toFixed(1)+"%";bot.style.fill=m.color;}
 }
 function statRank(recs){
   const exp=recs.filter(r=>r.type==="expense").sort((a,b)=>baseAmt(b)-baseAmt(a)).slice(0,30);
@@ -310,24 +328,25 @@ function statName(recs){
 function donutSVG(slices,total){
   const R=68,r=44,cx=90,cy=90;let a0=-Math.PI/2;
   let paths="";
-  slices.forEach(s=>{
+  slices.forEach((s,i)=>{
     const frac=s.value/total;let a1=a0+frac*Math.PI*2;
     if(frac>=0.9999){ // full circle
-      paths+=`<circle cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="${s.color}" stroke-width="${R-r}"/>`;
+      paths+=`<circle class="sv-slice" data-i="${i}" onclick="selectPieSlice(${i})" cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="${s.color}" stroke-width="${R-r}"/>`;
     }else{
-      paths+=arc(cx,cy,R,r,a0,a1,s.color);
+      paths+=arc(cx,cy,R,r,a0,a1,s.color,i);
     }
     a0=a1;
   });
   return `<svg width="180" height="180" viewBox="0 0 180 180">${paths}
-    <text x="90" y="84" text-anchor="middle" font-size="11" fill="var(--text2)">共</text>
-    <text x="90" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">${fmt(total)}</text></svg>`;
+    <text id="pieCTop" x="90" y="82" text-anchor="middle" font-size="11" fill="var(--text2)">共</text>
+    <text id="pieCBot" x="90" y="104" text-anchor="middle" font-size="17" font-weight="700" fill="var(--text)">${fmt(total)}</text></svg>`;
 }
-function arc(cx,cy,R,r,a0,a1,color){
+function arc(cx,cy,R,r,a0,a1,color,i){
   const p=(rad,ang)=>[cx+rad*Math.cos(ang),cy+rad*Math.sin(ang)];
   const large=(a1-a0)>Math.PI?1:0;
   const[x1,y1]=p(R,a0),[x2,y2]=p(R,a1),[x3,y3]=p(r,a1),[x4,y4]=p(r,a0);
-  return `<path d="M${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${r} ${r} 0 ${large} 0 ${x4} ${y4} Z" fill="${color}"/>`;
+  const hook=(i==null)?"":` class="sv-slice" data-i="${i}" onclick="selectPieSlice(${i})"`;
+  return `<path${hook} d="M${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${r} ${r} 0 ${large} 0 ${x4} ${y4} Z" fill="${color}"/>`;
 }
 /* =================== budgets page =================== */
 function budSpent(catId,recs){
