@@ -244,8 +244,29 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .hint{font-size:12px;color:var(--text2);line-height:1.6;margin:6px 2px}
 .synbadge{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--text3);margin-left:6px;vertical-align:middle}
 .synbadge.on{background:var(--income)}
-.toast{position:fixed;bottom:calc(var(--nav-h) + 90px);left:50%;transform:translateX(-50%);background:rgba(0,0,0,.82);color:#fff;padding:10px 18px;border-radius:22px;font-size:13.5px;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
-.toast.show{opacity:1}
+.toast{position:fixed;bottom:calc(var(--nav-h) + 90px);left:50%;transform:translateX(-50%) translateY(10px);background:rgba(0,0,0,.82);color:#fff;padding:10px 18px;border-radius:22px;font-size:13.5px;z-index:90;opacity:0;transition:opacity .25s,transform .25s cubic-bezier(.3,.9,.3,1);pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.warn{background:rgba(188,42,32,.92)}
+
+/* ---- micro-interactions: confirmation burst, row flash, page + nav motion ---- */
+.burst{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:95;pointer-events:none}
+.burst svg{width:86px;height:86px;fill:none;stroke:#47b58e;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 8px 20px rgba(0,0,0,.2));animation:burstpop .78s cubic-bezier(.2,.8,.3,1) forwards}
+.burst circle{fill:rgba(71,181,142,.15)}
+.burst path{stroke-dasharray:42;stroke-dashoffset:42;animation:burstcheck .34s .16s ease forwards}
+@keyframes burstpop{0%{opacity:0;transform:scale(.5)}22%{opacity:1;transform:scale(1.06)}72%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+@keyframes burstcheck{to{stroke-dashoffset:0}}
+@keyframes rowflash{0%{background:rgba(222,229,20,0)}16%{background:rgba(222,229,20,.5)}100%{background:rgba(222,229,20,0)}}
+.hv-row.flash{animation:rowflash 1.15s ease}
+@keyframes pagein{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.page.active{animation:pagein .24s ease}
+@keyframes navpop{0%{transform:scale(1)}42%{transform:scale(1.26)}100%{transform:scale(1)}}
+.nav button.on .ni{animation:navpop .32s ease}
+.keypad button:active{transform:scale(.93)}
+.av-pill:active,.seg button:active,.dp-d:active,.rp-ev:active,.rp-seg:active,.avp-confirm:active{transform:scale(.96)}
+@media (prefers-reduced-motion:reduce){
+  .page.active,.nav button.on .ni,.hv-row.flash{animation:none}
+  .burst{display:none}
+}
 
 /* === center + nav button === */
 .nav button.navadd{flex:0 0 68px;width:68px;height:68px;border-radius:50%;background:#dee514;box-shadow:0 5px 16px rgba(0,0,0,.18);transform:translateY(-20px);color:#182b25;font-size:34px;font-weight:400;z-index:2}

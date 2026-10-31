@@ -69,6 +69,7 @@ function renderRecords(){
     <div class="hv-list">${rows}</div>
   </div>`;
   document.getElementById("page-records").innerHTML=html;
+  _flashId=null;   // consumed: only pulse once, right after a save
   bindWeekSwipe();
 }
 const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
@@ -114,7 +115,7 @@ function homeRow(r){
   }
   const proj=r.projectId?projOf(r.projectId):null;
   const tag=proj?`<span class="hv-ptag">${esc(proj.name)}</span>`:"";
-  return `<div class="hv-row" onclick="openAdd('${r.id}')">
+  return `<div class="hv-row${r.id===_flashId?" flash":""}" onclick="openAdd('${r.id}')">
     <span class="hv-ic">${icon}</span>
     <span class="hv-name">${esc(name)}</span>
     ${tag}<span class="hv-amt ${amtcls}">${amt}</span></div>`;
@@ -557,6 +558,7 @@ function closeAllSheets(){while(sheetStack.length)closeTopSheet();}
 
 /* =================== add / edit record =================== */
 let addState=null;
+let _flashId=null;   // id of the just-saved record; its row pulses once on next render
 function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function openAdd(editId){
   let r=editId?DB.records.find(x=>x.id===editId):null;
@@ -640,6 +642,7 @@ function keypadHtml(){
 function bindAdd(el){
   el.querySelector("#addtabs").onclick=(e)=>{
     const b=e.target.closest("button[data-t]");if(!b)return;
+    haptic("tap");
     addState.tab=b.dataset.t;addState.catDrill=null;addState.catPicking=true;
     if(addState.tab==="expense"||addState.tab==="income"){
       addState.type=addState.tab;
@@ -651,8 +654,8 @@ function bindAdd(el){
   el.querySelector(".keypad").onclick=(e)=>{
     const b=e.target.closest("button[data-k]");if(!b)return;
     const k=b.dataset.k;
-    if(k==="done"){toggleKeypad(false);return;}
-    keyPress(k);updateAmtDisplay(el);
+    if(k==="done"){haptic("tap");toggleKeypad(false);return;}
+    haptic("soft");keyPress(k);updateAmtDisplay(el);
   };
   const fn=el.querySelector("#f_note");if(fn)fn.oninput=e=>addState.note=e.target.value;
 }
@@ -798,14 +801,14 @@ function renderAddCats(el){
   area.innerHTML=h;
   requestAnimationFrame(()=>{const f=area.querySelector(".av-cat");if(f)area.style.maxHeight=(f.offsetHeight*2+6)+"px";});
   area.querySelector("#avgrid").onclick=e=>{
-    if(e.target.closest("[data-back]")){addState.catDrill=null;renderAddCats(el);return;}
+    if(e.target.closest("[data-back]")){haptic("soft");addState.catDrill=null;renderAddCats(el);return;}
     const b=e.target.closest("[data-cid]");if(!b)return;const cat=catOf(b.dataset.cid);if(!cat)return;
     if(!cat.parent){ // main: drill into subs, or select directly if it has none
       const subs=subCats(cat.id);
-      if(subs.length){addState.catDrill=cat.id;addState.type=cat.type;renderAddCats(el);return;}
+      if(subs.length){haptic("soft");addState.catDrill=cat.id;addState.type=cat.type;renderAddCats(el);return;}
       addState.categoryId=cat.id;addState.type=cat.type;
     }else{addState.categoryId=cat.id;addState.type=mainOf(cat).type;}
-    addState.catPicking=false;renderAddCats(el);   // collapse to the selected one
+    haptic("tap");addState.catPicking=false;renderAddCats(el);   // collapse to the selected one
   };
 }
 function renderAddDynamic(el){
@@ -879,8 +882,9 @@ function dispExpr(){
 }
 function saveRecord(){
   const amt=Math.round(evalExpr(addState.expr)*100)/100;
-  if(!amt||amt<=0){toast("請輸入金額");return;}
-  if(!addState.categoryId){toast("請選擇分類");return;}
+  if(!amt||amt<=0){toast("請輸入金額","warn");return;}
+  if(!addState.categoryId){toast("請選擇分類","warn");return;}
+  const isNew=!addState.id;
   const rate=(addState.cur===DB.config.baseCur)?1:(addState.rate||curInfo(addState.cur).rate||1);
   const mk=over=>{const o=Object.assign({id:uid(),type:addState.type,amount:amt,date:addState.date,time:addState.time,
     note:addState.note.trim(),cur:addState.cur,rate:rate,categoryId:addState.categoryId,_t:Date.now()},over);
@@ -888,26 +892,27 @@ function saveRecord(){
   if(!addState.id&&addState.payMode==="installment"){
     const N=addState.instN,total=amt*(1+addState.instRate/100),per=Math.round(total/N*100)/100,gid=uid();
     const base=addState.note.trim()||((catOf(addState.categoryId)||{}).name||"");
-    for(let k=0;k<N;k++)DB.records.push(mk({id:uid(),amount:per,date:addMonthsStr(addState.date,k),note:base+" ("+(k+1)+"/"+N+")",instGroup:gid,_t:Date.now()+k}));
+    for(let k=0;k<N;k++){const rec=mk({id:uid(),amount:per,date:addMonthsStr(addState.date,k),note:base+" ("+(k+1)+"/"+N+")",instGroup:gid,_t:Date.now()+k});DB.records.push(rec);if(k===0)_flashId=rec.id;}
     toast("分 "+N+" 期已建立");
   }else if(!addState.id&&addState.payMode==="recurring"){
     const N=addState.recurN,gid=uid();
-    for(let k=0;k<N;k++)DB.records.push(mk({id:uid(),date:addEveryStr(addState.date,addState.recurEvery,k),recurGroup:gid,_t:Date.now()+k}));
+    for(let k=0;k<N;k++){const rec=mk({id:uid(),date:addEveryStr(addState.date,addState.recurEvery,k),recurGroup:gid,_t:Date.now()+k});DB.records.push(rec);if(k===0)_flashId=rec.id;}
     toast(everyLabel(addState.recurEvery)+" × "+N+" 筆已建立");
   }else{
     let r=addState.id?DB.records.find(x=>x.id===addState.id):null;
     if(r){const o=mk({id:r.id,_t:r._t});delete r.accountId;delete r.toAccountId;delete r.tags;delete r.recur;
-      Object.keys(o).forEach(k=>r[k]=o[k]);if(!addState.projectId)delete r.projectId;}
-    else DB.records.push(mk({}));
+      Object.keys(o).forEach(k=>r[k]=o[k]);if(!addState.projectId)delete r.projectId;_flashId=r.id;}
+    else{const nr=mk({});DB.records.push(nr);_flashId=nr.id;}
     toast(addState.id?"已更新":"已記錄");
   }
+  if(isNew)celebrate();          // signature burst for brand-new records only
   save();closeTopSheet();render();
 }
 function applyRecurring(){return false;}
 function deleteRecord(){
   if(!addState||!addState.id)return;
   DB.records=DB.records.filter(x=>x.id!==addState.id);
-  save();closeTopSheet();render();toast("已刪除");
+  save();closeTopSheet();render();haptic("warn");toast("已刪除");
 }
 
 /* =================== budget editor =================== */
