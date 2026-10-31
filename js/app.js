@@ -622,11 +622,13 @@ function addBody(editing){
     ${editing?`<button class="av-delete" onclick="deleteRecord()">DELETE</button>`:""}`;
 }
 function suggestedCats(){
-  // most-used SUB categories, ranked by frequency
+  // most-used SUB categories for the current type (expense/income), ranked by frequency
+  const type=addState.type;
+  const mtype=c=>{const m=c&&c.parent?catOf(c.parent):null;return m&&m.type;};
   const cnt={};DB.records.forEach(r=>{if(r.categoryId)cnt[r.categoryId]=(cnt[r.categoryId]||0)+1;});
-  let arr=Object.keys(cnt).map(id=>({id,n:cnt[id],c:catOf(id)})).filter(x=>x.c&&x.c.parent).sort((a,b)=>b.n-a.n).slice(0,15);
+  let arr=Object.keys(cnt).map(id=>({id,n:cnt[id],c:catOf(id)})).filter(x=>x.c&&x.c.parent&&mtype(x.c)===type).sort((a,b)=>b.n-a.n).slice(0,15);
   const have=new Set(arr.map(x=>x.id));
-  if(arr.length<10){outer:for(const m of mainCats("expense")){for(const s of subCats(m.id)){if(!have.has(s.id)){arr.push({c:s});have.add(s.id);}if(arr.length>=10)break outer;}}}
+  if(arr.length<10){outer:for(const m of mainCats(type)){for(const s of subCats(m.id)){if(!have.has(s.id)){arr.push({c:s});have.add(s.id);}if(arr.length>=10)break outer;}}}
   return arr.map(x=>x.c);
 }
 function keypadHtml(){

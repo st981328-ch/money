@@ -2,7 +2,7 @@
 /* data layer: storage, model, helpers */
 /* one-time lossless migration from the app's earlier storage keys */
 (function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
-const APP_VERSION="2026.10.26-bb";
+const APP_VERSION="2026.10.26-bc";
 const STORE_KEY="tally_data";
 const SYNC_DESC="Tally Sync — do not delete";
 const SYNC_FILE="tally_data.json";
@@ -168,14 +168,16 @@ const SUB_EN={
   "計程車":"TAXI","加油費":"GAS","罰單啦幹":"TICKET","摩托車":"SCOOTER","捷運":"MRT","公車":"BUS","停車費":"PARKING","維修":"REPAIR","機票":"FLIGHT","船票":"FERRY","單車":"BIKE","火車":"TRAIN","高鐵":"HSR",
   "喝酒":"BOOZE","消遣":"LEISURE","聚餐":"GATHER","請客":"TREAT","遊樂園":"PARK","唱歌":"KARAOKE","音樂":"MUSIC","電影":"MOVIE","遊戲":"GAME","影音":"MEDIA","展覽":"EXHIBIT","健身":"GYM","博弈":"GAMBLE","運動":"SPORTS",
   "美妝保養":"BEAUTY","衣物":"CLOTHES","鞋子":"SHOES","禮物":"GIFT","配件":"EXTRAS","電子產品":"TECH","應用軟體":"APP","精品":"LUXURY","日常採買":"DAILY","文具":"PENS","圖書":"BOOKS","市場":"MARKET","包包":"BAGS","訂閱":"SUBS","小費":"TIP",
-  "寵物":"PET","手機電話費":"PHONE","接案":"GIG","保險":"INSURE","投資":"INVEST",
+  "寵物":"PET","手機電話費":"PHONE","接案":"FREELANCE","保險":"INSURE","投資":"INVEST",
   "醫療用品":"MEDKIT","門診":"CLINIC","保健品":"VITAMIN","藥品":"MEDS","健康檢查":"CHECKUP","牙齒保健":"DENTAL",
   "日常用品":"SUPPLY","電話費":"PHONE","網路費":"WIFI","房租":"RENT","燃料費":"FUEL","洗衣費":"LAUNDRY","電費":"POWER","家具":"FURNISH","家電":"DEVICES",
   "美容美髮":"SALON","旅行":"TRAVEL","住宿":"STAY","泡湯":"SPA",
   "課程":"COURSE","圖書館":"LIBRARY",
   "薪水":"SALARY","獎金":"BONUS","收款":"PAYMENT","彩券":"LOTTERY","發票中獎":"WIN","薪資":"SALARY",
 };
-function catLabel(c){if(!c)return "";if(!c.parent){const sk=CAT_SKIN[c.name];return (sk&&sk[2])||c.name;}return SUB_EN[c.name]||c.name;}
+/* English labels for main categories not covered by the designed CAT_SKIN tiles (income + leftover expense mains) */
+const MAIN_EN={"收入":"INCOME","餘額調整":"ADJUST","其他":"OTHER","房租":"RENT","薪資":"SALARY","獎金":"BONUS","投資":"INVEST","兼職":"PARTTIME","退款":"REFUND"};
+function catLabel(c){if(!c)return "";if(!c.parent){const sk=CAT_SKIN[c.name];if(sk&&sk[2])return sk[2];return MAIN_EN[c.name]||c.name;}return SUB_EN[c.name]||c.name;}
 function catColor(cat){if(!cat)return "#999";const sk=catSkin(cat);if(sk)return sk[0];if(cat.color)return cat.color;const m=cat.parent?catOf(cat.parent):null;return (m&&m.color)||"#999";}
 function catIcon(cat){if(!cat)return "❓";if(!cat.parent){const sk=CAT_SKIN[cat.name];if(sk)return sk[1];}if(cat.icon)return cat.icon;if(cat.parent&&typeof SUB_ICON_MAP!=="undefined"&&SUB_ICON_MAP[cat.name])return SUB_ICON_MAP[cat.name];const m=cat.parent?catOf(cat.parent):null;return (m&&CAT_SKIN[m.name]?CAT_SKIN[m.name][1]:(m&&m.icon))||"📦";}
 function monthLabel(m){const[y,mo]=m.split("-");return y+"年"+parseInt(mo)+"月";}
