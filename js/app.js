@@ -73,7 +73,7 @@ function renderRecords(){
   bindWeekSwipe();
 }
 const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
-const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#47b58e","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];
+const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#64748b","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];
 function setStatTab(t){ui.statTab=t;render();}
 function monthRange(m){const[y,mo]=m.split("-").map(Number);const last=new Date(y,mo,0).getDate();const p=n=>String(n).padStart(2,"0");return `${y}/${p(mo)}/01 – ${y}/${p(mo)}/${p(last)}`;}
 function statCats(recs){
@@ -110,7 +110,7 @@ function homeRow(r){
     name=r.note||"轉帳";icon=IC("arrow-left-right");amt="−"+fmt(baseAmt(r));
   }else{
     const c=catOf(r.categoryId);
-    name=r.note||(c?c.name:"未分類");icon=IC(catIcon(c));
+    name=r.note||(c?catLabel(c):"未分類");icon=IC(catIcon(c));
     amt=(r.type==="income"?"+":"−")+fmt(baseAmt(r));
     if(r.type==="income")amtcls="inc";
   }
@@ -152,10 +152,10 @@ function recRow(r){
   }else{
     const c=catOf(r.categoryId);
     col=catColor(c);icon=IC(catIcon(c));
-    name=c?(c.parent?(mainOf(c).name+"·"+c.name):c.name):"未分類";
+    name=c?(c.parent?(catLabel(mainOf(c))+"·"+catLabel(c)):catLabel(c)):"未分類";
     note=r.note||"";
     amt=(r.type==="income"?"+":"−")+fmtCur(r.amount,rc);
-    amtcol=r.type==="income"?"var(--income)":"var(--expense)";
+    amtcol=r.type==="income"?"var(--text)":"var(--expense)";
     if(proj)pills+=`<span class="pill proj" style="border-color:${hex2b(proj.color)};color:${proj.color}">${esc(proj.name)}</span>`;
   }
   if(fgn)note=(note?note+" · ":"")+"≈"+fmt(baseAmt(r));
@@ -231,13 +231,13 @@ function statOverview(recs){
   const top3=statCats(recs).slice(0,3);
   const donuts=top3.length
     ?top3.map((x,i)=>`<div class="sv-dcol">${ringDonut(exp>0?x.v/exp*100:0,DONUT_PALETTE[i])}
-        <div class="sv-dname">${esc(x.c.name)}</div><div class="sv-damt">${fmt(x.v)}</div></div>`).join("")
+        <div class="sv-dname">${esc(catLabel(x.c))}</div><div class="sv-damt">${fmt(x.v)}</div></div>`).join("")
     :`<div class="sv-empty">本月尚無支出</div>`;
   return `<div class="sv-sums">
       ${bar("EXP",expN,exp,exp/maxv,"#ff2e01","−")}
-      ${bar("INC",incN,inc,inc/maxv,"#47b58e","+")}
+      ${bar("INC",incN,inc,inc/maxv,"#182b25","+")}
       <div class="sv-divider"></div>
-      ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"#47b58e":"#ff2e01",total>=0?"+":"−")}
+      ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"#182b25":"#ff2e01",total>=0?"+":"−")}
     </div>
     <div class="sv-h">Type</div>
     <div class="sv-donuts">${donuts}</div>`;
@@ -251,7 +251,7 @@ function statDetail(recs){
     const rows=groups[d].map(r=>{
       let nm,cls="",sign="−",ic;
       if(r.type==="transfer"){nm=r.note||"轉帳";ic=IC("arrow-left-right");}
-      else{const c=catOf(r.categoryId);nm=r.note||(c?c.name:"未分類");ic=IC(catIcon(c));if(r.type==="income"){sign="+";cls="inc";}}
+      else{const c=catOf(r.categoryId);nm=r.note||(c?catLabel(c):"未分類");ic=IC(catIcon(c));if(r.type==="income"){sign="+";cls="inc";}}
       const proj=r.projectId?projOf(r.projectId):null;
       const tag=proj?`<span class="sv-ptag">${esc(proj.name)}</span>`:"";
       return `<div class="sv-item" onclick="openAdd('${r.id}')"><span class="sv-ic">${ic}</span><span class="sv-iname">${esc(nm)}</span>${tag}<span class="sv-iamt ${cls}">${sign}${fmt(baseAmt(r))}</span></div>`;
@@ -265,11 +265,11 @@ function statCategory(recs){
   const cats=statCats(recs);if(!cats.length)return `<div class="sv-empty">本月尚無支出</div>`;
   const exp=cats.reduce((s,x)=>s+x.v,0);
   _pieSel=-1;_pieTotal=exp;
-  _pieMeta=cats.map((x,i)=>({name:x.c.name,v:x.v,pct:exp>0?x.v/exp*100:0,color:DONUT_PALETTE[i%DONUT_PALETTE.length]}));
+  _pieMeta=cats.map((x,i)=>({name:catLabel(x.c),v:x.v,pct:exp>0?x.v/exp*100:0,color:DONUT_PALETTE[i%DONUT_PALETTE.length]}));
   const slices=_pieMeta.map(m=>({value:m.v,color:m.color}));
   const list=cats.map((x,i)=>`<div class="sv-item sv-catrow" data-i="${i}" onclick="selectPieSlice(${i})">
       <span class="sv-dot" style="background:${DONUT_PALETTE[i%DONUT_PALETTE.length]}"></span>
-      <span class="sv-iname">${esc(x.c.name)}</span>
+      <span class="sv-iname">${esc(catLabel(x.c))}</span>
       <span class="sv-ipct">${(exp>0?x.v/exp*100:0).toFixed(1)}%</span>
       <span class="sv-iamt">${fmt(x.v)}</span></div>`).join("");
   return `<div class="sv-catwrap">${donutSVG(slices,exp)}</div><div class="sv-list">${list}</div>`;
@@ -292,7 +292,7 @@ function selectPieSlice(i){
 function statRank(recs){
   const exp=recs.filter(r=>r.type==="expense").sort((a,b)=>baseAmt(b)-baseAmt(a)).slice(0,30);
   if(!exp.length)return `<div class="sv-empty">本月尚無支出</div>`;
-  const list=exp.map((r,i)=>{const c=catOf(r.categoryId);const nm=r.note||(c?c.name:"未分類");
+  const list=exp.map((r,i)=>{const c=catOf(r.categoryId);const nm=r.note||(c?catLabel(c):"未分類");
     return `<div class="sv-item" onclick="openAdd('${r.id}')">
       <span class="sv-rank">${i+1}</span>
       <span class="sv-iname">${esc(nm)}</span>
@@ -370,7 +370,7 @@ function renderBudgets(){
   if(!catBuds.length)html+=`<div class="empty" style="padding:26px">尚未設定分類預算</div>`;
   catBuds.forEach(b=>{
     const c=catOf(b.categoryId);if(!c)return;
-    const nm=c.parent?(mainOf(c).name+"·"+c.name):c.name;
+    const nm=c.parent?(catLabel(mainOf(c))+"·"+catLabel(c)):catLabel(c);
     html+=`<div class="bud" onclick="openBudget('${b.categoryId}')">${budBar(nm,catIcon(c),catColor(c),budSpent(b.categoryId,recs),b.amount)}</div>`;
   });
   html+=`</div><button class="btn ghost" onclick="openBudget()">＋ 新增分類預算</button>`;
@@ -379,7 +379,7 @@ function renderBudgets(){
 function budBar(name,icon,color,spent,budget){
   const pct=budget>0?spent/budget*100:0;
   const over=pct>=100;
-  const barcol=over?"var(--expense)":pct>=80?"#f59e0b":"var(--income)";
+  const barcol=over?"var(--expense)":pct>=80?"#f59e0b":"var(--text)";
   const left=budget-spent;
   return `<div class="bhead"><div class="bname"><span class="ic" style="background:${hex2(color)};color:${color}">${IC(icon)}</span>${esc(name)}</div>
     <div class="bnum">${fmt(spent)} / ${fmt(budget)}</div></div>
@@ -501,7 +501,7 @@ function projDetailBody(pid){
   if(arr.length){
     body+=`<div class="card-h" style="padding:14px 2px 2px">支出分類</div><div class="card" style="padding:4px 14px">`;
     arr.forEach(x=>{const pct=s.exp>0?x.v/s.exp*100:0;const col=catColor(x.c);
-      body+=`<div class="legrow"><span class="dot" style="background:${col}"></span><span class="lname">${IC(catIcon(x.c))} ${esc(x.c.name)}</span><span class="lpct">${pct.toFixed(0)}%</span><span class="lamt">${fmt(x.v)}</span></div>`;});
+      body+=`<div class="legrow"><span class="dot" style="background:${col}"></span><span class="lname">${IC(catIcon(x.c))} ${esc(catLabel(x.c))}</span><span class="lpct">${pct.toFixed(0)}%</span><span class="lamt">${fmt(x.v)}</span></div>`;});
     body+=`</div>`;
   }
   body+=`<div class="card-h" style="padding:14px 2px 2px">明細 (${recs.length})</div>`;
