@@ -499,14 +499,32 @@ function projColor(p){const pool=projColorPool(),id=(p&&(p.id||p.name))||"";let 
 function inkOn(bg){let hex=(bg||"#888").replace("#","");if(hex.length===3)hex=hex.split("").map(c=>c+c).join("");const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);return (0.299*r+0.587*g+0.114*b)/255>0.62?"#182b25":"#fff";}
 function pickCover(pid){
   const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
-  inp.onchange=()=>{
+  inp.onchange=async()=>{
     const f=inp.files&&inp.files[0];if(!f)return;
-    const img=new Image(),url=URL.createObjectURL(f);
+    let url=null;try{url=await _prepCover(f);}catch(e){}
+    if(!url){toast("圖片讀取失敗");return;}
+    const img=new Image();
     img.onload=()=>openCropModal(pid,img,url);   // crop step before saving
-    img.onerror=()=>{URL.revokeObjectURL(url);toast("圖片讀取失敗");};
+    img.onerror=()=>toast("圖片讀取失敗");
     img.src=url;
   };
   inp.click();
+}
+/* decode + downscale the picked file to a safe (<=1600px) jpeg data-url before cropping.
+   full-res phone photos (12MP) can make iOS Safari draw a blank canvas; createImageBitmap
+   decodes reliably and we only ever draw a small image afterwards */
+async function _prepCover(file){
+  try{
+    if(window.createImageBitmap){
+      const bmp=await createImageBitmap(file);
+      const MAX=1600,s=Math.min(1,MAX/Math.max(bmp.width,bmp.height));
+      const w=Math.max(1,Math.round(bmp.width*s)),h=Math.max(1,Math.round(bmp.height*s));
+      const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+      cv.getContext("2d").drawImage(bmp,0,0,w,h);if(bmp.close)bmp.close();
+      return cv.toDataURL("image/jpeg",0.85);
+    }
+  }catch(e){}
+  return await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file);});
 }
 /* save a (3:4) cover data-url onto a project and reflect it everywhere */
 function _applyCover(pid,data){
@@ -550,7 +568,7 @@ function _cropBindDrag(){
 }
 function closeCrop(){
   const ov=document.getElementById("cropOv");if(ov)ov.remove();
-  if(_crop){if(_crop._win){window.removeEventListener("mousemove",_crop._win.move);window.removeEventListener("mouseup",_crop._win.end);}if(_crop.url)URL.revokeObjectURL(_crop.url);}
+  if(_crop){if(_crop._win){window.removeEventListener("mousemove",_crop._win.move);window.removeEventListener("mouseup",_crop._win.end);}if(_crop.url&&_crop.url.indexOf("blob:")===0)URL.revokeObjectURL(_crop.url);}
   _crop=null;if(!document.getElementById("phero"))document.documentElement.classList.remove("phero-open");
 }
 function confirmCrop(){
