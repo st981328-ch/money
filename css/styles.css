@@ -394,6 +394,9 @@ html.fin-full .pages{padding-bottom:0}
 .pcol{flex:1; min-width:0; display:flex; flex-direction:column; gap:14px}
 .projgrid .projcard{position:relative; border-radius:14px; overflow:hidden; cursor:pointer; background:var(--card-grey); box-shadow:0 6px 16px rgba(0,0,0,.15); transform:rotate(var(--rot,0deg)); transition:transform .18s ease, box-shadow .18s ease}
 .projgrid .projcard:active{transform:rotate(var(--rot,0deg)) scale(.96); box-shadow:0 3px 10px rgba(0,0,0,.14)}
+@keyframes projIn{from{opacity:0;transform:translateY(24px) rotate(var(--rot,0deg)) scale(.97)}to{opacity:1;transform:translateY(0) rotate(var(--rot,0deg)) scale(1)}}
+.projgrid .projcard.enter{animation:projIn .44s cubic-bezier(.2,.8,.3,1) backwards}
+@media (prefers-reduced-motion:reduce){.projgrid .projcard.enter{animation:none}}
 .projgrid .projcard img{display:block; width:100%; height:auto}
 .projgrid .projcard.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
 .projgrid .projcard .pc-letter{font-size:48px; font-weight:800; color:rgba(255,255,255,.92)}
@@ -510,8 +513,8 @@ html.pg-projects .app{background:#e8e8e8}
 /* directional slide when switching month */
 @keyframes svMonthR{from{opacity:0;transform:translateX(56px)}to{opacity:1;transform:none}}
 @keyframes svMonthL{from{opacity:0;transform:translateX(-56px)}to{opacity:1;transform:none}}
-.sv-body.sv-from-right{animation:svMonthR .42s cubic-bezier(.22,.85,.3,1)}
-.sv-body.sv-from-left{animation:svMonthL .42s cubic-bezier(.22,.85,.3,1)}
+.sv-from-right{animation:svMonthR .42s cubic-bezier(.22,.85,.3,1) backwards}
+.sv-from-left{animation:svMonthL .42s cubic-bezier(.22,.85,.3,1) backwards}
 @media (prefers-reduced-motion:reduce){
   .sv-arc,.sv-sbar>div{transition:none}
   .sv-catwrap svg,.sv-body.sv-from-right,.sv-body.sv-from-left{animation:none}

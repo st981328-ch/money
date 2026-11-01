@@ -4,6 +4,7 @@
 const TITLES={records:"記錄",stats:"統計",projects:"專案",budgets:"預算",settings:"設定"};
 function go(p){
   _monthDir=0;   // navigation is not a month change; don't slide
+  if(p==="projects")_projEnter=true;   // cascade the cards in on entry
   if(p==="stats"){ui.month=curMonth();ui.statTab="overview";}   // entering analytics always resets to this month's overview
   ui.page=p;
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
@@ -202,11 +203,16 @@ function renderStats(){
   else body=statOverview(recs);
   document.getElementById("page-stats").innerHTML=`<div class="statv2">${top}<div class="sv-body">${body}</div></div>`;
   const dir=_monthDir;_monthDir=0;
-  if(dir){const sb=document.querySelector("#page-stats .sv-body");if(sb)sb.classList.add(dir>0?"sv-from-right":"sv-from-left");}
+  if(dir){
+    const sb=document.querySelector("#page-stats .sv-body"),cls=dir>0?"sv-from-right":"sv-from-left";
+    const els=sb&&sb.querySelectorAll(".sv-sum, .sv-dcol, .sv-item, .sv-catwrap, .sv-dhead, .sv-h, .sv-empty");
+    if(els&&els.length)els.forEach((el,i)=>{if(i>22)return;el.classList.add(cls);el.style.animationDelay=(i*0.045)+"s";});  // staggered cascade
+    else if(sb)sb.classList.add(cls);
+  }
   requestAnimationFrame(()=>requestAnimationFrame(animateStatCharts));
 }
 /* ---- entrance animations for the analytics charts: ring sweep + count-up + bar fill ---- */
-let _statGen=0,_monthDir=0;
+let _statGen=0,_monthDir=0,_projEnter=false;
 function _countUp(el,to,dur){
   if(_rMotion){el.textContent=to.toFixed(1)+"%";return;}
   const gen=_statGen,start=performance.now();
@@ -460,15 +466,18 @@ function renderProjects(){
         <div class="pv-rtotal">${fmt(s.exp)}</div></div>`).join("");
     body=`<div class="pv-list">${rows||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
   }else{
-    // two-column flex masonry (left-right order; no multicol artifacts) of tilted floating cards
-    const card=p=>{
+    // two-column flex masonry (left-right order; no multicol artifacts) of tilted floating cards.
+    // on page entry, cards cascade in with a staggered delay (i = list/row order)
+    const ent=_projEnter;_projEnter=false;
+    const card=(p,i)=>{
       const cap=`<div class="pc-cap">${esc(p.name)}</div>`,t=projTilt(p.id);
-      if(p.cover)return `<div class="projcard img" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
+      const ex=ent?` enter`:"",dl=ent?`;animation-delay:${(Math.min(i,16)*0.05).toFixed(2)}s`:"";
+      if(p.cover)return `<div class="projcard img${ex}" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg${dl}" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
       const col=projColor(p),tc=inkOn(col),letter=esc((p.name||"?").trim().charAt(0)||"?");
-      return `<div class="projcard plain" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${col};--rot:${t}deg;--pc-tc:${tc}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
+      return `<div class="projcard plain${ex}" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${col};--rot:${t}deg;--pc-tc:${tc}${dl}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
     };
     if(!list.length)body=`<div class="projgrid"><div class="pv-empty-sm">這一年沒有專案</div></div>`;
-    else{const a=[],bcol=[];list.forEach((x,i)=>(i%2?bcol:a).push(card(x.p)));
+    else{const a=[],bcol=[];list.forEach((x,i)=>(i%2?bcol:a).push(card(x.p,i)));
       body=`<div class="projgrid"><div class="pcol">${a.join("")}</div><div class="pcol">${bcol.join("")}</div></div>`;}
   }
   document.getElementById("page-projects").innerHTML=`<div class="projv2">${top}
