@@ -507,9 +507,14 @@ html.pg-projects .app{background:#e8e8e8}
 .sv-arc{transition:stroke-dashoffset .95s cubic-bezier(.22,.8,.3,1)}
 .sv-sbar>div{transition:width .9s cubic-bezier(.22,.8,.3,1)}
 @keyframes pieIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+/* directional slide when switching month */
+@keyframes svMonthR{from{opacity:0;transform:translateX(56px)}to{opacity:1;transform:none}}
+@keyframes svMonthL{from{opacity:0;transform:translateX(-56px)}to{opacity:1;transform:none}}
+.sv-body.sv-from-right{animation:svMonthR .42s cubic-bezier(.22,.85,.3,1)}
+.sv-body.sv-from-left{animation:svMonthL .42s cubic-bezier(.22,.85,.3,1)}
 @media (prefers-reduced-motion:reduce){
   .sv-arc,.sv-sbar>div{transition:none}
-  .sv-catwrap svg{animation:none}
+  .sv-catwrap svg,.sv-body.sv-from-right,.sv-body.sv-from-left{animation:none}
 }
 .sv-empty{text-align:center; color:var(--muted); font-size:14px; padding:60px 0}
 

@@ -3,6 +3,7 @@
 /* =================== router =================== */
 const TITLES={records:"記錄",stats:"統計",projects:"專案",budgets:"預算",settings:"設定"};
 function go(p){
+  _monthDir=0;   // navigation is not a month change; don't slide
   if(p==="stats"){ui.month=curMonth();ui.statTab="overview";}   // entering analytics always resets to this month's overview
   ui.page=p;
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
@@ -21,7 +22,7 @@ function navAdd(){ if(ui.page!=="records") go("records"); else openAdd(); }
 function shiftMonth(d){
   let[y,m]=ui.month.split("-").map(Number);m+=d;
   if(m<1){m=12;y--;}if(m>12){m=1;y++;}
-  ui.month=y+"-"+String(m).padStart(2,"0");render();
+  ui.month=y+"-"+String(m).padStart(2,"0");_monthDir=d<0?-1:1;render();
 }
 function render(){
   document.getElementById("mlabel").textContent=monthLabel(ui.month);
@@ -200,10 +201,12 @@ function renderStats(){
   else if(tab==="name")body=statName(recs);
   else body=statOverview(recs);
   document.getElementById("page-stats").innerHTML=`<div class="statv2">${top}<div class="sv-body">${body}</div></div>`;
+  const dir=_monthDir;_monthDir=0;
+  if(dir){const sb=document.querySelector("#page-stats .sv-body");if(sb)sb.classList.add(dir>0?"sv-from-right":"sv-from-left");}
   requestAnimationFrame(()=>requestAnimationFrame(animateStatCharts));
 }
 /* ---- entrance animations for the analytics charts: ring sweep + count-up + bar fill ---- */
-let _statGen=0;
+let _statGen=0,_monthDir=0;
 function _countUp(el,to,dur){
   if(_rMotion){el.textContent=to.toFixed(1)+"%";return;}
   const gen=_statGen,start=performance.now();
@@ -460,9 +463,9 @@ function renderProjects(){
     // two-column flex masonry (left-right order; no multicol artifacts) of tilted floating cards
     const card=p=>{
       const cap=`<div class="pc-cap">${esc(p.name)}</div>`,t=projTilt(p.id);
-      if(p.cover)return `<div class="projcard img" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
+      if(p.cover)return `<div class="projcard img" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
       const col=projColor(p),tc=inkOn(col),letter=esc((p.name||"?").trim().charAt(0)||"?");
-      return `<div class="projcard plain" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${col};--rot:${t}deg;--pc-tc:${tc}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
+      return `<div class="projcard plain" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${col};--rot:${t}deg;--pc-tc:${tc}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
     };
     if(!list.length)body=`<div class="projgrid"><div class="pv-empty-sm">這一年沒有專案</div></div>`;
     else{const a=[],bcol=[];list.forEach((x,i)=>(i%2?bcol:a).push(card(x.p)));
@@ -496,7 +499,17 @@ function pickCover(pid){
       if(w>h){if(w>max){h=Math.round(h*max/w);w=max;}}else{if(h>max){w=Math.round(w*max/h);h=max;}}
       const cv=document.createElement("canvas");cv.width=w;cv.height=h;
       cv.getContext("2d").drawImage(img,0,0,w,h);
-      const p=projOf(pid);if(p){p.cover=cv.toDataURL("image/jpeg",0.72);save();render();toast("封面已更新");}
+      const p=projOf(pid);if(p){
+        p.cover=cv.toDataURL("image/jpeg",0.72);save();
+        const ph=document.getElementById("phero"),cov=ph&&ph.querySelector("#pheroCover");
+        if(cov){ // update the open hero cover in place (render() only rebuilds the grid behind it)
+          cov.className="phero-cover img";cov.style.background="";cov.style.removeProperty("--pc-tc");
+          cov.innerHTML=`<img src="${p.cover}" alt="" draggable="false"><button class="phc-cam" onclick="pickCover('${pid}')" aria-label="更換封面">${IC("image")}</button>`;
+        }
+        render();
+        if(ph)_pheroSrc=document.querySelector('#page-projects .projcard[data-pid="'+pid+'"]')||null; // re-link morph source to the rebuilt card
+        toast("封面已更新");
+      }
     };
     img.onerror=()=>{URL.revokeObjectURL(url);toast("圖片讀取失敗");};
     img.src=url;
