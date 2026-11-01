@@ -529,7 +529,13 @@ async function _prepCover(file){
 /* save a (3:4) cover data-url onto a project and reflect it everywhere */
 function _applyCover(pid,data){
   const p=projOf(pid);if(!p)return;
-  p.cover=data;save();
+  const old=p.cover;p.cover=data;
+  try{save();}catch(e){                         // iOS localStorage can be full; don't fail silently
+    p.cover=old;
+    const q=/quota|exceeded/i.test((e&&e.name||"")+" "+(e&&e.message||""));
+    toast(q?"儲存空間不足，封面存不下（可先刪掉其他封面）":"存檔失敗，請再試一次");
+    return;
+  }
   const ph=document.getElementById("phero"),cov=ph&&ph.querySelector("#pheroCover");
   if(cov){ // render() only rebuilds the grid behind the hero, so update the open hero cover in place
     cov.className="phero-cover img";cov.style.background="";cov.style.removeProperty("--pc-tc");
@@ -573,11 +579,16 @@ function closeCrop(){
 }
 function confirmCrop(){
   const c=_crop;if(!c)return;
-  const srcX=-c.tx/c.scale,srcY=-c.ty/c.scale,srcW=c.FW/c.scale,srcH=c.FH/c.scale;
-  const TW=600,TH=800,cv=document.createElement("canvas");cv.width=TW;cv.height=TH;
-  cv.getContext("2d").drawImage(c.img,srcX,srcY,srcW,srcH,0,0,TW,TH);
-  const data=cv.toDataURL("image/jpeg",0.78),pid=c.pid;
-  closeCrop();_applyCover(pid,data);
+  const pid=c.pid;
+  try{
+    const srcX=-c.tx/c.scale,srcY=-c.ty/c.scale,srcW=c.FW/c.scale,srcH=c.FH/c.scale;
+    const TW=540,TH=720,cv=document.createElement("canvas");cv.width=TW;cv.height=TH;   // smaller = less localStorage
+    cv.getContext("2d").drawImage(c.img,srcX,srcY,srcW,srcH,0,0,TW,TH);
+    const data=cv.toDataURL("image/jpeg",0.72);
+    closeCrop();
+    if(!data||data.length<300){toast("圖片處理失敗，請換一張");return;}
+    _applyCover(pid,data);
+  }catch(e){closeCrop();toast("裁切失敗："+((e&&e.message)||"未知錯誤"));}
 }
 function projDetailBody(pid){
   const p=projOf(pid),s=projStats(pid);
