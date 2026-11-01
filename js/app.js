@@ -498,11 +498,15 @@ function projColor(p){const pool=projColorPool(),id=(p&&(p.id||p.name))||"";let 
 /* readable ink/white on a given background by luminance */
 function inkOn(bg){let hex=(bg||"#888").replace("#","");if(hex.length===3)hex=hex.split("").map(c=>c+c).join("");const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);return (0.299*r+0.587*g+0.114*b)/255>0.62?"#182b25":"#fff";}
 function pickCover(pid){
-  const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
+  const old=document.getElementById("coverInput");if(old)old.remove();
+  const inp=document.createElement("input");inp.id="coverInput";inp.type="file";inp.accept="image/*";
+  inp.style.cssText="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0";
+  document.body.appendChild(inp);   // iOS Safari only fires change reliably for an in-DOM input
   inp.onchange=async()=>{
-    const f=inp.files&&inp.files[0];if(!f)return;
+    const f=inp.files&&inp.files[0];if(!f){inp.remove();return;}
     toast("處理圖片中…");
     let url=null;try{url=await _prepCover(f);}catch(e){}
+    inp.remove();
     if(!url){toast("圖片讀取失敗，請換一張");return;}
     const img=new Image();
     img.onload=()=>openCropModal(pid,img,url);   // crop step before saving
