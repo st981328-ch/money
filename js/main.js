@@ -40,21 +40,22 @@ window.addEventListener("focus",()=>{if(syncOn())syncPull({background:true,silen
 // prevent double-tap zoom on buttons
 document.addEventListener("dblclick",e=>e.preventDefault(),{passive:false});
 
-/* auto-update: when a newer version is deployed, reload on return so the running
-   code is never stale (at most one reload per deployed version per session) */
+/* auto-update: when a strictly-newer version is deployed, reload on return so the
+   running code isn't stale. Never reloads mid-interaction (crop / hero / sheet /
+   add open), and never downgrades to a momentarily-stale CDN copy. */
 (function(){
   let busy=false;
+  const overlayOpen=()=>!!(document.getElementById("cropOv")||document.getElementById("phero")||(typeof sheetStack!=="undefined"&&sheetStack.length)||document.documentElement.classList.contains("adding"));
   async function chk(){
-    if(busy)return;busy=true;
+    if(busy||overlayOpen())return;busy=true;
     try{
       const run=(document.querySelector('script[src*="app.js"]')||{}).src||"";
       const cur=(run.match(/[?&]v=([\w.-]+)/)||[])[1]||"";
       const res=await fetch("index.html?cb="+Date.now(),{cache:"no-store"});
       const dep=((await res.text()).match(/app\.js\?v=([\w.-]+)/)||[])[1]||"";
-      if(dep&&cur&&dep!==cur&&sessionStorage.getItem("_tv")!==dep){sessionStorage.setItem("_tv",dep);location.reload();return;}
+      if(dep&&cur&&dep>cur&&!overlayOpen()&&sessionStorage.getItem("_tv")!==dep){sessionStorage.setItem("_tv",dep);location.reload();return;}
     }catch(e){}
     busy=false;
   }
-  window.addEventListener("focus",chk);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")chk();});
 })();

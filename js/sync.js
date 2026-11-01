@@ -9,6 +9,7 @@ function syncBase(){return +localStorage.getItem("tally_sync_base")||0;}
 function syncOn(){return !!pat();}
 function isBusyEditing(){
   if(sheetStack.length)return true;
+  if(document.getElementById("cropOv"))return true;   // mid cover-crop
   const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;
   return false;
 }
