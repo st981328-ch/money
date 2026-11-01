@@ -568,6 +568,7 @@ function openProjectHero(pid,srcEl){
   document.documentElement.classList.add("phero-open");
   const cover=ov.querySelector("#pheroCover"),info=ov.querySelector("#pheroInfo");
   _pheroSrc=srcEl||null;
+  enablePheroDrag(ov);
   requestAnimationFrame(()=>{
     if(_rMotion||!srcEl){info.classList.add("in");return;}
     const t=_pheroFlip(srcEl,cover);        // start the cover overlapping the tilted card
@@ -580,6 +581,32 @@ function openProjectHero(pid,srcEl){
     });
     cover.addEventListener("transitionend",()=>{cover.style.transition="";cover.style.transform="";},{once:true});
   });
+}
+/* pull the hero down to dismiss, but only when it's already scrolled to the top */
+function enablePheroDrag(ov){
+  let startY=0,dy=0,dragging=false;
+  ov.addEventListener("touchstart",e=>{
+    if(ov.scrollTop>0||(e.target.closest&&e.target.closest("button"))){dragging=false;return;}
+    startY=e.touches[0].clientY;dy=0;dragging=true;ov.style.transition="none";
+  },{passive:true});
+  ov.addEventListener("touchmove",e=>{
+    if(!dragging)return;
+    dy=e.touches[0].clientY-startY;
+    if(dy>0&&ov.scrollTop<=0){
+      ov.style.transform="translateY("+dy+"px)";
+      ov.style.opacity=String(Math.max(.45,1-dy/650));
+      if(e.cancelable)e.preventDefault();
+    }else{dragging=false;ov.style.transform="";ov.style.opacity="";}
+  },{passive:false});
+  const end=()=>{
+    if(!dragging)return;dragging=false;
+    ov.style.transition="transform .26s ease, opacity .26s ease";
+    if(dy>110){
+      ov.style.transform="translateY(100%)";ov.style.opacity="0";haptic("tap");
+      setTimeout(()=>{if(_pheroSrc)_pheroSrc.style.visibility="";ov.remove();document.documentElement.classList.remove("phero-open");_pheroSrc=null;},270);
+    }else{ov.style.transform="";ov.style.opacity="";}
+  };
+  ov.addEventListener("touchend",end);ov.addEventListener("touchcancel",end);
 }
 function closeProjectHero(){
   const ov=document.getElementById("phero");if(!ov)return;
