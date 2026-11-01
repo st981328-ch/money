@@ -7,7 +7,7 @@ function go(p){
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
   document.getElementById("page-"+p).classList.add("active");
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
-  document.documentElement.classList.toggle("fin-full",p==="records"||p==="stats"||p==="projects");
+  document.documentElement.classList.toggle("fin-full",p==="records"||p==="stats"||p==="projects"||p==="settings");
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
   document.getElementById("navAddBtn").classList.toggle("on",p==="records");
@@ -620,25 +620,29 @@ function deleteProject(pid){
 
 /* =================== settings page =================== */
 function renderSettings(){
+  document.documentElement.classList.add("fin-full");
   const syn=syncOn();
-  let html=`
-  <div class="set-group">
-    <div class="set-item" onclick="openManageCats()"><span class="si-ic">🏷️</span><span class="si-label">分類管理</span><span class="si-val">${DB.categories.length}</span><span class="chev">›</span></div>
-    <div class="set-item" onclick="openManageTags()"><span class="si-ic">#️⃣</span><span class="si-label">標籤管理</span><span class="si-val">${DB.tags.length}</span><span class="chev">›</span></div>
-  </div>
-  <div class="set-group">
-    <div class="set-item" onclick="openCurrency()"><span class="si-ic">💱</span><span class="si-label">幣別與匯率</span><span class="si-val">${DB.config.baseCur}・${DB.config.currencies.length} 種</span><span class="chev">›</span></div>
-    <div class="set-item" onclick="openTheme()"><span class="si-ic">🎨</span><span class="si-label">外觀主題</span><span class="si-val">${({light:"淺色",dark:"深色",auto:"跟隨系統"})[DB.config.theme]}</span><span class="chev">›</span></div>
-  </div>
-  <div class="set-group">
-    <div class="set-item" onclick="openSync()"><span class="si-ic">☁️</span><span class="si-label">雲端同步<span class="synbadge ${syn?"on":""}"></span></span><span class="si-val">${syn?"已啟用":"未設定"}</span><span class="chev">›</span></div>
-    <div class="set-item" onclick="exportData()"><span class="si-ic">📤</span><span class="si-label">匯出備份</span><span class="chev">›</span></div>
-    <div class="set-item" onclick="importData()"><span class="si-ic">📥</span><span class="si-label">匯入備份</span><span class="chev">›</span></div>
-  </div>
-  <div class="set-group">
-    <div class="set-item" onclick="resetAll()"><span class="si-ic">🗑️</span><span class="si-label" style="color:var(--expense)">清除所有資料</span><span class="chev">›</span></div>
-  </div>
-  <div class="hint" style="text-align:center;margin-top:16px">Tally · 資料存在本機瀏覽器${syn?" + 雲端 Gist":""}<br>共 ${DB.records.length} 筆記錄 · 版本 ${APP_VERSION}</div>`;
+  const row=(ic,col,label,val,click,danger)=>`<div class="srow" onclick="${click}">
+      <span class="stile" style="background:${hex2(col)};color:${col}">${IC(ic)}</span>
+      <span class="slabel"${danger?' style="color:var(--expense)"':""}>${label}</span>
+      ${val?`<span class="sval">${val}</span>`:""}<span class="schev">›</span></div>`;
+  const themeLbl={light:"淺色",dark:"深色",auto:"跟隨系統"}[DB.config.theme];
+  const groups=[
+    [ row("grid","#5b6cff","分類管理",DB.categories.length,"openManageCats()"),
+      row("hashtag","#8b5cf6","標籤管理",DB.tags.length,"openManageTags()") ],
+    [ row("coins","#f59e0b","幣別與匯率",`${DB.config.baseCur}・${DB.config.currencies.length} 種`,"openCurrency()"),
+      row("palette","#ec4899","外觀主題",themeLbl,"openTheme()") ],
+    [ row("sync","#0891b2",`雲端同步<span class="synbadge ${syn?"on":""}"></span>`,syn?"已啟用":"未設定","openSync()"),
+      row("upload","#64748b","匯出備份","","exportData()"),
+      row("download","#64748b","匯入備份","","importData()") ],
+    [ row("trash","#e5484d","清除所有資料","","resetAll()",true) ],
+  ];
+  const html=`<div class="setv2">
+    <div class="set-head"><div class="set-title">Settings</div></div>
+    <div class="set-wrap">
+      ${groups.map(g=>`<div class="sgroup">${g.join("")}</div>`).join("")}
+      <div class="shint">Tally · 資料存在本機瀏覽器${syn?" + 雲端 Gist":""}<br>共 ${DB.records.length} 筆記錄 · 版本 ${APP_VERSION}</div>
+    </div></div>`;
   document.getElementById("page-settings").innerHTML=html;
 }
 
