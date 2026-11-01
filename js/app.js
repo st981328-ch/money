@@ -111,7 +111,7 @@ function homeStrip(sel){
 function homeRow(r){
   let name,icon,amt,amtcls="";
   if(r.type==="transfer"){
-    name=r.note||"轉帳";icon=IC("arrow-left-right");amt="−"+fmt(baseAmt(r));
+    name=r.note||"轉帳";icon=IC("arrow-left-right");amt="⇄ "+fmt(baseAmt(r));amtcls="xfer";  // neutral: a transfer is not an expense
   }else{
     const c=catOf(r.categoryId);
     name=r.note||(c?catLabel(c):"未分類");icon=IC(catIcon(c));
@@ -261,7 +261,7 @@ function statDetail(recs){
   Object.keys(groups).sort().reverse().forEach(d=>{
     const rows=groups[d].map(r=>{
       let nm,cls="",sign="−",ic;
-      if(r.type==="transfer"){nm=r.note||"轉帳";ic=IC("arrow-left-right");}
+      if(r.type==="transfer"){nm=r.note||"轉帳";ic=IC("arrow-left-right");sign="⇄ ";cls="xfer";}
       else{const c=catOf(r.categoryId);nm=r.note||(c?catLabel(c):"未分類");ic=IC(catIcon(c));if(r.type==="income"){sign="+";cls="inc";}}
       const proj=r.projectId?projOf(r.projectId):null;
       const tag=proj?`<span class="sv-ptag">${esc(proj.name)}</span>`:"";
@@ -546,8 +546,13 @@ function _cropBindDrag(){
   const end=()=>{down=false;};
   fr.addEventListener("touchstart",start,{passive:true});fr.addEventListener("touchmove",move,{passive:false});fr.addEventListener("touchend",end);fr.addEventListener("touchcancel",end);
   fr.addEventListener("mousedown",start);window.addEventListener("mousemove",move);window.addEventListener("mouseup",end);
+  if(_crop)_crop._win={move,end};   // kept so closeCrop can detach the window listeners
 }
-function closeCrop(){const ov=document.getElementById("cropOv");if(ov)ov.remove();if(_crop&&_crop.url)URL.revokeObjectURL(_crop.url);_crop=null;if(!document.getElementById("phero"))document.documentElement.classList.remove("phero-open");}
+function closeCrop(){
+  const ov=document.getElementById("cropOv");if(ov)ov.remove();
+  if(_crop){if(_crop._win){window.removeEventListener("mousemove",_crop._win.move);window.removeEventListener("mouseup",_crop._win.end);}if(_crop.url)URL.revokeObjectURL(_crop.url);}
+  _crop=null;if(!document.getElementById("phero"))document.documentElement.classList.remove("phero-open");
+}
 function confirmCrop(){
   const c=_crop;if(!c)return;
   const srcX=-c.tx/c.scale,srcY=-c.ty/c.scale,srcW=c.FW/c.scale,srcH=c.FH/c.scale;
@@ -767,6 +772,7 @@ let _flashId=null;   // id of the just-saved record; its row pulses once on next
 function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function openAdd(editId){
   let r=editId?DB.records.find(x=>x.id===editId):null;
+  if(r&&r.type==="transfer"){toast("轉帳記錄不開放編輯");return;}   // the add form has no transfer mode; editing one would corrupt it
   addState={
     id:r?r.id:null,
     type:r?(r.type==="income"?"income":"expense"):"expense",
