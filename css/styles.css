@@ -397,6 +397,9 @@ html.fin-full .pages{padding-bottom:0}
 .projgrid .projcard.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
 .projgrid .projcard .pc-letter{font-size:48px; font-weight:800; color:rgba(255,255,255,.92)}
 .projgrid .projcard .pc-cap{position:absolute; left:0; right:0; bottom:0; z-index:1; padding:24px 12px 11px; color:#fff; font-weight:700; font-size:13.5px; line-height:1.25; background:linear-gradient(transparent, rgba(0,0,0,.62))}
+/* cover-less cards are a neutral grey -> dark text, no gradient */
+.projgrid .projcard.plain .pc-letter{color:rgba(24,43,37,.26)}
+.projgrid .projcard.plain .pc-cap{color:#182b25; background:none; padding:10px 12px}
 
 /* hero / container-transform project detail */
 .phero-open{overflow:hidden}
@@ -409,7 +412,7 @@ html.fin-full .pages{padding-bottom:0}
 .phero-cover{position:relative; margin:2px auto 0; width:58%; max-width:244px; border-radius:16px; overflow:hidden; box-shadow:0 16px 36px rgba(0,0,0,.26); background:var(--card-grey,#d9d9d9); will-change:transform}
 .phero-cover img{display:block; width:100%; height:auto}
 .phero-cover.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
-.phero-cover.plain .pc-letter{font-size:76px; font-weight:800; color:rgba(255,255,255,.92)}
+.phero-cover.plain .pc-letter{font-size:76px; font-weight:800; color:rgba(24,43,37,.28)}
 .phc-cam{position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.34); color:#fff; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.4)}
 .phc-cam .gi{width:16px; height:16px}
 .phc-cam:active{filter:brightness(.85)}

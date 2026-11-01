@@ -460,7 +460,7 @@ function renderProjects(){
       const cap=`<div class="pc-cap">${esc(p.name)}</div>`,t=projTilt(p.id);
       if(p.cover)return `<div class="projcard img" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
       const letter=esc((p.name||"?").trim().charAt(0)||"?");
-      return `<div class="projcard plain" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${p.color||"#8b5cf6"};--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
+      return `<div class="projcard plain" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${PROJ_BG};--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
     }).join("");
     body=`<div class="projgrid">${cards||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
   }
@@ -472,6 +472,7 @@ function renderProjects(){
 function setProjActive(pid){ui.projActive=pid;render();}
 /* stable small tilt per project id (~ -2.6deg .. +2.6deg) for a casual, tossed-card look */
 function projTilt(id){let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))>>>0;return (((h%9)-4)*0.65).toFixed(2);}
+const PROJ_BG="#e8e8e8";   // uniform neutral card colour for cover-less projects
 function pickCover(pid){
   const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
   inp.onchange=()=>{
@@ -529,7 +530,7 @@ function openProjectHero(pid,srcEl){
       <button class="phero-ico" onclick="closeProjectHero()" aria-label="關閉">${IC("x")}</button>
       <button class="phero-ico" onclick="openProjectEdit('${pid}')" aria-label="編輯">${IC("pencil")}</button>
     </div>
-    <div class="phero-cover ${hasCover?"img":"plain"}" id="pheroCover" style="${hasCover?"":"background:"+(p.color||"#8b5cf6")}">
+    <div class="phero-cover ${hasCover?"img":"plain"}" id="pheroCover" style="${hasCover?"":"background:"+PROJ_BG}">
       ${inner}
       <button class="phc-cam" onclick="pickCover('${pid}')" aria-label="更換封面">${IC("image")}</button>
     </div>
