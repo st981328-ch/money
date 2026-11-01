@@ -720,25 +720,26 @@ function deleteProject(pid){
 function renderSettings(){
   document.documentElement.classList.add("fin-full");
   const syn=syncOn();
-  const row=(ic,col,label,val,click,danger)=>`<div class="srow" onclick="${click}">
-      <span class="stile" style="background:${hex2(col)};color:${col}">${IC(ic)}</span>
-      <span class="slabel"${danger?' style="color:var(--expense)"':""}>${label}</span>
-      ${val?`<span class="sval">${val}</span>`:""}<span class="schev">›</span></div>`;
+  const row=(label,val,click,danger)=>`<button class="srow${danger?" danger":""}" onclick="${click}">
+      <span class="slabel">${label}</span>
+      ${val?`<span class="sval">${val}</span>`:""}<span class="schev">›</span></button>`;
+  const sec=(title,rows)=>`<div class="ssec"><div class="ssec-h">${title}</div><div class="sgroup">${rows}</div></div>`;
   const themeLbl={light:"淺色",dark:"深色",auto:"跟隨系統"}[DB.config.theme];
-  const groups=[
-    [ row("grid","#5b6cff","分類管理",DB.categories.length,"openManageCats()"),
-      row("hashtag","#8b5cf6","標籤管理",DB.tags.length,"openManageTags()") ],
-    [ row("coins","#f59e0b","幣別與匯率",`${DB.config.baseCur}・${DB.config.currencies.length} 種`,"openCurrency()"),
-      row("palette","#ec4899","外觀主題",themeLbl,"openTheme()") ],
-    [ row("sync","#0891b2",`雲端同步<span class="synbadge ${syn?"on":""}"></span>`,syn?"已啟用":"未設定","openSync()"),
-      row("upload","#64748b","匯出備份","","exportData()"),
-      row("download","#64748b","匯入備份","","importData()") ],
-    [ row("trash","#e5484d","清除所有資料","","resetAll()",true) ],
-  ];
   const html=`<div class="setv2">
     <div class="set-head"><div class="set-title">Settings</div></div>
     <div class="set-wrap">
-      ${groups.map(g=>`<div class="sgroup">${g.join("")}</div>`).join("")}
+      ${sec("資料",
+        row("分類管理",DB.categories.length+" 類","openManageCats()")+
+        row("標籤管理",DB.tags.length+" 個","openManageTags()"))}
+      ${sec("偏好設定",
+        row("幣別與匯率",`${DB.config.baseCur} · ${DB.config.currencies.length} 種`,"openCurrency()")+
+        row("外觀主題",themeLbl,"openTheme()"))}
+      ${sec("備份與同步",
+        row(`雲端同步<span class="synbadge ${syn?"on":""}"></span>`,syn?"已啟用":"未設定","openSync()")+
+        row("匯出備份","","exportData()")+
+        row("匯入備份","","importData()"))}
+      ${sec("危險操作",
+        row("清除所有資料","","resetAll()",true))}
       <div class="shint">Tally · 資料存在本機瀏覽器${syn?" + 雲端 Gist":""}<br>共 ${DB.records.length} 筆記錄 · 版本 ${APP_VERSION}</div>
     </div></div>`;
   document.getElementById("page-settings").innerHTML=html;
