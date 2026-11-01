@@ -3,6 +3,7 @@
 /* =================== router =================== */
 const TITLES={records:"記錄",stats:"統計",projects:"專案",budgets:"預算",settings:"設定"};
 function go(p){
+  if(p==="stats"){ui.month=curMonth();ui.statTab="overview";}   // entering analytics always resets to this month's overview
   ui.page=p;
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
   document.getElementById("page-"+p).classList.add("active");
