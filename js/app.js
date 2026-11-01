@@ -501,30 +501,36 @@ function pickCover(pid){
   const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
   inp.onchange=async()=>{
     const f=inp.files&&inp.files[0];if(!f)return;
+    toast("處理圖片中…");
     let url=null;try{url=await _prepCover(f);}catch(e){}
-    if(!url){toast("圖片讀取失敗");return;}
+    if(!url){toast("圖片讀取失敗，請換一張");return;}
     const img=new Image();
     img.onload=()=>openCropModal(pid,img,url);   // crop step before saving
-    img.onerror=()=>toast("圖片讀取失敗");
+    img.onerror=()=>toast("圖片讀取失敗，請換一張");
     img.src=url;
   };
   inp.click();
 }
-/* decode + downscale the picked file to a safe (<=1600px) jpeg data-url before cropping.
-   full-res phone photos (12MP) can make iOS Safari draw a blank canvas; createImageBitmap
-   decodes reliably and we only ever draw a small image afterwards */
-async function _prepCover(file){
-  try{
-    if(window.createImageBitmap){
-      const bmp=await createImageBitmap(file);
-      const MAX=1600,s=Math.min(1,MAX/Math.max(bmp.width,bmp.height));
-      const w=Math.max(1,Math.round(bmp.width*s)),h=Math.max(1,Math.round(bmp.height*s));
-      const cv=document.createElement("canvas");cv.width=w;cv.height=h;
-      cv.getContext("2d").drawImage(bmp,0,0,w,h);if(bmp.close)bmp.close();
-      return cv.toDataURL("image/jpeg",0.85);
-    }
-  }catch(e){}
-  return await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file);});
+/* load + (if large) downscale the picked file before cropping. Uses <img>+object-url
+   (handles HEIC iphone photos; never hangs — unlike createImageBitmap, which can stall
+   on HEIC) and only downscales oversized photos so later canvas draws stay small/safe */
+function _prepCover(file){
+  return new Promise((res)=>{
+    const url=URL.createObjectURL(file);
+    const im=new Image();
+    im.onload=()=>{
+      const MAX=1600,s=Math.min(1,MAX/Math.max(im.naturalWidth||1,im.naturalHeight||1));
+      if(s>=1){res(url);return;}            // small enough: use the object-url directly (closeCrop revokes it)
+      try{
+        const w=Math.round(im.naturalWidth*s),h=Math.round(im.naturalHeight*s);
+        const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        cv.getContext("2d").drawImage(im,0,0,w,h);
+        const d=cv.toDataURL("image/jpeg",0.9);URL.revokeObjectURL(url);res(d);
+      }catch(e){res(url);}                  // downscale failed: fall back to the full-res object-url
+    };
+    im.onerror=()=>{URL.revokeObjectURL(url);res(null);};
+    im.src=url;
+  });
 }
 /* save a (3:4) cover data-url onto a project and reflect it everywhere */
 function _applyCover(pid,data){
