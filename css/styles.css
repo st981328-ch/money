@@ -375,8 +375,8 @@ html.fin-full .pages{padding-bottom:0}
 
 /* ===================== projects page ===================== */
 #page-projects{padding:0}
-.projv2{--cream:#f6f5f0; --ink:#182b25; --muted:#737a74; --card-grey:#d9d9d9; --line:rgba(112,112,112,.2); min-height:100dvh; background:var(--cream)}
-.pv-top{position:sticky; top:0; z-index:5; background:var(--cream); padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 12px; display:flex; align-items:center; gap:10px}
+.projv2{--cream:#e8e8e8; --ink:#182b25; --muted:#737a74; --card-grey:#d9d9d9; --line:rgba(112,112,112,.2); min-height:100dvh; background:#e8e8e8}
+.pv-top{position:sticky; top:0; z-index:5; background:#e8e8e8; padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 12px; display:flex; align-items:center; gap:10px}
 .pv-title{flex:1; font-size:30px; font-weight:800; color:var(--ink); letter-spacing:-.5px}
 .pv-actions{display:flex; align-items:center; gap:8px}
 .pv-pill{height:39px; padding:0 11px 0 15px; border-radius:20px; border:1.5px solid #dddfd7; display:flex; align-items:center; gap:2px; font-size:15px; font-weight:600; color:var(--ink); background:transparent}
@@ -390,16 +390,17 @@ html.fin-full .pages{padding-bottom:0}
 .pv-body{padding:8px 20px calc(var(--nav-h) + var(--safe-b) + 24px)}
 /* card mode */
 /* masonry grid of floating cover cards */
-.projgrid{columns:2; column-gap:12px}
-.projgrid .projcard{break-inside:avoid; margin:0 0 14px; position:relative; border-radius:14px; overflow:hidden; cursor:pointer; background:var(--card-grey); box-shadow:0 6px 16px rgba(0,0,0,.15); transform:rotate(var(--rot,0deg)); transition:transform .18s ease, box-shadow .18s ease}
+.projgrid{display:flex; gap:12px; align-items:flex-start}
+.pcol{flex:1; min-width:0; display:flex; flex-direction:column; gap:14px}
+.projgrid .projcard{position:relative; border-radius:14px; overflow:hidden; cursor:pointer; background:var(--card-grey); box-shadow:0 6px 16px rgba(0,0,0,.15); transform:rotate(var(--rot,0deg)); transition:transform .18s ease, box-shadow .18s ease}
 .projgrid .projcard:active{transform:rotate(var(--rot,0deg)) scale(.96); box-shadow:0 3px 10px rgba(0,0,0,.14)}
 .projgrid .projcard img{display:block; width:100%; height:auto}
 .projgrid .projcard.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
 .projgrid .projcard .pc-letter{font-size:48px; font-weight:800; color:rgba(255,255,255,.92)}
 .projgrid .projcard .pc-cap{position:absolute; left:0; right:0; bottom:0; z-index:1; padding:24px 12px 11px; color:#fff; font-weight:700; font-size:13.5px; line-height:1.25; background:linear-gradient(transparent, rgba(0,0,0,.62))}
 /* cover-less cards are a neutral grey -> dark text, no gradient */
-.projgrid .projcard.plain .pc-letter{color:rgba(24,43,37,.26)}
-.projgrid .projcard.plain .pc-cap{color:#182b25; background:none; padding:10px 12px}
+.projgrid .projcard.plain .pc-letter{color:var(--pc-tc,rgba(255,255,255,.92)); opacity:.9}
+.projgrid .projcard.plain .pc-cap{color:var(--pc-tc,#fff); background:none; padding:10px 12px}
 
 /* hero / container-transform project detail */
 .phero-open{overflow:hidden}
@@ -412,7 +413,7 @@ html.fin-full .pages{padding-bottom:0}
 .phero-cover{position:relative; margin:2px auto 0; width:58%; max-width:244px; border-radius:16px; overflow:hidden; box-shadow:0 16px 36px rgba(0,0,0,.26); background:var(--card-grey,#d9d9d9); will-change:transform}
 .phero-cover img{display:block; width:100%; height:auto}
 .phero-cover.plain{aspect-ratio:3/4; display:flex; align-items:center; justify-content:center}
-.phero-cover.plain .pc-letter{font-size:76px; font-weight:800; color:rgba(24,43,37,.28)}
+.phero-cover.plain .pc-letter{font-size:76px; font-weight:800; color:var(--pc-tc,rgba(255,255,255,.92)); opacity:.9}
 .phc-cam{position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.34); color:#fff; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.4)}
 .phc-cam .gi{width:16px; height:16px}
 .phc-cam:active{filter:brightness(.85)}
@@ -442,6 +443,7 @@ html.fin-full .pages{padding-bottom:0}
 
 /* shared full-bleed cream pages (home / projects / analytics) */
 html.fin-full .app{background:#f6f5f0}
+html.pg-projects .app{background:#e8e8e8}
 #page-records{padding:0}
 #page-stats{padding:0}
 

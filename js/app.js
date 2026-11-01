@@ -9,6 +9,7 @@ function go(p){
   document.getElementById("page-"+p).classList.add("active");
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
   document.documentElement.classList.toggle("fin-full",p==="records"||p==="stats"||p==="projects"||p==="settings");
+  document.documentElement.classList.toggle("pg-projects",p==="projects");
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
   document.getElementById("navAddBtn").classList.toggle("on",p==="records");
@@ -456,14 +457,16 @@ function renderProjects(){
         <div class="pv-rtotal">${fmt(s.exp)}</div></div>`).join("");
     body=`<div class="pv-list">${rows||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
   }else{
-    // masonry grid of floating cover cards, each with a small casual tilt; tapping one morphs into the detail
-    const cards=list.map(({p})=>{
+    // two-column flex masonry (left-right order; no multicol artifacts) of tilted floating cards
+    const card=p=>{
       const cap=`<div class="pc-cap">${esc(p.name)}</div>`,t=projTilt(p.id);
       if(p.cover)return `<div class="projcard img" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
-      const letter=esc((p.name||"?").trim().charAt(0)||"?");
-      return `<div class="projcard plain" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${PROJ_BG};--rot:${t}deg" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
-    }).join("");
-    body=`<div class="projgrid">${cards||`<div class="pv-empty-sm">這一年沒有專案</div>`}</div>`;
+      const col=projColor(p),tc=inkOn(col),letter=esc((p.name||"?").trim().charAt(0)||"?");
+      return `<div class="projcard plain" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${col};--rot:${t}deg;--pc-tc:${tc}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
+    };
+    if(!list.length)body=`<div class="projgrid"><div class="pv-empty-sm">這一年沒有專案</div></div>`;
+    else{const a=[],bcol=[];list.forEach((x,i)=>(i%2?bcol:a).push(card(x.p)));
+      body=`<div class="projgrid"><div class="pcol">${a.join("")}</div><div class="pcol">${bcol.join("")}</div></div>`;}
   }
   document.getElementById("page-projects").innerHTML=`<div class="projv2">${top}
     <div class="pv-body">${body}
@@ -473,7 +476,15 @@ function renderProjects(){
 function setProjActive(pid){ui.projActive=pid;render();}
 /* stable small tilt per project id (~ -2.6deg .. +2.6deg) for a casual, tossed-card look */
 function projTilt(id){let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))>>>0;return (((h%9)-4)*0.65).toFixed(2);}
-const PROJ_BG="#e8e8e8";   // uniform neutral card colour for cover-less projects
+/* cover-less project cards take a colour from the main-category palette actually in use (CAT_SKIN) */
+function projColorPool(){
+  const seen=new Set(),pool=[];
+  (DB.categories||[]).forEach(c=>{if(c.parent)return;const sk=CAT_SKIN[c.name];if(sk&&sk[0]&&!seen.has(sk[0])){seen.add(sk[0]);pool.push(sk[0]);}});
+  return pool.length?pool:["#6C84C0","#F1A258","#D53128","#FF9A93","#68773E","#B6E8E7"];
+}
+function projColor(p){const pool=projColorPool(),id=(p&&(p.id||p.name))||"";let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))>>>0;return pool[h%pool.length];}
+/* readable ink/white on a given background by luminance */
+function inkOn(bg){let hex=(bg||"#888").replace("#","");if(hex.length===3)hex=hex.split("").map(c=>c+c).join("");const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);return (0.299*r+0.587*g+0.114*b)/255>0.62?"#182b25":"#fff";}
 function pickCover(pid){
   const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
   inp.onchange=()=>{
@@ -531,7 +542,7 @@ function openProjectHero(pid,srcEl){
       <button class="phero-ico" onclick="closeProjectHero()" aria-label="關閉">${IC("x")}</button>
       <button class="phero-ico" onclick="openProjectEdit('${pid}')" aria-label="編輯">${IC("pencil")}</button>
     </div>
-    <div class="phero-cover ${hasCover?"img":"plain"}" id="pheroCover" style="${hasCover?"":"background:"+PROJ_BG}">
+    <div class="phero-cover ${hasCover?"img":"plain"}" id="pheroCover" style="${hasCover?"":"background:"+projColor(p)+";--pc-tc:"+inkOn(projColor(p))}">
       ${inner}
       <button class="phc-cam" onclick="pickCover('${pid}')" aria-label="更換封面">${IC("image")}</button>
     </div>
