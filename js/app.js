@@ -502,28 +502,59 @@ function pickCover(pid){
   inp.onchange=()=>{
     const f=inp.files&&inp.files[0];if(!f)return;
     const img=new Image(),url=URL.createObjectURL(f);
-    img.onload=()=>{
-      URL.revokeObjectURL(url);
-      const max=800;let w=img.width,h=img.height;
-      if(w>h){if(w>max){h=Math.round(h*max/w);w=max;}}else{if(h>max){w=Math.round(w*max/h);h=max;}}
-      const cv=document.createElement("canvas");cv.width=w;cv.height=h;
-      cv.getContext("2d").drawImage(img,0,0,w,h);
-      const p=projOf(pid);if(p){
-        p.cover=cv.toDataURL("image/jpeg",0.72);save();
-        const ph=document.getElementById("phero"),cov=ph&&ph.querySelector("#pheroCover");
-        if(cov){ // update the open hero cover in place (render() only rebuilds the grid behind it)
-          cov.className="phero-cover img";cov.style.background="";cov.style.removeProperty("--pc-tc");
-          cov.innerHTML=`<img src="${p.cover}" alt="" draggable="false"><button class="phc-cam" onclick="pickCover('${pid}')" aria-label="更換封面">${IC("image")}</button>`;
-        }
-        render();
-        if(ph)_pheroSrc=document.querySelector('#page-projects .projcard[data-pid="'+pid+'"]')||null; // re-link morph source to the rebuilt card
-        toast("封面已更新");
-      }
-    };
+    img.onload=()=>openCropModal(pid,img,url);   // crop step before saving
     img.onerror=()=>{URL.revokeObjectURL(url);toast("圖片讀取失敗");};
     img.src=url;
   };
   inp.click();
+}
+/* save a (3:4) cover data-url onto a project and reflect it everywhere */
+function _applyCover(pid,data){
+  const p=projOf(pid);if(!p)return;
+  p.cover=data;save();
+  const ph=document.getElementById("phero"),cov=ph&&ph.querySelector("#pheroCover");
+  if(cov){ // render() only rebuilds the grid behind the hero, so update the open hero cover in place
+    cov.className="phero-cover img";cov.style.background="";cov.style.removeProperty("--pc-tc");
+    cov.innerHTML=`<img src="${data}" alt="" draggable="false"><button class="phc-cam" onclick="pickCover('${pid}')" aria-label="更換封面">${IC("image")}</button>`;
+  }
+  render();
+  if(ph)_pheroSrc=document.querySelector('#page-projects .projcard[data-pid="'+pid+'"]')||null;
+  toast("封面已更新");
+}
+/* ---- cover crop modal: pan + zoom a photo inside a fixed 3:4 frame ---- */
+let _crop=null;
+function openCropModal(pid,img,url){
+  const FW=Math.min(Math.round(window.innerWidth-56),300),FH=Math.round(FW*4/3);
+  _crop={pid,img,url,FW,FH,IW:img.naturalWidth,IH:img.naturalHeight,base:Math.max(FW/img.naturalWidth,FH/img.naturalHeight),scale:1,tx:0,ty:0};
+  _crop.scale=_crop.base;_cropCenter();
+  const ov=document.createElement("div");ov.className="crop-ov";ov.id="cropOv";
+  ov.innerHTML=`<div class="crop-head"><button onclick="closeCrop()">取消</button><span>調整封面</span><button class="crop-ok" onclick="confirmCrop()">完成</button></div>
+    <div class="crop-stage"><div class="crop-frame" id="cropFrame" style="width:${FW}px;height:${FH}px"><img id="cropImg" src="${url}" draggable="false"></div></div>
+    <div class="crop-zoom">${IC("search")}<input type="range" id="cropZoom" min="1" max="3" step="0.005" value="1" oninput="cropZoom(this.value)"></div>
+    <div class="crop-hint">拖曳移動 · 滑桿縮放</div>`;
+  document.body.appendChild(ov);document.documentElement.classList.add("phero-open");
+  _cropApply();_cropBindDrag();
+}
+function _cropCenter(){const c=_crop,w=c.IW*c.scale,h=c.IH*c.scale;c.tx=(c.FW-w)/2;c.ty=(c.FH-h)/2;_cropClamp();}
+function _cropClamp(){const c=_crop,w=c.IW*c.scale,h=c.IH*c.scale;c.tx=Math.min(0,Math.max(c.FW-w,c.tx));c.ty=Math.min(0,Math.max(c.FH-h,c.ty));}
+function _cropApply(){const c=_crop,im=document.getElementById("cropImg");if(!im)return;im.style.width=(c.IW*c.scale)+"px";im.style.height=(c.IH*c.scale)+"px";im.style.transform=`translate(${c.tx}px,${c.ty}px)`;}
+function cropZoom(v){const c=_crop;if(!c)return;const cx=c.FW/2,cy=c.FH/2,old=c.scale;c.scale=c.base*parseFloat(v);const k=c.scale/old;c.tx=cx-(cx-c.tx)*k;c.ty=cy-(cy-c.ty)*k;_cropClamp();_cropApply();}
+function _cropBindDrag(){
+  const fr=document.getElementById("cropFrame");if(!fr)return;let sx=0,sy=0,ox=0,oy=0,down=false;
+  const start=e=>{down=true;const q=e.touches?e.touches[0]:e;sx=q.clientX;sy=q.clientY;ox=_crop.tx;oy=_crop.ty;};
+  const move=e=>{if(!down||!_crop)return;const q=e.touches?e.touches[0]:e;_crop.tx=ox+(q.clientX-sx);_crop.ty=oy+(q.clientY-sy);_cropClamp();_cropApply();if(e.cancelable&&e.touches)e.preventDefault();};
+  const end=()=>{down=false;};
+  fr.addEventListener("touchstart",start,{passive:true});fr.addEventListener("touchmove",move,{passive:false});fr.addEventListener("touchend",end);fr.addEventListener("touchcancel",end);
+  fr.addEventListener("mousedown",start);window.addEventListener("mousemove",move);window.addEventListener("mouseup",end);
+}
+function closeCrop(){const ov=document.getElementById("cropOv");if(ov)ov.remove();if(_crop&&_crop.url)URL.revokeObjectURL(_crop.url);_crop=null;if(!document.getElementById("phero"))document.documentElement.classList.remove("phero-open");}
+function confirmCrop(){
+  const c=_crop;if(!c)return;
+  const srcX=-c.tx/c.scale,srcY=-c.ty/c.scale,srcW=c.FW/c.scale,srcH=c.FH/c.scale;
+  const TW=600,TH=800,cv=document.createElement("canvas");cv.width=TW;cv.height=TH;
+  cv.getContext("2d").drawImage(c.img,srcX,srcY,srcW,srcH,0,0,TW,TH);
+  const data=cv.toDataURL("image/jpeg",0.78),pid=c.pid;
+  closeCrop();_applyCover(pid,data);
 }
 function projDetailBody(pid){
   const p=projOf(pid),s=projStats(pid);
