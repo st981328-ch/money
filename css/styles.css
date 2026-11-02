@@ -144,6 +144,41 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .setv2 .schev{color:#b9bcb5; font-size:19px; font-weight:700; margin-left:2px}
 .setv2 .shint{text-align:left; color:var(--muted); font-size:12px; line-height:1.7; margin-top:6px; padding:0 2px}
 
+/* clean cream sheets (match the forced-light app look, in both themes) */
+.sheet:not(.addsheet){background:#f6f5f0; color:#182b25; --card:#fff; --text:#182b25; --text2:#737a74; --text3:#9ca3af; --line:rgba(112,112,112,.14); --input:#efeee9; --shadow:0 1px 3px rgba(0,0,0,.07); --muted:#737a74}
+.sheet:not(.addsheet) .seg{background:rgba(0,0,0,.05)}
+
+/* category manager: colour cards */
+.ccgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8px}
+.ccard{position:relative; aspect-ratio:1/1.08; border-radius:16px; padding:12px 12px 11px; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:8px; cursor:pointer; color:var(--cc-tc,#fff); overflow:hidden; text-align:left; transition:filter .15s, transform .15s}
+.ccard:active{filter:brightness(.94); transform:scale(.97)}
+.ccard .cc-ic{display:flex}
+.ccard .cc-ic .gi{width:28px; height:28px}
+.ccard .cc-nm{font-weight:700; font-size:13.5px; line-height:1.15; word-break:break-word; letter-spacing:.2px}
+.ccard .cc-pill{position:absolute; bottom:9px; right:10px; font-size:11px; font-weight:800; background:rgba(255,255,255,.26); padding:0 7px; border-radius:10px; font-variant-numeric:tabular-nums}
+.ccard .cc-edit{position:absolute; top:7px; right:7px; width:25px; height:25px; border-radius:50%; background:rgba(255,255,255,.26); display:flex; align-items:center; justify-content:center; color:inherit}
+.ccard .cc-edit .gi{width:13px; height:13px}
+.ccard.ccadd{background:rgba(0,0,0,.045); color:var(--muted); border:1.5px dashed #c7cabf; align-items:center; justify-content:center; gap:5px}
+.ccard.ccadd .cc-nm{font-size:12px; font-weight:600}
+@keyframes ccpop{from{opacity:0; transform:scale(.82)} to{opacity:1; transform:none}}
+.ccard.cc-in{animation:ccpop .32s cubic-bezier(.2,.8,.3,1) backwards}
+.mct-back{display:flex; align-items:center; gap:6px; font-weight:700; font-size:16px; color:#182b25; padding:2px 2px 8px}
+.mct-back .gi{width:18px; height:18px}
+
+/* category edit: preview + icon / colour pickers */
+.ce-preview{display:flex; justify-content:center; padding:2px 0 16px}
+.ce-tile{width:66px; height:66px; border-radius:18px; display:flex; align-items:center; justify-content:center; box-shadow:0 5px 16px rgba(0,0,0,.14)}
+.ce-tile .gi{width:34px; height:34px}
+.icgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; max-height:184px; overflow-y:auto; padding:2px; -webkit-overflow-scrolling:touch}
+.icpick{aspect-ratio:1; border-radius:11px; background:#efeee9; display:flex; align-items:center; justify-content:center; color:#5b6066}
+.icpick .gi{width:20px; height:20px}
+.icpick.on{background:#182b25; color:#fff}
+.colgrid{display:grid; grid-template-columns:repeat(8,1fr); gap:9px; padding:2px}
+.colpick{aspect-ratio:1; border-radius:50%; box-shadow:inset 0 0 0 0 #fff}
+.colpick.on{box-shadow:0 0 0 2px #fff, 0 0 0 4px #182b25}
+.ce-del{display:block; width:100%; margin-top:12px; padding:12px; border-radius:12px; background:transparent; color:var(--expense); font-weight:600; font-size:14px}
+.ce-del:active{background:rgba(229,72,77,.08)}
+
 /* fab */
 .fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + var(--safe-b) + 14px);width:60px;height:60px;border-radius:50%;background:var(--accent);color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px color-mix(in srgb,var(--accent) 55%,transparent);z-index:40;max-width:560px}
 .fab:active{transform:translateX(-50%) scale(.92)}

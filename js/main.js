@@ -30,6 +30,7 @@ function celebrate(){
 }
 
 /* =================== init =================== */
+seedCatColors();
 applyTheme();
 document.querySelectorAll("[data-ic]").forEach(e=>{e.innerHTML=IC(e.dataset.ic);});
 if(applyRecurring())save(true);

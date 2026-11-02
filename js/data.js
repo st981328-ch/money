@@ -2,7 +2,7 @@
 /* data layer: storage, model, helpers */
 /* one-time lossless migration from the app's earlier storage keys */
 (function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
-const APP_VERSION="2026.10.26-cb";
+const APP_VERSION="2026.10.26-cc";
 const STORE_KEY="tally_data";
 const SYNC_DESC="Tally Sync — do not delete";
 const SYNC_FILE="tally_data.json";
@@ -162,6 +162,22 @@ const CAT_SKIN={
   "學習":["#C7E3B5","cat-study","STUDY"],"教育":["#C7E3B5","cat-study","STUDY"],
 };
 function catSkin(cat){const m=cat?(cat.parent?catOf(cat.parent):cat):null;return (m&&CAT_SKIN[m.name])||null;}
+/* recommended soft / non-saturated palette for category colours (hue-ordered) */
+const MUTED_COLORS=["#D86A5E","#C77B6A","#E0A458","#F1A258","#E6C36A","#FBEF97","#A8B06B","#68773E","#A3B18A","#C7E3B5","#79B4B0","#B6E8E7","#6C84C0","#8B9DC3","#8B83C0","#B4A7D6","#B58BB0","#CC8FA3","#FF9A93","#CCC9B6","#9C8B7A","#8A93A3"];
+/* Line Awesome icon keys offered in the category icon picker */
+const CAT_ICONS=["utensils","sandwich","cup-soda","wine","beer","cookie","carrot","egg","car","bus","train-front","plane","ship","bike","fuel","house","sofa","bed","washing-machine","microwave","shopping-bag","shopping-cart","shopping-basket","shirt","gift","gem","watch","smartphone","laptop","monitor-play","gamepad-2","joystick","dices","mic-vocal","clapperboard","ferris-wheel","dumbbell","heart","pill","stethoscope","cross","bandage","graduation-cap","book","book-open","briefcase","wallet","coins","banknote","credit-card","landmark","hand-coins","trending-up","dog","flower","tree-palm","droplets","zap","wifi","phone","package","wrench","scissors","palette","spray-can","party-popper","award","medal","target","user","users","folder"];
+function _hash(s){let h=0;s=s||"";for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
+/* one-time: give every main category a stored muted colour (CAT_SKIN for designed ones,
+   else a palette colour), and drop the designed mains' baked icon so their CAT_SKIN icon
+   shows until the user picks one. After this, cat.color / cat.icon are the source of truth
+   (editable) while display stays the same. */
+function seedCatColors(){
+  if(!DB||DB._catSeed===3)return;
+  (DB.categories||[]).forEach(c=>{if(c.parent)return;const sk=CAT_SKIN[c.name];
+    if(sk){c.color=sk[0];delete c.icon;}
+    else c.color=MUTED_COLORS[_hash(c.id)%MUTED_COLORS.length];});
+  DB._catSeed=3;save(true);
+}
 /* short English labels for sub-categories (length-controlled, <=8 chars) */
 const SUB_EN={
   "早餐":"BRKFAST","午餐":"LUNCH","晚餐":"DINNER","飲料":"DRINK","點心":"SNACK","食材":"GROCERY","菸酒":"SMOKE",
@@ -178,8 +194,15 @@ const SUB_EN={
 /* English labels for main categories not covered by the designed CAT_SKIN tiles (income + leftover expense mains) */
 const MAIN_EN={"收入":"INCOME","餘額調整":"ADJUST","其他":"OTHER","房租":"RENT","薪資":"SALARY","獎金":"BONUS","投資":"INVEST","兼職":"PARTTIME","退款":"REFUND"};
 function catLabel(c){if(!c)return "";if(!c.parent){const sk=CAT_SKIN[c.name];if(sk&&sk[2])return sk[2];return MAIN_EN[c.name]||c.name;}return SUB_EN[c.name]||c.name;}
-function catColor(cat){if(!cat)return "#999";const sk=catSkin(cat);if(sk)return sk[0];if(cat.color)return cat.color;const m=cat.parent?catOf(cat.parent):null;return (m&&m.color)||"#999";}
-function catIcon(cat){if(!cat)return "❓";if(!cat.parent){const sk=CAT_SKIN[cat.name];if(sk)return sk[1];}if(cat.icon)return cat.icon;if(cat.parent&&typeof SUB_ICON_MAP!=="undefined"&&SUB_ICON_MAP[cat.name])return SUB_ICON_MAP[cat.name];const m=cat.parent?catOf(cat.parent):null;return (m&&CAT_SKIN[m.name]?CAT_SKIN[m.name][1]:(m&&m.icon))||"📦";}
+function catColor(cat){if(!cat)return "#999";
+  if(cat.color)return cat.color;                                   // user-set wins
+  if(cat.parent){const m=catOf(cat.parent);return m?catColor(m):"#999";}
+  const sk=CAT_SKIN[cat.name];return sk?sk[0]:"#999";}
+function catIcon(cat){if(!cat)return "folder";
+  if(cat.icon&&typeof ICONS!=="undefined"&&ICONS[cat.icon])return cat.icon;   // user-set wins
+  if(!cat.parent){const sk=CAT_SKIN[cat.name];if(sk&&typeof ICONS!=="undefined"&&ICONS[sk[1]])return sk[1];return "folder";}
+  if(typeof SUB_ICON_MAP!=="undefined"&&SUB_ICON_MAP[cat.name]&&ICONS[SUB_ICON_MAP[cat.name]])return SUB_ICON_MAP[cat.name];
+  const m=catOf(cat.parent);return m?catIcon(m):"folder";}
 function monthLabel(m){const[y,mo]=m.split("-");return y+"年"+parseInt(mo)+"月";}
 function inMonth(dateStr,m){return dateStr&&dateStr.slice(0,7)===m;}
 function recsInMonth(m){return DB.records.filter(r=>inMonth(r.date,m));}

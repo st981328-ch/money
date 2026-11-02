@@ -1218,29 +1218,23 @@ function mctRender(){
   const el=sheetStack[sheetStack.length-1];if(!el)return;const box=el.querySelector("#mct_body");if(!box)return;
   const type=window._mctType||"expense";
   if(!window._mctMain){
-    // main categories list
     const mains=mainCats(type);
-    let h=mains.map(m=>{const n=subCats(m.id).length;return `<div class="mitem">
-      <div class="ic" style="background:${hex2(m.color)};color:${m.color}">${IC(m.icon)}</div>
-      <div class="mn" onclick="window._mctMain='${m.id}';mctRender()" style="cursor:pointer">${esc(m.name)}<div style="font-size:11px;color:var(--text2)">${n} 個細項 ›</div></div>
-      <button class="medit" onclick="openEditCat('${m.id}')">編輯</button>
-      <button class="mdel" onclick="deleteCat('${m.id}')">✕</button></div>`;}).join("")
-      ||`<div class="empty" style="padding:24px">尚無大類</div>`;
-    h+=`<button class="btn ghost" style="margin-top:14px" onclick="openEditCat(null,'${type}',null,null)">＋ 新增大類</button>`;
-    box.innerHTML=h;
+    const cards=mains.map(m=>{const n=subCats(m.id).length,col=catColor(m),tc=inkOn(col);
+      return `<div class="ccard" style="background:${col};--cc-tc:${tc}" onclick="window._mctMain='${m.id}';mctRender()">
+        <button class="cc-edit" onclick="event.stopPropagation();openEditCat('${m.id}')" aria-label="編輯">${IC("pencil")}</button>
+        <span class="cc-ic">${IC(catIcon(m))}</span>
+        <span class="cc-nm">${esc(catLabel(m))}</span>
+        ${n?`<span class="cc-pill">${n}</span>`:""}</div>`;}).join("");
+    box.innerHTML=`<div class="ccgrid">${cards}<div class="ccard ccadd" onclick="openEditCat(null,'${type}',null,null)"><span class="cc-ic">${IC("plus")}</span><span class="cc-nm">新增大類</span></div></div>`;
   }else{
     const m=catOf(window._mctMain);if(!m){window._mctMain=null;return mctRender();}
-    const subs=subCats(m.id);
-    let h=`<div class="mitem" style="border:none"><button class="medit" style="padding-left:0" onclick="window._mctMain=null;mctRender()">‹ 返回大類</button><div class="mn" style="text-align:center;font-weight:700;display:inline-flex;align-items:center;gap:6px;justify-content:center">${IC(m.icon)}${esc(m.name)}</div><span style="width:50px"></span></div>`;
-    h+=subs.map(s=>{const col=catColor(s);return `<div class="mitem">
-      <div class="ic" style="background:${hex2(col)};color:${col}">${IC(catIcon(s))}</div>
-      <div class="mn">${esc(s.name)}</div>
-      <button class="medit" onclick="openEditCat('${s.id}')">編輯</button>
-      <button class="mdel" onclick="deleteCat('${s.id}')">✕</button></div>`;}).join("")
-      ||`<div class="empty" style="padding:20px">此大類尚無細項</div>`;
-    h+=`<button class="btn ghost" style="margin-top:14px" onclick="openEditCat(null,'${type}',null,'${m.id}')">＋ 新增細項到「${esc(m.name)}」</button>`;
-    box.innerHTML=h;
+    const col=catColor(m),tc=inkOn(col),subs=subCats(m.id);
+    const cards=subs.map(s=>`<div class="ccard" style="background:${col};--cc-tc:${tc}" onclick="openEditCat('${s.id}')">
+        <span class="cc-ic">${IC(catIcon(s))}</span><span class="cc-nm">${esc(catLabel(s))}</span></div>`).join("");
+    box.innerHTML=`<button class="mct-back" onclick="window._mctMain=null;mctRender()">${IC("arrow-left")}<span>${esc(catLabel(m))}</span></button>
+      <div class="ccgrid">${cards}<div class="ccard ccadd" style="background:${hex2(col)};--cc-tc:${col}" onclick="openEditCat(null,'${type}',null,'${m.id}')"><span class="cc-ic">${IC("plus")}</span><span class="cc-nm">新增細項</span></div></div>`;
   }
+  requestAnimationFrame(()=>{box.querySelectorAll(".ccard").forEach((c,i)=>{c.style.animationDelay=(Math.min(i,14)*0.028).toFixed(3)+"s";c.classList.add("cc-in");});});  // split-out cascade
 }
 let catState=null,catCb=null;
 function openEditCat(id,type,cb,parent){
@@ -1248,19 +1242,26 @@ function openEditCat(id,type,cb,parent){
   let c=id?catOf(id):null;
   const par=c?(c.parent||null):(parent||null);
   const parCat=par?catOf(par):null;
-  catState=c?Object.assign({},c):{id:null,name:"",type:(parCat?parCat.type:(type||"expense")),icon:(par?"":"📦"),color:parCat?parCat.color:"#78716c",parent:par};
+  catState=c?Object.assign({},c):{id:null,name:"",type:(parCat?parCat.type:(type||"expense")),icon:"",color:(parCat?"":MUTED_COLORS[0]),parent:par};
   const isSub=!!par;
+  const curColor=()=>catState.color||(c?catColor(c):(parCat?catColor(parCat):MUTED_COLORS[0]));
+  const curIcon=()=>catState.icon||(c?catIcon(c):(parCat?catIcon(parCat):"folder"));
+  const iconGrid=CAT_ICONS.map(k=>`<button type="button" data-ic="${k}" class="icpick${k===catState.icon?" on":""}">${IC(k)}</button>`).join("");
+  const colGrid=MUTED_COLORS.map(x=>`<button type="button" data-c="${x}" class="colpick${x===catState.color?" on":""}" style="background:${x}"></button>`).join("");
   const body=`
-    ${isSub?`<div class="hint" style="margin:0 0 10px">${parCat?emojiOrBlank(parCat.icon)+esc(parCat.name):""} 的細項</div>`:""}
+    <div class="ce-preview"><span class="ce-tile" id="ce_tile" style="background:${curColor()};color:${inkOn(curColor())}">${IC(curIcon())}</span></div>
     <div class="field"><label>名稱</label><input id="ct_name" value="${esc(catState.name)}" placeholder="${isSub?"細項名稱":"大類名稱"}"></div>
-    <div class="field"><label>圖示</label><div class="emoji-grid" id="ct_emoji">${EMOJIS.map(e=>`<button data-e="${e}" class="${e===catState.icon?"on":""}">${e}</button>`).join("")}</div></div>
-    <div class="field"><label>顏色${isSub?"（細項預設沿用大類色）":""}</label><div class="color-grid" id="ct_color">${COLORS.map(x=>`<button data-c="${x}" style="background:${x}" class="${x===catState.color?"on":""}"></button>`).join("")}</div></div>
-    <button class="btn" onclick="saveCat()">${c?"儲存":"新增"}</button>`;
+    <div class="field"><label>圖示</label><div class="icgrid" id="ct_icon">${iconGrid}</div></div>
+    <div class="field"><label>顏色${isSub?"（留白＝沿用大類色）":""}</label><div class="colgrid" id="ct_color">${colGrid}</div></div>
+    <button class="btn" onclick="saveCat()">${c?"儲存":"新增"}</button>
+    ${c?`<button class="ce-del" onclick="deleteCat('${c.id}')">刪除此分類</button>`:""}`;
   const el=openSheet(c?"編輯分類":(isSub?"新增細項":"新增"+(catState.type==="expense"?"支出":"收入")+"大類"),body);
   const b=el.querySelector(".sheet-body");
+  const tile=b.querySelector("#ce_tile");
+  const refresh=()=>{const col=curColor();tile.style.background=col;tile.style.color=inkOn(col);tile.innerHTML=IC(curIcon());};
   b.querySelector("#ct_name").oninput=e=>catState.name=e.target.value;
-  b.querySelector("#ct_emoji").onclick=e=>{const t=e.target.closest("[data-e]");if(!t)return;catState.icon=t.dataset.e;b.querySelectorAll("#ct_emoji button").forEach(x=>x.classList.toggle("on",x.dataset.e===catState.icon));};
-  b.querySelector("#ct_color").onclick=e=>{const t=e.target.closest("[data-c]");if(!t)return;catState.color=t.dataset.c;b.querySelectorAll("#ct_color button").forEach(x=>x.classList.toggle("on",x.dataset.c===catState.color));};
+  b.querySelector("#ct_icon").onclick=e=>{const t=e.target.closest("[data-ic]");if(!t)return;catState.icon=t.dataset.ic;b.querySelectorAll("#ct_icon .on").forEach(x=>x.classList.remove("on"));t.classList.add("on");refresh();};
+  b.querySelector("#ct_color").onclick=e=>{const t=e.target.closest("[data-c]");if(!t)return;catState.color=t.dataset.c;b.querySelectorAll("#ct_color .on").forEach(x=>x.classList.remove("on"));t.classList.add("on");refresh();};
 }
 function saveCat(){
   if(!catState.name.trim()){toast("請輸入名稱");return;}
@@ -1283,6 +1284,7 @@ function deleteCat(id){
     :`確定刪除細項「${c.name}」？`;
   if(usedN)msg+=`\n有 ${usedN} 筆記錄使用，刪除後會變成未分類。`;
   if(!confirm(msg))return;
+  if(sheetStack.length&&sheetStack[sheetStack.length-1].querySelector("#ct_name"))closeTopSheet();   // close the edit sheet
   DB.records.forEach(r=>{if(ids.includes(r.categoryId))delete r.categoryId;});
   DB.categories=DB.categories.filter(x=>!ids.includes(x.id));
   DB.budgets=DB.budgets.filter(b=>!ids.includes(b.categoryId));
