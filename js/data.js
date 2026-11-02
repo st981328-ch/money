@@ -2,7 +2,7 @@
 /* data layer: storage, model, helpers */
 /* one-time lossless migration from the app's earlier storage keys */
 (function(){try{var km=[["moze_data","tally_data"],["moze_sync_pat","tally_sync_pat"],["moze_sync_gist_id","tally_sync_gist_id"],["moze_sync_base","tally_sync_base"]];for(var i=0;i<km.length;i++){var o=km[i][0],n=km[i][1];if(localStorage.getItem(n)===null&&localStorage.getItem(o)!==null)localStorage.setItem(n,localStorage.getItem(o));}}catch(e){}})();
-const APP_VERSION="2026.10.26-cc";
+const APP_VERSION="2026.10.26-cd";
 const STORE_KEY="tally_data";
 const SYNC_DESC="Tally Sync — do not delete";
 const SYNC_FILE="tally_data.json";
@@ -165,7 +165,7 @@ function catSkin(cat){const m=cat?(cat.parent?catOf(cat.parent):cat):null;return
 /* recommended soft / non-saturated palette for category colours (hue-ordered) */
 const MUTED_COLORS=["#D86A5E","#C77B6A","#E0A458","#F1A258","#E6C36A","#FBEF97","#A8B06B","#68773E","#A3B18A","#C7E3B5","#79B4B0","#B6E8E7","#6C84C0","#8B9DC3","#8B83C0","#B4A7D6","#B58BB0","#CC8FA3","#FF9A93","#CCC9B6","#9C8B7A","#8A93A3"];
 /* Line Awesome icon keys offered in the category icon picker */
-const CAT_ICONS=["utensils","sandwich","cup-soda","wine","beer","cookie","carrot","egg","car","bus","train-front","plane","ship","bike","fuel","house","sofa","bed","washing-machine","microwave","shopping-bag","shopping-cart","shopping-basket","shirt","gift","gem","watch","smartphone","laptop","monitor-play","gamepad-2","joystick","dices","mic-vocal","clapperboard","ferris-wheel","dumbbell","heart","pill","stethoscope","cross","bandage","graduation-cap","book","book-open","briefcase","wallet","coins","banknote","credit-card","landmark","hand-coins","trending-up","dog","flower","tree-palm","droplets","zap","wifi","phone","package","wrench","scissors","palette","spray-can","party-popper","award","medal","target","user","users","folder"];
+const CAT_ICONS=["utensils","sandwich","cup-soda","wine","beer","cookie","carrot","egg","car","bus","train-front","plane","ship","bike","fuel","house","sofa","bed","washing-machine","microwave","shopping-bag","shopping-cart","shopping-basket","shirt","gift","gem","watch","smartphone","laptop","monitor-play","gamepad-2","joystick","dices","mic-vocal","clapperboard","ferris-wheel","dumbbell","heart","pill","stethoscope","cross","bandage","graduation-cap","book","book-open","briefcase","wallet","coins","banknote","credit-card","landmark","hand-coins","trending-up","dog","flower","tree-palm","droplets","zap","wifi","phone","package","wrench","scissors","palette","spray-can","party-popper","award","medal","target","user","users","eye-solid","folder"];
 function _hash(s){let h=0;s=s||"";for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
 /* one-time: give every main category a stored muted colour (CAT_SKIN for designed ones,
    else a palette colour), and drop the designed mains' baked icon so their CAT_SKIN icon
