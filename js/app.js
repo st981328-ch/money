@@ -137,7 +137,49 @@ function spentCompare(mo,dayCutoff){
   if(pct>0)return{cls:"up",arrow:"↗",text:`${pct}% more than this time in ${MN}`};
   return{cls:"flat",arrow:"→",text:`same as this time in ${MN}`};
 }
-function homeSearch(){toast("搜尋功能稍後加入");}
+function homeSearch(){
+  if(document.getElementById("searchOv"))return;
+  const ov=document.createElement("div");ov.className="search-ov";ov.id="searchOv";
+  ov.innerHTML=`<div class="search-top">
+      <div class="search-box">${IC("search")}<input id="searchInput" type="search" enterkeyhint="search" placeholder="搜尋備註、分類、專案、金額" autocomplete="off"></div>
+      <button class="search-cancel" onclick="closeSearch()">取消</button>
+    </div>
+    <div class="search-results" id="searchResults"><div class="search-hint">輸入關鍵字開始搜尋</div></div>`;
+  document.body.appendChild(ov);document.documentElement.classList.add("phero-open");
+  const inp=ov.querySelector("#searchInput");
+  inp.oninput=()=>runSearch(inp.value);
+  inp.focus();                                   // within the tap gesture so iOS shows the keyboard
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function closeSearch(){
+  const ov=document.getElementById("searchOv");if(!ov)return;
+  ov.classList.remove("show");
+  setTimeout(()=>{ov.remove();if(!document.getElementById("phero"))document.documentElement.classList.remove("phero-open");},200);
+}
+function searchMatch(r,q){
+  const parts=[];
+  if(r.note)parts.push(r.note);
+  const c=catOf(r.categoryId);
+  if(c){parts.push(c.name,catLabel(c));const m=mainOf(c);if(m&&m!==c)parts.push(m.name,catLabel(m));}
+  else if(r.type==="transfer")parts.push("轉帳 transfer");else parts.push("未分類");
+  const proj=r.projectId?projOf(r.projectId):null;if(proj)parts.push(proj.name);
+  parts.push(String(r.amount),fmt(baseAmt(r)),r.date);
+  return parts.join(" ").toLowerCase().includes(q);
+}
+function runSearch(raw){
+  const box=document.getElementById("searchResults");if(!box)return;
+  const q=(raw||"").trim().toLowerCase();
+  if(!q){box.innerHTML=`<div class="search-hint">輸入關鍵字開始搜尋</div>`;return;}
+  const hits=DB.records.filter(r=>searchMatch(r,q)).sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0));
+  if(!hits.length){box.innerHTML=`<div class="search-hint">找不到「${esc(raw.trim())}」的結果</div>`;return;}
+  let exp=0,inc=0;hits.forEach(r=>{if(r.type==="expense")exp+=baseAmt(r);else if(r.type==="income")inc+=baseAmt(r);});
+  const groups={};hits.forEach(r=>{(groups[r.date]=groups[r.date]||[]).push(r);});
+  let h=`<div class="search-sum">${hits.length} 筆${exp?` · 支出 ${fmt(exp)}`:""}${inc?` · 收入 ${fmt(inc)}`:""}</div>`;
+  Object.keys(groups).sort().reverse().forEach(d=>{
+    h+=`<div class="daygroup"><div class="dayhead"><span class="ddate">${fmtDay(d)}</span></div><div class="reclist">${groups[d].map(recRow).join("")}</div></div>`;
+  });
+  box.innerHTML=h;
+}
 function fmtDay(d){
   const[y,m,dd]=d.split("-").map(Number);const dt=new Date(y,m-1,dd);
   const wk=["日","一","二","三","四","五","六"][dt.getDay()];
