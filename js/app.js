@@ -91,8 +91,7 @@ function renderHome(){
   const perDay=elapsed?exp/elapsed:0,projected=isCur?perDay*dim:exp;
   const net=inc-exp,rate=inc>0?Math.round(Math.max(0,net)/inc*100):0;
   const mLbl=(String(y)===curMo.slice(0,4))?(m+"月"):(y+"年"+m+"月");
-  const tex=`<i class="tex tex-blob"></i><i class="tex tex-stripe"></i><i class="tex tex-dot"></i>`;
-  const cardA=`<div class="hd-card lime" onclick="go('stats')">${tex}
+  const cardA=`<div class="hd-card lime" onclick="go('stats')">
     <div class="hd-ch"><span>${isCur?"本月支出":"當月支出"}</span><span class="hd-cico">${IC("bars")}</span></div>
     <div class="hd-hero">${fmt(Math.round(exp))}</div>
     <div class="hd-sub3">
@@ -100,7 +99,7 @@ function renderHome(){
       <div class="hd-st"><b>${fmt(Math.round(perDay))}</b><span>日均</span></div>
       <div class="hd-st"><b>${n}</b><span>筆</span></div>
     </div></div>`;
-  const cardB=`<div class="hd-card peach" onclick="go('stats')">${tex}
+  const cardB=`<div class="hd-card peach" onclick="go('stats')">
     <div class="hd-ch"><span>本月收支</span><span class="hd-cico">${IC("wallet")}</span></div>
     <div class="hd-hero ${net<0?"neg":""}">${fmt(net)}</div>
     <div class="hd-sub3">

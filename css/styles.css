@@ -406,7 +406,7 @@ html.fin-full .pages{padding-bottom:0}
 .hv-spent-cmp{display:inline-block; font-size:13px; margin-top:9px; color:var(--muted)}
 .hv-spent-cmp.up{color:#b8541f}
 /* =================== home dashboard (house-icon landing) =================== */
-.homed{--ink:#182b25; --muted:#7a8178; --rule:#ece7dd; --hd-tex:rgba(24,43,37,.16);
+.homed{--ink:#182b25; --muted:#7a8178; --rule:#ece7dd;
   min-height:100dvh; background:#f6f5f0;
   padding:calc(env(safe-area-inset-top,0px) + 16px) 20px calc(var(--nav-h) + var(--safe-b) + 26px);
   display:flex; flex-direction:column; gap:14px}
@@ -432,10 +432,6 @@ html.fin-full .pages{padding-bottom:0}
 .hd-st{display:flex; flex-direction:column; min-width:0}
 .hd-st b{font-size:16.5px; font-weight:800; color:var(--ink); letter-spacing:-.3px; font-variant-numeric:tabular-nums; white-space:nowrap}
 .hd-st span{font-size:11.5px; color:rgba(24,43,37,.62); margin-top:2px; font-weight:600}
-.hd-card .tex{position:absolute; border-radius:15px; z-index:0; pointer-events:none}
-.hd-card .tex-blob{width:70px; height:70px; top:40px; right:14px; background:linear-gradient(140deg,var(--hd-tex),transparent 70%)}
-.hd-card .tex-stripe{width:48px; height:48px; top:90px; right:66px; background:repeating-linear-gradient(45deg,var(--hd-tex) 0 5px,transparent 5px 11px)}
-.hd-card .tex-dot{width:54px; height:54px; top:96px; right:12px; background-image:radial-gradient(var(--hd-tex) 27%,transparent 29%); background-size:12px 12px}
 /* recent records */
 .hd-rech{display:flex; align-items:center; justify-content:space-between; margin-top:6px; padding:0 2px}
 .hd-rech>span{font-size:16px; font-weight:800; color:var(--ink)}
