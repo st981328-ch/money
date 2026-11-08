@@ -1,25 +1,26 @@
 "use strict";
 /* views: pages, routing, modals, editors */
 /* =================== router =================== */
-const TITLES={records:"記錄",stats:"統計",projects:"專案",budgets:"預算",settings:"設定"};
+const TITLES={home:"總覽",records:"記錄",stats:"統計",projects:"專案",budgets:"預算",settings:"設定"};
 function go(p){
   _monthDir=0;   // navigation is not a month change; don't slide
   if(p==="projects")_projEnter=true;   // cascade the cards in on entry
+  if(p==="home")_homeEnter=true;       // stagger the dashboard in on entry
   if(p==="stats"){ui.month=curMonth();ui.statTab="overview";}   // entering analytics always resets to this month's overview
   ui.page=p;
   document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
   document.getElementById("page-"+p).classList.add("active");
   document.querySelectorAll(".nav button[data-p]").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
-  document.documentElement.classList.toggle("fin-full",p==="records"||p==="stats"||p==="projects"||p==="settings");
+  document.documentElement.classList.toggle("fin-full",p==="home"||p==="records"||p==="stats"||p==="projects"||p==="settings");
   document.documentElement.classList.toggle("pg-projects",p==="projects");
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
-  document.getElementById("navAddBtn").classList.toggle("on",p==="records");
+  document.getElementById("navAddBtn").classList.toggle("on",p==="home");
   document.querySelector(".pages").scrollTop=0;
   render();
 }
 /* center + : jump to records when elsewhere, else open the add sheet */
-function navAdd(){ if(ui.page!=="records") go("records"); else openAdd(); }
+function navAdd(){ openAdd(); }
 function shiftMonth(d){
   let[y,m]=ui.month.split("-").map(Number);m+=d;
   if(m<1){m=12;y--;}if(m>12){m=1;y++;}
@@ -27,7 +28,8 @@ function shiftMonth(d){
 }
 function render(){
   document.getElementById("mlabel").textContent=monthLabel(ui.month);
-  if(ui.page==="records")renderRecords();
+  if(ui.page==="home")renderHome();
+  else if(ui.page==="records")renderRecords();
   else if(ui.page==="stats")renderStats();
   else if(ui.page==="projects")renderProjects();
   else if(ui.page==="budgets")renderBudgets();
@@ -69,51 +71,60 @@ function renderRecords(){
         <div class="hv-spent-amt">${fmt(mexp)}</div>
         ${cmp?`<div class="hv-spent-cmp ${cmp.cls}">${cmp.arrow} ${cmp.text}</div>`:``}
       </div>
-      ${homeCards(mo)}
     </div>
     <div class="hv-list">${rows}</div>
   </div>`;
   document.getElementById("page-records").innerHTML=html;
   _flashId=null;   // consumed: only pulse once, right after a save
   bindWeekSwipe();
-  requestAnimationFrame(()=>requestAnimationFrame(animateHomeCards));   // sweep donut + count-ups, same as stats
 }
-/* ---- home glance cards: a swipeable strip of this-month analytics under the hero ---- */
-function homeCards(mo){
-  const recs=recsInMonth(mo);
-  if(!recs.length)return "";                               // empty month: no strip
-  let exp=0,inc=0;
+/* =================== home dashboard (the house-icon landing) =================== */
+let _homeEnter=false;
+function renderHome(){
+  const mo=ui.month,recs=recsInMonth(mo);
+  let exp=0,inc=0;const n=recs.length;
   recs.forEach(r=>{const v=baseAmt(r);if(r.type==="expense")exp+=v;else if(r.type==="income")inc+=v;});
-  // pace / projection
-  const[y,m]=mo.split("-").map(Number);
-  const dim=new Date(y,m,0).getDate();
+  const[y,m]=mo.split("-").map(Number),dim=new Date(y,m,0).getDate();
   const today=todayStr(),curMo=today.slice(0,7),isCur=mo===curMo;
   const elapsed=isCur?parseInt(today.slice(8,10),10):(mo<curMo?dim:0);
-  const perDay=elapsed?exp/elapsed:0;
-  const projected=isCur?perDay*dim:exp;
-  // net + savings rate
-  const net=inc-exp,rate=inc>0?Math.round(net/inc*100):null;
-  const netCls=net>0?"pos":(net<0?"neg":"");
-  const rateS=rate==null?"本月無收入":(rate>=0?("存下 "+rate+"%"):("透支 "+Math.abs(rate)+"%"));
-  // biggest spending category (reuses the stats grouping + donut)
-  const top=statCats(recs)[0];
-  const topPct=(top&&exp>0)?top.v/exp*100:0,topColor=top?catColor(top.c):"#c9c9c9";
-  // subscriptions (訂閱 sub- or main-category)
-  let subSum=0,subN=0;
-  recs.forEach(r=>{if(r.type!=="expense")return;const c=catOf(r.categoryId);if(!c)return;const mn=mainOf(c);
-    if(c.name==="訂閱"||(mn&&mn.name==="訂閱")){subSum+=baseAmt(r);subN++;}});
-  const card=(l,icon,v,s,vcls)=>`<div class="hvc" onclick="go('stats')">
-      <div class="hvc-top"><span class="hvc-l">${l}</span><span class="hvc-ic">${IC(icon)}</span></div>
-      <div class="hvc-v ${vcls||""}">${v}</div><div class="hvc-s">${s}</div></div>`;
-  const pace=card(isCur?"本月預估":"本月支出","trending-up",fmt(Math.round(isCur?projected:exp)),"日均 "+fmt(Math.round(perDay)));
-  const netc=card("本月結餘","wallet",fmt(net),rateS,netCls);
-  const donut=`<div class="hvc" onclick="go('stats')">
-      <div class="hvc-top"><span class="hvc-l">最大開銷</span></div>
-      <div class="hvc-dn">${ringDonut(topPct,topColor)}
-        <div class="hvc-dmeta"><div class="hvc-dname">${top?catLabel(top.c):"—"}</div><div class="hvc-damt">${fmt(top?top.v:0)}</div></div>
-      </div></div>`;
-  const subs=card("本月訂閱","repeat",fmt(subSum),subN+" 項");
-  return `<div class="hv-cards">${pace}${netc}${donut}${subs}</div>`;
+  const perDay=elapsed?exp/elapsed:0,projected=isCur?perDay*dim:exp;
+  const net=inc-exp,rate=inc>0?Math.round(Math.max(0,net)/inc*100):0;
+  const mLbl=(String(y)===curMo.slice(0,4))?(m+"月"):(y+"年"+m+"月");
+  const tex=`<i class="tex tex-blob"></i><i class="tex tex-stripe"></i><i class="tex tex-dot"></i>`;
+  const cardA=`<div class="hd-card lime" onclick="go('stats')">${tex}
+    <div class="hd-ch"><span>${isCur?"本月支出":"當月支出"}</span><span class="hd-cico">${IC("bars")}</span></div>
+    <div class="hd-hero">${fmt(Math.round(exp))}</div>
+    <div class="hd-sub3">
+      <div class="hd-st"><b>${fmt(Math.round(projected))}</b><span>${isCur?"預估月底":"合計"}</span></div>
+      <div class="hd-st"><b>${fmt(Math.round(perDay))}</b><span>日均</span></div>
+      <div class="hd-st"><b>${n}</b><span>筆</span></div>
+    </div></div>`;
+  const cardB=`<div class="hd-card peach" onclick="go('stats')">${tex}
+    <div class="hd-ch"><span>本月收支</span><span class="hd-cico">${IC("wallet")}</span></div>
+    <div class="hd-hero ${net<0?"neg":""}">${fmt(net)}</div>
+    <div class="hd-sub3">
+      <div class="hd-st"><b>${fmt(Math.round(inc))}</b><span>收入</span></div>
+      <div class="hd-st"><b>${fmt(Math.round(exp))}</b><span>支出</span></div>
+      <div class="hd-st"><b>${rate}%</b><span>存下</span></div>
+    </div></div>`;
+  const recent=DB.records.slice().sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0)).slice(0,4);
+  const recHtml=recent.length?recent.map(homeRow).join(""):`<div class="hd-empty">還沒有記錄，按 ＋ 新增一筆</div>`;
+  const ent=_homeEnter;_homeEnter=false;
+  const html=`<div class="homed${ent?" hd-enter":""}">
+    <div class="hd-top">
+      <div><div class="hd-greet">${greeting()}</div><div class="hd-title">總覽</div></div>
+      <button class="hd-gear" onclick="go('settings')" aria-label="設定">${IC("settings")}</button>
+    </div>
+    <div class="hd-monthrow">
+      <button class="hd-marrow" onclick="shiftMonth(-1)" aria-label="上個月">${IC("arrow-left")}</button>
+      <div class="hd-mlabel">${mLbl}</div>
+      <button class="hd-marrow" onclick="shiftMonth(1)" aria-label="下個月">${IC("arrow-right")}</button>
+    </div>
+    ${cardA}${cardB}
+    <div class="hd-rech"><span>近期記錄</span><button onclick="go('records')">查看全部 ›</button></div>
+    <div class="hd-rec">${recHtml}</div>
+  </div>`;
+  document.getElementById("page-home").innerHTML=html;
 }
 const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
 const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#64748b","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];
@@ -312,7 +323,6 @@ function _sweepCharts(root){
   root.querySelectorAll(".sv-num").forEach(el=>_countUp(el,parseFloat(el.dataset.pct)||0,950));
 }
 function animateStatCharts(){_statGen++;_sweepCharts(document.getElementById("page-stats"));}   // _statGen bump invalidates count-ups still running from a previous render
-function animateHomeCards(){_statGen++;_sweepCharts(document.getElementById("page-records"));}
 function statOverview(recs){
   let exp=0,inc=0,expN=0,incN=0;
   recs.forEach(r=>{const v=baseAmt(r);if(r.type==="expense"){exp+=v;expN++;}else if(r.type==="income"){inc+=v;incN++;}});
