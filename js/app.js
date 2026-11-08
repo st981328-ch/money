@@ -91,22 +91,33 @@ function renderHome(){
   const perDay=elapsed?exp/elapsed:0,projected=isCur?perDay*dim:exp;
   const net=inc-exp,rate=inc>0?Math.round(Math.max(0,net)/inc*100):0;
   const mLbl=(String(y)===curMo.slice(0,4))?(m+"月"):(y+"年"+m+"月");
+  // card A: a mini bar per day of the month (spending rhythm; today highlighted, future days faint)
+  const byDay=new Array(dim).fill(0);
+  recs.forEach(r=>{if(r.type==="expense"){const dd=parseInt(r.date.slice(8,10),10)||0;if(dd>=1&&dd<=dim)byDay[dd-1]+=baseAmt(r);}});
+  const maxDay=Math.max(1,...byDay),todayD=isCur?parseInt(today.slice(8,10),10):dim;
+  const bars=byDay.map((v,i)=>{const h=v>0?Math.max(6,Math.round(v/maxDay*100)):0;
+    const cls=isCur?((i+1)>todayD?" fut":((i+1)===todayD?" tdy":"")):"";
+    return `<i class="hd-bar${cls}" data-h="${h}%"></i>`;}).join("");
+  // card B: gauge of how much of income was spent (remainder = saved)
+  const spentPct=inc>0?Math.min(100,Math.round(exp/inc*100)):(exp>0?100:0);
   const cardA=`<div class="hd-card lime" onclick="go('stats')">
     <div class="hd-ch"><span>${isCur?"本月支出":"當月支出"}</span><span class="hd-cico">${IC("bars")}</span></div>
-    <div class="hd-hero">${fmt(Math.round(exp))}</div>
+    <div class="hd-hero" data-to="${Math.round(exp)}">${fmt(Math.round(exp))}</div>
     <div class="hd-sub3">
       <div class="hd-st"><b>${fmt(Math.round(projected))}</b><span>${isCur?"預估月底":"合計"}</span></div>
       <div class="hd-st"><b>${fmt(Math.round(perDay))}</b><span>日均</span></div>
       <div class="hd-st"><b>${n}</b><span>筆</span></div>
-    </div></div>`;
+    </div>
+    <div class="hd-bars">${bars}</div></div>`;
   const cardB=`<div class="hd-card peach" onclick="go('stats')">
     <div class="hd-ch"><span>本月收支</span><span class="hd-cico">${IC("wallet")}</span></div>
-    <div class="hd-hero ${net<0?"neg":""}">${fmt(net)}</div>
+    <div class="hd-hero ${net<0?"neg":""}" data-to="${Math.round(net)}">${fmt(net)}</div>
     <div class="hd-sub3">
       <div class="hd-st"><b>${fmt(Math.round(inc))}</b><span>收入</span></div>
       <div class="hd-st"><b>${fmt(Math.round(exp))}</b><span>支出</span></div>
       <div class="hd-st"><b>${rate}%</b><span>存下</span></div>
-    </div></div>`;
+    </div>
+    <div class="hd-gauge"><i class="hd-gfill" data-w="${spentPct}%"></i></div></div>`;
   const recent=DB.records.slice().sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0)).slice(0,4);
   const recHtml=recent.length?recent.map(homeRow).join(""):`<div class="hd-empty">還沒有記錄，按 ＋ 新增一筆</div>`;
   const ent=_homeEnter;_homeEnter=false;
@@ -125,6 +136,21 @@ function renderHome(){
     <div class="hd-rec">${recHtml}</div>
   </div>`;
   document.getElementById("page-home").innerHTML=html;
+  animateHome();
+}
+/* grow the day bars + savings gauge from 0, and count the hero numbers up */
+function animateHome(){
+  const root=document.getElementById("page-home");if(!root)return;
+  const setViz=()=>{root.querySelectorAll(".hd-bar").forEach(el=>el.style.height=el.dataset.h);
+    root.querySelectorAll(".hd-gfill").forEach(el=>el.style.width=el.dataset.w);};
+  if(_rMotion){setViz();root.querySelectorAll(".hd-hero[data-to]").forEach(el=>el.textContent=fmt(Math.round(parseFloat(el.dataset.to)||0)));return;}
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{setViz();root.querySelectorAll(".hd-hero[data-to]").forEach(_countMoney);}));
+}
+function _countMoney(el){
+  const to=Math.round(parseFloat(el.dataset.to)||0),dur=760,t0=performance.now();
+  const step=now=>{if(!el.isConnected)return;const t=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-t,3);
+    el.textContent=fmt(Math.round(to*e));if(t<1)requestAnimationFrame(step);else el.textContent=fmt(to);};
+  requestAnimationFrame(step);
 }
 const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
 const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#64748b","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];
