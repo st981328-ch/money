@@ -560,8 +560,7 @@ html.fin-full .pages{padding-bottom:0}
 /* shared full-bleed cream pages (home / projects / analytics) */
 html.fin-full .app{background:#f6f5f0}
 html.pg-projects .app{background:#e8e8e8}
-#page-records{padding:0}
-#page-stats{padding:0}
+#page-records,#page-stats,#page-home,#page-settings{padding:0}
 
 /* ===================== analytics page (Monthly Report) ===================== */
 .statv2{--cream:#f6f5f0; --ink:#182b25; --muted:#737a74; --lime:#dee514; --line:rgba(112,112,112,.26); --card:#fff; --text:#182b25; --text2:#737a74; --input:#efeee9; --shadow:0 1px 3px rgba(0,0,0,.08); min-height:100dvh; background:var(--cream); font-variant-numeric:tabular-nums}
