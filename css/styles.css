@@ -130,9 +130,9 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 /* settings */
 /* settings page — same cream/ink system + icon tiles as the other pages */
 .setv2{--cream:#f6f5f0; --ink:#182b25; --muted:#737a74; --line:rgba(112,112,112,.14); min-height:100dvh; background:var(--cream)}
-.setv2 .set-head{padding:calc(env(safe-area-inset-top,0px) + 16px) 22px 12px}
+.setv2 .set-head{padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 12px}
 .setv2 .set-title{font-size:30px; font-weight:800; color:var(--ink); letter-spacing:-.5px}
-.setv2 .set-wrap{padding:6px 22px calc(var(--nav-h) + var(--safe-b) + 40px)}
+.setv2 .set-wrap{padding:6px 20px calc(var(--nav-h) + var(--safe-b) + 40px)}
 .setv2 .ssec{margin-bottom:24px}
 .setv2 .ssec-h{font-size:14px; font-weight:800; color:var(--ink); padding:0 2px 10px}
 .setv2 .sgroup{display:flex; flex-direction:column; gap:8px}
@@ -407,8 +407,8 @@ html.fin-full .pages{padding-bottom:0}
 .hv-spent-cmp.up{color:#b8541f}
 /* =================== home dashboard (house-icon landing) =================== */
 .homed{--ink:#182b25; --muted:#7a8178; --rule:#ece7dd; --hd-tex:rgba(24,43,37,.16);
-  min-height:100dvh; background:linear-gradient(180deg,#f7f4ec,#f3efe8 42%);
-  padding:calc(env(safe-area-inset-top,0px) + 16px) 14px calc(var(--nav-h) + var(--safe-b) + 26px);
+  min-height:100dvh; background:#f6f5f0;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 20px calc(var(--nav-h) + var(--safe-b) + 26px);
   display:flex; flex-direction:column; gap:14px}
 .hd-top{display:flex; align-items:flex-start; justify-content:space-between}
 .hd-greet{font-size:13px; color:var(--muted); font-weight:600}
@@ -470,8 +470,8 @@ html.fin-full .pages{padding-bottom:0}
 
 /* ===================== projects page ===================== */
 #page-projects{padding:0}
-.projv2{--cream:#e8e8e8; --ink:#182b25; --muted:#737a74; --card-grey:#d9d9d9; --line:rgba(112,112,112,.2); min-height:100dvh; background:#e8e8e8}
-.pv-top{position:sticky; top:0; z-index:5; background:#e8e8e8; padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 12px; display:flex; align-items:center; gap:10px}
+.projv2{--cream:#f6f5f0; --ink:#182b25; --muted:#737a74; --card-grey:#d9d9d9; --line:rgba(112,112,112,.2); min-height:100dvh; background:#f6f5f0}
+.pv-top{position:sticky; top:0; z-index:5; background:#f6f5f0; padding:calc(env(safe-area-inset-top,0px) + 16px) 20px 12px; display:flex; align-items:center; gap:10px}
 .pv-title{flex:1; font-size:30px; font-weight:800; color:var(--ink); letter-spacing:-.5px}
 .pv-actions{display:flex; align-items:center; gap:8px}
 .pv-pill{height:39px; padding:0 11px 0 15px; border-radius:20px; border:1.5px solid #dddfd7; display:flex; align-items:center; gap:2px; font-size:15px; font-weight:600; color:var(--ink); background:transparent}
