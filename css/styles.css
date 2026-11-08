@@ -408,7 +408,7 @@ html.fin-full .pages{padding-bottom:0}
 /* =================== home dashboard (house-icon landing) =================== */
 .homed{--ink:#182b25; --muted:#7a8178; --rule:#ece7dd; --hd-tex:rgba(24,43,37,.16);
   min-height:100dvh; background:linear-gradient(180deg,#f7f4ec,#f3efe8 42%);
-  padding:calc(env(safe-area-inset-top,0px) + 16px) 20px calc(var(--nav-h) + var(--safe-b) + 26px);
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 14px calc(var(--nav-h) + var(--safe-b) + 26px);
   display:flex; flex-direction:column; gap:14px}
 .hd-top{display:flex; align-items:flex-start; justify-content:space-between}
 .hd-greet{font-size:13px; color:var(--muted); font-weight:600}
