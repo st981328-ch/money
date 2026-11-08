@@ -405,6 +405,22 @@ html.fin-full .pages{padding-bottom:0}
 .hv-spent-amt{font-size:40px; font-weight:700; color:var(--ink); letter-spacing:-.5px; line-height:1.1; font-variant-numeric:tabular-nums; margin-top:3px}
 .hv-spent-cmp{display:inline-block; font-size:13px; margin-top:9px; color:var(--muted)}
 .hv-spent-cmp.up{color:#b8541f}
+/* glance card strip under the hero */
+.hv-cards{display:flex; gap:11px; margin:20px -20px 0; padding:2px 20px; overflow-x:auto; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+.hv-cards::-webkit-scrollbar{display:none}
+.hvc{flex:0 0 auto; width:150px; min-height:106px; background:#fff; border-radius:18px; padding:14px 15px; box-shadow:0 1px 3px rgba(24,43,37,.08); scroll-snap-align:start; display:flex; flex-direction:column; cursor:pointer}
+.hvc:active{transform:scale(.975)} .hvc{transition:transform .12s ease}
+.hvc-top{display:flex; align-items:center; justify-content:space-between; gap:6px}
+.hvc-l{font-size:12px; font-weight:600; color:var(--muted)}
+.hvc-ic{width:26px; height:26px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--ink); background:rgba(24,43,37,.06)}
+.hvc-v{font-size:23px; font-weight:800; color:var(--ink); letter-spacing:-.4px; line-height:1.1; font-variant-numeric:tabular-nums; margin-top:auto}
+.hvc-v.pos{color:var(--grn)} .hvc-v.neg{color:var(--rule)}
+.hvc-s{font-size:12px; color:var(--muted); margin-top:5px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.hvc-dn{display:flex; align-items:center; gap:11px; margin-top:auto}
+.hvc-dn .sv-donut{width:62px; height:62px; flex:0 0 auto}
+.hvc-dmeta{min-width:0}
+.hvc-dname{font-size:14px; font-weight:700; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.hvc-damt{font-size:12.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums}
 .hv-list{flex:1; background:var(--sage); margin:16px 20px 0; border-radius:5px 5px 0 0; padding:4px 15px calc(var(--nav-h) + var(--safe-b) + 44px)}
 .hv-row{display:flex; align-items:center; gap:11px; padding:14px 0; border-bottom:0.5px solid var(--rule); cursor:pointer}
 .hv-row:last-child{border-bottom:none}

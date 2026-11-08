@@ -69,12 +69,51 @@ function renderRecords(){
         <div class="hv-spent-amt">${fmt(mexp)}</div>
         ${cmp?`<div class="hv-spent-cmp ${cmp.cls}">${cmp.arrow} ${cmp.text}</div>`:``}
       </div>
+      ${homeCards(mo)}
     </div>
     <div class="hv-list">${rows}</div>
   </div>`;
   document.getElementById("page-records").innerHTML=html;
   _flashId=null;   // consumed: only pulse once, right after a save
   bindWeekSwipe();
+  requestAnimationFrame(()=>requestAnimationFrame(animateHomeCards));   // sweep donut + count-ups, same as stats
+}
+/* ---- home glance cards: a swipeable strip of this-month analytics under the hero ---- */
+function homeCards(mo){
+  const recs=recsInMonth(mo);
+  if(!recs.length)return "";                               // empty month: no strip
+  let exp=0,inc=0;
+  recs.forEach(r=>{const v=baseAmt(r);if(r.type==="expense")exp+=v;else if(r.type==="income")inc+=v;});
+  // pace / projection
+  const[y,m]=mo.split("-").map(Number);
+  const dim=new Date(y,m,0).getDate();
+  const today=todayStr(),curMo=today.slice(0,7),isCur=mo===curMo;
+  const elapsed=isCur?parseInt(today.slice(8,10),10):(mo<curMo?dim:0);
+  const perDay=elapsed?exp/elapsed:0;
+  const projected=isCur?perDay*dim:exp;
+  // net + savings rate
+  const net=inc-exp,rate=inc>0?Math.round(net/inc*100):null;
+  const netCls=net>0?"pos":(net<0?"neg":"");
+  const rateS=rate==null?"本月無收入":(rate>=0?("存下 "+rate+"%"):("透支 "+Math.abs(rate)+"%"));
+  // biggest spending category (reuses the stats grouping + donut)
+  const top=statCats(recs)[0];
+  const topPct=(top&&exp>0)?top.v/exp*100:0,topColor=top?catColor(top.c):"#c9c9c9";
+  // subscriptions (訂閱 sub- or main-category)
+  let subSum=0,subN=0;
+  recs.forEach(r=>{if(r.type!=="expense")return;const c=catOf(r.categoryId);if(!c)return;const mn=mainOf(c);
+    if(c.name==="訂閱"||(mn&&mn.name==="訂閱")){subSum+=baseAmt(r);subN++;}});
+  const card=(l,icon,v,s,vcls)=>`<div class="hvc" onclick="go('stats')">
+      <div class="hvc-top"><span class="hvc-l">${l}</span><span class="hvc-ic">${IC(icon)}</span></div>
+      <div class="hvc-v ${vcls||""}">${v}</div><div class="hvc-s">${s}</div></div>`;
+  const pace=card(isCur?"本月預估":"本月支出","trending-up",fmt(Math.round(isCur?projected:exp)),"日均 "+fmt(Math.round(perDay)));
+  const netc=card("本月結餘","wallet",fmt(net),rateS,netCls);
+  const donut=`<div class="hvc" onclick="go('stats')">
+      <div class="hvc-top"><span class="hvc-l">最大開銷</span></div>
+      <div class="hvc-dn">${ringDonut(topPct,topColor)}
+        <div class="hvc-dmeta"><div class="hvc-dname">${top?catLabel(top.c):"—"}</div><div class="hvc-damt">${fmt(top?top.v:0)}</div></div>
+      </div></div>`;
+  const subs=card("本月訂閱","repeat",fmt(subSum),subN+" 項");
+  return `<div class="hv-cards">${pace}${netc}${donut}${subs}</div>`;
 }
 const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
 const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#64748b","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];
@@ -266,13 +305,14 @@ function _countUp(el,to,dur){
   };
   requestAnimationFrame(step);
 }
-function animateStatCharts(){
-  _statGen++;   // invalidates any count-up still running from a previous render
-  const root=document.getElementById("page-stats");if(!root)return;
+function _sweepCharts(root){
+  if(!root)return;
   root.querySelectorAll(".sv-arc").forEach(el=>{void el.getBoundingClientRect();el.style.strokeDashoffset=el.dataset.off;});
   root.querySelectorAll(".sv-sfill").forEach(el=>{void el.getBoundingClientRect();el.style.width=el.dataset.w;});
   root.querySelectorAll(".sv-num").forEach(el=>_countUp(el,parseFloat(el.dataset.pct)||0,950));
 }
+function animateStatCharts(){_statGen++;_sweepCharts(document.getElementById("page-stats"));}   // _statGen bump invalidates count-ups still running from a previous render
+function animateHomeCards(){_statGen++;_sweepCharts(document.getElementById("page-records"));}
 function statOverview(recs){
   let exp=0,inc=0,expN=0,incN=0;
   recs.forEach(r=>{const v=baseAmt(r);if(r.type==="expense"){exp+=v;expN++;}else if(r.type==="income"){inc+=v;incN++;}});
