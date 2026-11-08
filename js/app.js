@@ -15,12 +15,13 @@ function go(p){
   document.documentElement.classList.toggle("pg-projects",p==="projects");
   document.getElementById("pageTitle").textContent=TITLES[p];
   document.getElementById("monthNav").style.visibility=(p==="stats"||p==="budgets")?"visible":"hidden";
-  document.getElementById("navAddBtn").classList.toggle("on",p==="home");
+  document.getElementById("navAddBtn").classList.toggle("on",p==="records");
   document.querySelector(".pages").scrollTop=0;
   render();
 }
 /* center + : jump to records when elsewhere, else open the add sheet */
-function navAdd(){ openAdd(); }
+/* center + : first press opens the records ledger; press again there to add a record */
+function navAdd(){ if(ui.page!=="records") go("records"); else openAdd(); }
 function shiftMonth(d){
   let[y,m]=ui.month.split("-").map(Number);m+=d;
   if(m<1){m=12;y--;}if(m>12){m=1;y++;}
