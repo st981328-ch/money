@@ -554,9 +554,9 @@ function renderProjects(){
     const card=(p,i)=>{
       const cap=`<div class="pc-cap">${esc(p.name)}</div>`,t=projTilt(p.id);
       const ex=ent?` enter`:"",dl=ent?`;animation-delay:${(Math.min(i,16)*0.05).toFixed(2)}s`:"";
-      if(p.cover)return `<div class="projcard img${ex}" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg${dl}" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false">${cap}</div>`;
+      if(p.cover)return `<div class="projcard img${ex}" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="--rot:${t}deg${dl}" onclick="openProjectHero('${p.id}',this)"><img src="${p.cover}" alt="" draggable="false"><i class="pc-glare"></i>${cap}</div>`;
       const col=projColor(p),tc=inkOn(col),letter=esc((p.name||"?").trim().charAt(0)||"?");
-      return `<div class="projcard plain${ex}" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${col};--rot:${t}deg;--pc-tc:${tc}${dl}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span>${cap}</div>`;
+      return `<div class="projcard plain${ex}" data-pid="${p.id}" data-pname="${esc(p.name)}" data-rot="${t}" style="background:${col};--rot:${t}deg;--pc-tc:${tc}${dl}" onclick="openProjectHero('${p.id}',this)"><span class="pc-letter">${letter}</span><i class="pc-glare"></i>${cap}</div>`;
     };
     if(!list.length)body=`<div class="projgrid"><div class="pv-empty-sm">這一年沒有專案</div></div>`;
     else{const a=[],bcol=[];list.forEach((x,i)=>(i%2?bcol:a).push(card(x.p,i)));
@@ -566,6 +566,29 @@ function renderProjects(){
     <div class="pv-body">${body}
       <button class="pv-add" onclick="openProjectEdit()">${IC("plus")} 新增專案</button>
     </div></div>`;
+  if(ui.projView!=="list")bindCardTilt();
+}
+/* 3D press-tilt: cards lean toward the finger with a light glare, then spring back to their tossed tilt */
+function bindCardTilt(){
+  if(_rMotion)return;
+  document.querySelectorAll("#page-projects .projgrid .projcard").forEach(el=>{
+    const rot=parseFloat(el.dataset.rot||"0")||0;let rect=null,on=false;
+    const apply=(cx,cy)=>{
+      if(!rect)return;
+      const px=Math.max(0,Math.min(1,(cx-rect.left)/rect.width)),py=Math.max(0,Math.min(1,(cy-rect.top)/rect.height));
+      const ry=(px-.5)*15,rx=-(py-.5)*15;
+      el.style.transform=`perspective(680px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) rotate(${rot}deg) scale(1.06)`;
+      el.style.setProperty("--gx",(px*100).toFixed(1)+"%");el.style.setProperty("--gy",(py*100).toFixed(1)+"%");
+    };
+    const down=e=>{rect=el.getBoundingClientRect();on=true;el.classList.add("pc-press");apply(e.clientX,e.clientY);};
+    const move=e=>{if(on)apply(e.clientX,e.clientY);};
+    const reset=()=>{if(!on)return;on=false;el.classList.remove("pc-press");el.style.transform="";el.style.removeProperty("--gx");el.style.removeProperty("--gy");};
+    el.addEventListener("pointerdown",down);
+    el.addEventListener("pointermove",move);
+    el.addEventListener("pointerup",reset);
+    el.addEventListener("pointercancel",reset);
+    el.addEventListener("pointerleave",reset);
+  });
 }
 function setProjActive(pid){ui.projActive=pid;render();}
 /* stable small tilt per project id (~ -2.6deg .. +2.6deg) for a casual, tossed-card look */
@@ -713,6 +736,7 @@ let _pheroSrc=null;
 function openProjectHero(pid,srcEl){
   const p=projOf(pid);if(!p)return;
   haptic("tap");
+  if(srcEl){srcEl.classList.remove("pc-press");srcEl.style.transition="none";srcEl.style.transform="";void srcEl.getBoundingClientRect();srcEl.style.transition="";srcEl.style.removeProperty("--gx");srcEl.style.removeProperty("--gy");}  // reset any press-tilt so the FLIP measures the resting card
   const hasCover=!!p.cover,dr=projDateRange(pid);
   const letter=esc((p.name||"?").trim().charAt(0)||"?");
   const inner=hasCover?`<img src="${p.cover}" alt="" draggable="false">`:`<span class="pc-letter">${letter}</span>`;
