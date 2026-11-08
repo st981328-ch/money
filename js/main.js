@@ -2,6 +2,18 @@
 /* toast + haptics + feedback + bootstrap */
 /* =================== motion / haptics =================== */
 let _rMotion=false;try{_rMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
+/* =================== lock zoom (iOS Safari ignores user-scalable=no / maximum-scale) =================== */
+(function lockZoom(){
+  // pinch-zoom: iOS Safari-specific gesture events
+  ["gesturestart","gesturechange","gestureend"].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+  // double-tap-to-zoom: block only the 2nd of two quick taps at the same spot (nothing in the app uses double-tap)
+  let lt=0,lx=0,ly=0;
+  document.addEventListener("touchend",e=>{
+    const t=e.changedTouches[0];if(!t)return;const now=Date.now();
+    if(now-lt<=320&&Math.abs(t.clientX-lx)<42&&Math.abs(t.clientY-ly)<42)e.preventDefault();
+    lt=now;lx=t.clientX;ly=t.clientY;
+  },{passive:false});
+})();
 /* progressive enhancement: vibrates on Android; silently a no-op on iOS (no Web Vibration API) */
 const _HAPT={tap:8,soft:4,ok:[0,16,30,22],warn:[0,34,48,34],heavy:22};
 function haptic(type){try{if(navigator.vibrate)navigator.vibrate(_HAPT[type]||8);}catch(e){}}
