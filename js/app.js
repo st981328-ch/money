@@ -129,6 +129,7 @@ function renderHome(){
       <div class="hd-seg">
         <button data-p="month" class="${per==="month"?"on":""}" onclick="setHomeTrack('month')">本月</button>
         <button data-p="year" class="${per==="year"?"on":""}" onclick="setHomeTrack('year')">本年</button>
+        <button data-p="all" class="${per==="all"?"on":""}" onclick="setHomeTrack('all')">全部</button>
       </div>
     </div>
     <div id="hdTrackRows">${trackRowsHtml()}</div></div>`;
@@ -169,6 +170,7 @@ function _countMoney(el){
 /* tracked-category card: user-picked expense categories (DB.config.homeTrack = [catId]),
    this-month or whole-year spend, toggled in place */
 function _trackRecs(per){
+  if(per==="all")return DB.records;
   const y=ui.month.slice(0,4);
   return per==="year"?DB.records.filter(r=>r.date&&r.date.slice(0,4)===y):recsInMonth(ui.month);
 }
