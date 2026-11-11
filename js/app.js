@@ -82,6 +82,10 @@ function renderRecords(){
 /* =================== home dashboard (the house-icon landing) =================== */
 let _homeEnter=false;
 function renderHome(){
+  if(!Array.isArray(DB.config.homeTrack)){   // first run: default to 訂閱 / 寵物 if they exist
+    DB.config.homeTrack=["訂閱","寵物"].map(nm=>{const c=DB.categories.find(x=>x.name===nm&&x.type==="expense");return c&&c.id;}).filter(Boolean);
+    save(true);
+  }
   const mo=ui.month,recs=recsInMonth(mo);
   let exp=0,inc=0;const n=recs.length;
   recs.forEach(r=>{const v=baseAmt(r);if(r.type==="expense")exp+=v;else if(r.type==="income")inc+=v;});
@@ -120,7 +124,8 @@ function renderHome(){
     <div class="hd-gauge"><i class="hd-gfill" data-w="${spentPct}%"></i></div></div>`;
   const per=ui.homeTrack||"month";
   const trackCard=`<div class="hd-track" id="hdTrack">
-    <div class="hd-trh"><span>追蹤項目</span>
+    <div class="hd-trh">
+      <div class="hd-trh-l"><span>追蹤項目</span><button class="hd-tedit" onclick="openTrackPicker()" aria-label="編輯追蹤分類">${IC("pencil")}</button></div>
       <div class="hd-seg">
         <button data-p="month" class="${per==="month"?"on":""}" onclick="setHomeTrack('month')">本月</button>
         <button data-p="year" class="${per==="year"?"on":""}" onclick="setHomeTrack('year')">本年</button>
@@ -161,27 +166,51 @@ function _countMoney(el){
     el.textContent=fmt(Math.round(to*e));if(t<1)requestAnimationFrame(step);else el.textContent=fmt(to);};
   requestAnimationFrame(step);
 }
-/* tracked-category card (訂閱 / 寵物): this-month or whole-year spend, toggled in place */
-const HOME_TRACK=[["訂閱","repeat"],["寵物","dog"]];
-function _trackSum(name,per){
+/* tracked-category card: user-picked expense categories (DB.config.homeTrack = [catId]),
+   this-month or whole-year spend, toggled in place */
+function _trackRecs(per){
   const y=ui.month.slice(0,4);
-  const recs=per==="year"?DB.records.filter(r=>r.date&&r.date.slice(0,4)===y):recsInMonth(ui.month);
-  let s=0;recs.forEach(r=>{if(r.type!=="expense")return;const c=catOf(r.categoryId);if(!c)return;const mn=mainOf(c);
-    if(c.name===name||(mn&&mn.name===name))s+=baseAmt(r);});
+  return per==="year"?DB.records.filter(r=>r.date&&r.date.slice(0,4)===y):recsInMonth(ui.month);
+}
+function _trackSumCat(cat,recs){
+  let s=0;recs.forEach(r=>{if(r.type!=="expense")return;const c=catOf(r.categoryId);if(!c)return;
+    if(cat.parent){if(c.id===cat.id)s+=baseAmt(r);}else{const m=mainOf(c);if(m&&m.id===cat.id)s+=baseAmt(r);}});
   return s;
 }
 function trackRowsHtml(){
-  const per=ui.homeTrack||"month";
-  return HOME_TRACK.map(([name,fb])=>{
-    const c=DB.categories.find(x=>x.name===name);
-    const icon=c?catIcon(c):fb,col=c?catColor(c):"#8a8f8a";
-    return `<div class="hd-trow"><span class="hd-tic" style="color:${col}">${IC(icon)}</span><span class="hd-tnm">${name}</span><span class="hd-tamt">${fmt(Math.round(_trackSum(name,per)))}</span></div>`;
-  }).join("");
+  const per=ui.homeTrack||"month",recs=_trackRecs(per);
+  const rows=(DB.config.homeTrack||[]).map(id=>{const c=catOf(id);if(!c)return "";
+    return `<div class="hd-trow"><span class="hd-tic" style="color:${catColor(c)}">${IC(catIcon(c))}</span><span class="hd-tnm">${esc(c.name)}</span><span class="hd-tamt">${fmt(Math.round(_trackSumCat(c,recs)))}</span></div>`;
+  }).filter(Boolean).join("");
+  return rows||`<div class="hd-tempty">尚未選擇，點右上 ✎ 新增追蹤分類</div>`;
 }
 function setHomeTrack(p){
   ui.homeTrack=p;
   const rows=document.getElementById("hdTrackRows");if(rows)rows.innerHTML=trackRowsHtml();
   document.querySelectorAll("#hdTrack .hd-seg button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+}
+/* pick which expense categories the dashboard tracks */
+let _trackSel=null;
+function openTrackPicker(){
+  _trackSel=new Set(DB.config.homeTrack||[]);
+  const mains=DB.categories.filter(c=>c.type==="expense"&&!c.parent);
+  let body=`<div class="tk-list">`;
+  mains.forEach(m=>{body+=_tkRow(m,false);DB.categories.filter(s=>s.parent===m.id&&s.type==="expense").forEach(s=>body+=_tkRow(s,true));});
+  body+=`</div><button class="btn" onclick="saveTrackPicker()">完成</button>`;
+  openSheet("選擇追蹤分類",body);
+}
+function _tkRow(c,isSub){
+  const on=_trackSel.has(c.id);
+  return `<div class="tk-row${isSub?" sub":""}${on?" on":""}" onclick="toggleTrackSel('${c.id}',this)">
+    <span class="tk-ic" style="color:${catColor(c)}">${IC(catIcon(c))}</span>
+    <span class="tk-nm">${esc(c.name)}</span><span class="tk-ck">${on?"✓":""}</span></div>`;
+}
+function toggleTrackSel(id,el){
+  if(_trackSel.has(id))_trackSel.delete(id);else _trackSel.add(id);
+  const on=_trackSel.has(id);el.classList.toggle("on",on);el.querySelector(".tk-ck").textContent=on?"✓":"";
+}
+function saveTrackPicker(){
+  DB.config.homeTrack=[..._trackSel];save();closeTopSheet();render();
 }
 const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
 const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#64748b","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];

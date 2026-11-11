@@ -452,6 +452,17 @@ html.fin-full .pages{padding-bottom:0}
 .hd-tic{display:inline-flex; align-items:center; justify-content:center; width:24px; font-size:18px; flex:0 0 auto}
 .hd-tnm{flex:1; font-size:15px; font-weight:600; color:var(--ink)}
 .hd-tamt{font-size:16px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums}
+.hd-trh-l{display:flex; align-items:center; gap:7px}
+.hd-tedit{width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; background:rgba(24,43,37,.06)}
+.hd-tempty{text-align:center; color:var(--muted); font-size:13px; padding:14px 8px}
+/* tracked-category picker (in a sheet) */
+.tk-list{max-height:52vh; overflow-y:auto; margin:2px -4px 14px}
+.tk-row{display:flex; align-items:center; gap:11px; padding:11px 8px; border-radius:12px; cursor:pointer}
+.tk-row.sub{padding-left:26px}
+.tk-row.on{background:rgba(24,43,37,.06)}
+.tk-ic{width:24px; display:inline-flex; align-items:center; justify-content:center; font-size:18px; flex:0 0 auto}
+.tk-nm{flex:1; font-size:15px; font-weight:600; color:#182b25}
+.tk-ck{width:20px; text-align:center; color:#28a46c; font-weight:800; font-size:15px}
 /* recent records */
 .hd-rech{display:flex; align-items:center; justify-content:space-between; margin-top:6px; padding:0 2px}
 .hd-rech>span{font-size:16px; font-weight:800; color:var(--ink)}
