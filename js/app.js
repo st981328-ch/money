@@ -118,6 +118,15 @@ function renderHome(){
       <div class="hd-st"><b>${rate}%</b><span>存下</span></div>
     </div>
     <div class="hd-gauge"><i class="hd-gfill" data-w="${spentPct}%"></i></div></div>`;
+  const per=ui.homeTrack||"month";
+  const trackCard=`<div class="hd-track" id="hdTrack">
+    <div class="hd-trh"><span>追蹤項目</span>
+      <div class="hd-seg">
+        <button data-p="month" class="${per==="month"?"on":""}" onclick="setHomeTrack('month')">本月</button>
+        <button data-p="year" class="${per==="year"?"on":""}" onclick="setHomeTrack('year')">本年</button>
+      </div>
+    </div>
+    <div id="hdTrackRows">${trackRowsHtml()}</div></div>`;
   const recent=DB.records.slice().sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0)).slice(0,4);
   const recHtml=recent.length?recent.map(homeRow).join(""):`<div class="hd-empty">還沒有記錄，按 ＋ 新增一筆</div>`;
   const ent=_homeEnter;_homeEnter=false;
@@ -131,7 +140,7 @@ function renderHome(){
       <div class="hd-mlabel">${mLbl}</div>
       <button class="hd-marrow" onclick="shiftMonth(1)" aria-label="下個月">${IC("arrow-right")}</button>
     </div>
-    ${cardA}${cardB}
+    ${cardA}${cardB}${trackCard}
     <div class="hd-rech"><span>近期記錄</span><button onclick="go('records')">查看全部 ›</button></div>
     <div class="hd-rec">${recHtml}</div>
   </div>`;
@@ -151,6 +160,28 @@ function _countMoney(el){
   const step=now=>{if(!el.isConnected)return;const t=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-t,3);
     el.textContent=fmt(Math.round(to*e));if(t<1)requestAnimationFrame(step);else el.textContent=fmt(to);};
   requestAnimationFrame(step);
+}
+/* tracked-category card (訂閱 / 寵物): this-month or whole-year spend, toggled in place */
+const HOME_TRACK=[["訂閱","repeat"],["寵物","dog"]];
+function _trackSum(name,per){
+  const y=ui.month.slice(0,4);
+  const recs=per==="year"?DB.records.filter(r=>r.date&&r.date.slice(0,4)===y):recsInMonth(ui.month);
+  let s=0;recs.forEach(r=>{if(r.type!=="expense")return;const c=catOf(r.categoryId);if(!c)return;const mn=mainOf(c);
+    if(c.name===name||(mn&&mn.name===name))s+=baseAmt(r);});
+  return s;
+}
+function trackRowsHtml(){
+  const per=ui.homeTrack||"month";
+  return HOME_TRACK.map(([name,fb])=>{
+    const c=DB.categories.find(x=>x.name===name);
+    const icon=c?catIcon(c):fb,col=c?catColor(c):"#8a8f8a";
+    return `<div class="hd-trow"><span class="hd-tic" style="color:${col}">${IC(icon)}</span><span class="hd-tnm">${name}</span><span class="hd-tamt">${fmt(Math.round(_trackSum(name,per)))}</span></div>`;
+  }).join("");
+}
+function setHomeTrack(p){
+  ui.homeTrack=p;
+  const rows=document.getElementById("hdTrackRows");if(rows)rows.innerHTML=trackRowsHtml();
+  document.querySelectorAll("#hdTrack .hd-seg button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
 }
 const STAT_TABS=[["overview","總覽"],["detail","明細"],["category","類別"],["rank","排行"],["project","專案"],["name","名稱"]];
 const DONUT_PALETTE=["#faba00","#aec8e1","#a3b128","#64748b","#ff2e01","#8b5cf6","#ec4899","#0ea5e9","#f97316","#14b8a6"];
