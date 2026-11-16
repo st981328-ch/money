@@ -1559,8 +1559,9 @@ function delCurrency(code){
   const el=sheetStack[sheetStack.length-1];el.querySelector("#cm_list").innerHTML=curManagerList();
 }
 function openTheme(){
-  const body=[["auto","跟隨系統"],["light","淺色"],["dark","深色"]].map(([k,n])=>`<div class="set-item" onclick="setTheme('${k}')"><span class="si-label">${n}</span>${DB.config.theme===k?'<span class="si-val">✓</span>':""}</div>`).join("");
-  openSheet("外觀主題",`<div class="set-group" style="margin-top:6px">${body}</div>`);
+  const opts=[["auto","跟隨系統","自動配合裝置設定"],["light","淺色","明亮配色"],["dark","深色","暗色配色"]];
+  const body=`<div class="theme-list">`+opts.map(([k,n,d])=>`<button class="theme-opt${DB.config.theme===k?" on":""}" onclick="setTheme('${k}')"><span class="to-txt"><span class="to-nm">${n}</span><span class="to-dsc">${d}</span></span><span class="to-rad"></span></button>`).join("")+`</div>`;
+  openSheet("外觀主題",body);
 }
 function setTheme(t){DB.config.theme=t;save();applyTheme();closeTopSheet();render();}
 function applyTheme(){
