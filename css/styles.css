@@ -836,3 +836,18 @@ html.adding .mask{background:transparent}
 :root[data-theme="dark"] .sv-donut circle:first-of-type{stroke:#2a352e}
 :root[data-theme="dark"] .sv-tabs button{background:#26322b; color:#8ca396}
 :root[data-theme="dark"] .sv-tabs button.on{background:#1d2822; color:#e9ede9}
+/* dashboard budget bar */
+.hd-bud{background:#fff; border-radius:18px; padding:15px 17px; box-shadow:0 1px 3px rgba(24,43,37,.07); cursor:pointer; transition:transform .14s ease}
+.hd-bud:active{transform:scale(.99)}
+.hd-budh{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+.hd-budh>span:first-child{font-size:15px; font-weight:800; color:var(--ink)}
+.hd-bud-pct{font-size:13px; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums}
+.hd-budbar{height:10px; border-radius:999px; background:rgba(24,43,37,.08); overflow:hidden}
+.hd-budbar i{display:block; height:100%; width:0; border-radius:999px; transition:width .7s cubic-bezier(.2,.8,.3,1)}
+.hd-budmeta{display:flex; align-items:center; justify-content:space-between; margin-top:9px; font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:600}
+.hd-budmeta .over{color:#d2432f; font-weight:800}
+.hd-bud-set>span:first-child{font-size:15px; font-weight:700; color:var(--ink)}
+.hd-bud-chev{color:var(--muted); font-size:18px}
+.homed.hd-enter>*:nth-child(8){animation-delay:.36s}
+:root[data-theme="dark"] .hd-bud{background:#1d2822}
+:root[data-theme="dark"] .hd-budbar{background:rgba(255,255,255,.1)}

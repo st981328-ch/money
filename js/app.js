@@ -124,6 +124,19 @@ function renderHome(){
       <div class="hd-st"><b>${rate}%</b><span>存下</span></div>
     </div>
     <div class="hd-gauge"><i class="hd-gfill" data-w="${spentPct}%"></i></div></div>`;
+  const totalBud=DB.budgets.find(b=>b.categoryId==="total");
+  let budCard;
+  if(totalBud&&totalBud.amount>0){
+    const bud=totalBud.amount,pct=Math.round(exp/bud*100),over=exp>bud,barw=Math.min(100,pct);
+    const barcol=over?"#d2432f":(exp/bud>=0.8?"#e0a458":"#2f7d57");
+    budCard=`<div class="hd-bud" onclick="go('budgets')">
+      <div class="hd-budh"><span>本月預算</span><span class="hd-bud-pct">${pct}%</span></div>
+      <div class="hd-budbar"><i data-w="${barw}%" style="background:${barcol}"></i></div>
+      <div class="hd-budmeta"><span>${fmt(Math.round(exp))} / ${fmt(bud)}</span><span class="${over?"over":""}">${over?"超支 "+fmt(Math.round(exp-bud)):"剩 "+fmt(Math.round(bud-exp))}</span></div>
+    </div>`;
+  }else{
+    budCard=`<div class="hd-bud hd-bud-set" onclick="go('budgets')"><span>設定本月預算</span><span class="hd-bud-chev">›</span></div>`;
+  }
   const per=ui.homeTrack||"month";
   const trackCard=`<div class="hd-track" id="hdTrack">
     <div class="hd-trh">
@@ -148,7 +161,7 @@ function renderHome(){
       <div class="hd-mlabel">${mLbl}</div>
       <button class="hd-marrow" onclick="shiftMonth(1)" aria-label="下個月">${IC("arrow-right")}</button>
     </div>
-    ${cardA}${cardB}${trackCard}
+    ${cardA}${cardB}${budCard}${trackCard}
     <div class="hd-rech"><span>近期記錄</span><button onclick="go('records')">查看全部 ›</button></div>
     <div class="hd-rec">${recHtml}</div>
   </div>`;
@@ -159,7 +172,8 @@ function renderHome(){
 function animateHome(){
   const root=document.getElementById("page-home");if(!root)return;
   const setViz=()=>{root.querySelectorAll(".hd-bar").forEach(el=>el.style.height=el.dataset.h);
-    root.querySelectorAll(".hd-gfill").forEach(el=>el.style.width=el.dataset.w);};
+    root.querySelectorAll(".hd-gfill").forEach(el=>el.style.width=el.dataset.w);
+    root.querySelectorAll(".hd-budbar i").forEach(el=>el.style.width=el.dataset.w);};
   if(_rMotion){setViz();root.querySelectorAll(".hd-hero[data-to]").forEach(el=>el.textContent=fmt(Math.round(parseFloat(el.dataset.to)||0)));return;}
   requestAnimationFrame(()=>requestAnimationFrame(()=>{setViz();root.querySelectorAll(".hd-hero[data-to]").forEach(_countMoney);}));
 }
