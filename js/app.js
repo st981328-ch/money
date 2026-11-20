@@ -57,7 +57,7 @@ function renderRecords(){
   const dtotMain=dexp>0?"−"+fmt(dexp):(dinc>0?"+"+fmt(dinc):fmt(0));
   const dtot=`<div class="hv-daytot"><span class="hv-dt-l">本日總計</span><span class="hv-dt-v">${dtotMain}</span>${(dexp>0&&dinc>0)?`<span class="hv-dt-inc">收入 +${fmt(dinc)}</span>`:""}</div>`;
   const rows=day.length
-    ?`${dtot}<div class="hv-rows">${day.map(homeRow).join("")}</div>`
+    ?`${dtot}<div class="hv-rows">${day.map(r=>homeRow(r,true)).join("")}</div>`
     :`<div class="hv-empty">No records yet<br>Tap ＋ to add one</div>`;
   const html=`<div class="homev2">
     <div class="hv-top">
@@ -80,6 +80,7 @@ function renderRecords(){
   document.getElementById("page-records").innerHTML=html;
   _flashId=null;   // consumed: only pulse once, right after a save
   bindWeekSwipe();
+  bindRowSwipe();
 }
 /* =================== home dashboard (the house-icon landing) =================== */
 let _homeEnter=false;
@@ -262,10 +263,10 @@ function homeStrip(sel){
   }
   return `<div class="hv-wlabels">${labels}</div><div class="hv-strip" id="weekstrip">${cells}</div>`;
 }
-function homeRow(r){
+function homeRow(r,swipe){
   let name,icon,amt,amtcls="";
   if(r.type==="transfer"){
-    name=r.note||"轉帳";icon=IC("arrow-left-right");amt="⇄ "+fmt(baseAmt(r));amtcls="xfer";  // neutral: a transfer is not an expense
+    name=r.note||"轉帳";icon=IC("arrow-left-right");amt="⇄ "+fmt(baseAmt(r));amtcls="xfer";
   }else{
     const c=catOf(r.categoryId);
     name=r.note||(c?catLabel(c):"未分類");icon=IC(catIcon(c));
@@ -274,11 +275,38 @@ function homeRow(r){
   }
   const proj=r.projectId?projOf(r.projectId):null;
   const tag=proj?`<span class="hv-ptag">${esc(proj.name)}</span>`:"";
-  return `<div class="hv-row${r.id===_flashId?" flash":""}" onclick="openAdd('${r.id}')">
-    <span class="hv-ic">${icon}</span>
-    <span class="hv-name">${esc(name)}</span>
-    ${tag}<span class="hv-amt ${amtcls}">${amt}</span></div>`;
+  const inner=`<span class="hv-ic">${icon}</span><span class="hv-name">${esc(name)}</span>${tag}<span class="hv-amt ${amtcls}">${amt}</span>`;
+  if(swipe)return `<div class="hv-sw"><button class="hv-sw-del" onclick="swipeDel('${r.id}')">刪除</button><div class="hv-row${r.id===_flashId?" flash":""}" data-id="${r.id}">${inner}</div></div>`;
+  return `<div class="hv-row${r.id===_flashId?" flash":""}" onclick="openAdd('${r.id}')">${inner}</div>`;
 }
+/* swipe-left a record row to reveal delete; tap still opens the editor */
+function bindRowSwipe(){
+  const list=document.querySelector("#page-records .hv-rows");if(!list)return;
+  let cur=null,sx=0,sy=0,dx=0,moved=false,horiz=null,opened=null;
+  const rowEl=el=>el.querySelector(".hv-row");
+  const close=el=>{if(el){rowEl(el).style.transform="";el.classList.remove("open");}if(opened===el)opened=null;};
+  list.addEventListener("touchstart",e=>{
+    if(e.target.closest(".hv-sw-del"))return;
+    const el=e.target.closest(".hv-sw");
+    if(opened&&opened!==el)close(opened);
+    cur=el;if(!cur)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;moved=false;horiz=null;
+  },{passive:true});
+  list.addEventListener("touchmove",e=>{
+    if(!cur)return;dx=e.touches[0].clientX-sx;const dy=e.touches[0].clientY-sy;
+    if(horiz===null&&(Math.abs(dx)>8||Math.abs(dy)>8))horiz=Math.abs(dx)>Math.abs(dy);
+    if(!horiz)return;moved=true;if(e.cancelable)e.preventDefault();
+    const base=cur.classList.contains("open")?-84:0;
+    rowEl(cur).style.transform="translateX("+Math.max(-84,Math.min(0,base+dx))+"px)";
+  },{passive:false});
+  const end=()=>{
+    if(!cur)return;const el=cur;cur=null;
+    if(!moved){if(el.classList.contains("open"))close(el);else openAdd(rowEl(el).dataset.id);return;}
+    if(dx<-42){rowEl(el).style.transform="translateX(-84px)";el.classList.add("open");opened=el;}else close(el);
+  };
+  list.addEventListener("touchend",end);
+  list.addEventListener("touchcancel",()=>{if(cur){close(cur);cur=null;}});
+}
+function swipeDel(id){DB.records=DB.records.filter(x=>x.id!==id);save();haptic("warn");render();toast("已刪除");}
 function spentCompare(mo,dayCutoff){
   const[y,m]=mo.split("-").map(Number);
   const prev=(m===1)?((y-1)+"-12"):(y+"-"+String(m-1).padStart(2,"0"));

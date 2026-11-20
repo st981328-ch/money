@@ -851,3 +851,8 @@ html.adding .mask{background:transparent}
 .homed.hd-enter>*:nth-child(8){animation-delay:.36s}
 :root[data-theme="dark"] .hd-bud{background:#1d2822}
 :root[data-theme="dark"] .hd-budbar{background:rgba(255,255,255,.1)}
+/* swipe-to-delete record rows */
+.hv-sw{position:relative; overflow:hidden; border-bottom:0.5px solid var(--rule)}
+.hv-sw:last-child{border-bottom:none}
+.hv-sw-del{position:absolute; top:0; right:0; bottom:0; width:84px; border:none; background:#ff2e01; color:#fff; font-weight:700; font-size:14.5px; letter-spacing:1px; display:flex; align-items:center; justify-content:center}
+.hv-sw .hv-row{position:relative; z-index:1; background:var(--sage); border-bottom:none; transition:transform .22s cubic-bezier(.3,.9,.3,1); touch-action:pan-y}
