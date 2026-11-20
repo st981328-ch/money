@@ -58,7 +58,7 @@ function renderRecords(){
   const dtot=`<div class="hv-daytot"><span class="hv-dt-l">本日總計</span><span class="hv-dt-v">${dtotMain}</span>${(dexp>0&&dinc>0)?`<span class="hv-dt-inc">收入 +${fmt(dinc)}</span>`:""}</div>`;
   const rows=day.length
     ?`${dtot}<div class="hv-rows">${day.map(r=>homeRow(r,true)).join("")}</div>`
-    :`<div class="hv-empty">No records yet<br>Tap ＋ to add one</div>`;
+    :`<div class="hv-empty"><div class="hv-empty-ic">${IC("wallet")}</div><div class="hv-empty-t">這天還沒有記錄</div><div class="hv-empty-s">按下方 ＋ 記一筆</div></div>`;
   const html=`<div class="homev2">
     <div class="hv-top">
       <div class="hv-head">
