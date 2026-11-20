@@ -54,8 +54,10 @@ function renderRecords(){
   const cmp=spentCompare(mo,parseInt(sel.slice(8,10),10));
   const day=DB.records.filter(r=>r.date===sel).sort((a,b)=>(b._t||0)-(a._t||0));
   let dexp=0,dinc=0;day.forEach(r=>{if(r.type==="income")dinc+=baseAmt(r);else if(r.type==="expense")dexp+=baseAmt(r);});
+  const dtotMain=dexp>0?"−"+fmt(dexp):(dinc>0?"+"+fmt(dinc):fmt(0));
+  const dtot=`<div class="hv-daytot"><span class="hv-dt-l">本日總計</span><span class="hv-dt-v">${dtotMain}</span>${(dexp>0&&dinc>0)?`<span class="hv-dt-inc">收入 +${fmt(dinc)}</span>`:""}</div>`;
   const rows=day.length
-    ?`<div class="hv-rows">${day.map(homeRow).join("")}</div>`
+    ?`${dtot}<div class="hv-rows">${day.map(homeRow).join("")}</div>`
     :`<div class="hv-empty">No records yet<br>Tap ＋ to add one</div>`;
   const html=`<div class="homev2">
     <div class="hv-top">

@@ -491,6 +491,10 @@ html.fin-full .pages{padding-bottom:0}
 .homed.hd-enter>*:nth-child(7){animation-delay:.32s}
 @media (prefers-reduced-motion:reduce){.homed.hd-enter>*{animation:none}}
 .hv-list{flex:1; background:var(--sage); margin:16px 20px 0; border-radius:5px 5px 0 0; padding:4px 15px calc(var(--nav-h) + var(--safe-b) + 44px)}
+.hv-daytot{display:flex; align-items:baseline; gap:8px; padding:13px 2px 11px; border-bottom:0.5px solid var(--rule)}
+.hv-dt-l{font-size:13.5px; color:var(--ink); font-weight:700}
+.hv-dt-v{margin-left:auto; font-size:20px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.3px}
+.hv-dt-inc{font-size:12.5px; color:var(--muted); font-weight:600; font-variant-numeric:tabular-nums}
 .hv-row{display:flex; align-items:center; gap:11px; padding:14px 0; border-bottom:0.5px solid var(--rule); cursor:pointer}
 .hv-row:last-child{border-bottom:none}
 .hv-row:active{opacity:.6}
