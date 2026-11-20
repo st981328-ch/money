@@ -1567,9 +1567,10 @@ function openTheme(){
 }
 function setTheme(t){DB.config.theme=t;save();applyTheme();closeTopSheet();render();}
 function applyTheme(){
-  const t=DB.config.theme;
-  if(t==="auto")document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme",t);
+  const t=DB.config.theme;let eff=t;
+  if(t==="auto"){try{eff=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}catch(e){eff="light";}}
+  document.documentElement.setAttribute("data-theme",eff);
+  if(!applyTheme._sysBound){applyTheme._sysBound=1;try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if(DB.config.theme==="auto")applyTheme();});}catch(e){}}
   document.documentElement.style.setProperty("--accent",DB.config.accent||"#5b6cff");
 }
 
