@@ -799,13 +799,13 @@ html.adding .mask{background:transparent}
 
 /* ===================== dark theme ===================== */
 :root[data-theme="dark"]{color-scheme:dark}
-:root[data-theme="dark"] .homed{--ink:#e9ede9; --muted:#8ca396; --rule:#2a352e; background:#131c18}
-:root[data-theme="dark"] .homev2{--cream:#131c18; --sage:#17221d; --ink:#e9ede9; --muted:#8ca396}
-:root[data-theme="dark"] .statv2{--cream:#131c18; --ink:#e9ede9; --muted:#8ca396; --card:#1d2822; --text:#e9ede9; --text2:#8ca396; --input:#26322b; --line:rgba(255,255,255,.14)}
-:root[data-theme="dark"] .setv2{--cream:#131c18; --ink:#e9ede9; --muted:#8ca396; --line:rgba(255,255,255,.1)}
-:root[data-theme="dark"] .projv2{--cream:#131c18; --ink:#e9ede9; --muted:#8ca396; --card-grey:#28322c; background:#131c18}
-:root[data-theme="dark"].fin-full .app{background:#131c18}
-:root[data-theme="dark"].pg-projects .app{background:#131c18}
+:root[data-theme="dark"] .homed{--ink:#eceef2; --muted:#9aa1ad; --rule:#2b2f37; background:#15171c}
+:root[data-theme="dark"] .homev2{--cream:#15171c; --sage:#1b1e24; --ink:#eceef2; --muted:#9aa1ad}
+:root[data-theme="dark"] .statv2{--cream:#15171c; --ink:#eceef2; --muted:#9aa1ad; --card:#1e2127; --text:#eceef2; --text2:#9aa1ad; --input:#282c34; --line:rgba(255,255,255,.14)}
+:root[data-theme="dark"] .setv2{--cream:#15171c; --ink:#eceef2; --muted:#9aa1ad; --line:rgba(255,255,255,.1)}
+:root[data-theme="dark"] .projv2{--cream:#15171c; --ink:#eceef2; --muted:#9aa1ad; --card-grey:#2a2e36; background:#15171c}
+:root[data-theme="dark"].fin-full .app{background:#15171c}
+:root[data-theme="dark"].pg-projects .app{background:#15171c}
 :root[data-theme="dark"] .hd-track,
 :root[data-theme="dark"] .hd-rec,
 :root[data-theme="dark"] .hd-gear,
@@ -814,32 +814,32 @@ html.adding .mask{background:transparent}
 :root[data-theme="dark"] .theme-opt,
 :root[data-theme="dark"] .nav,
 :root[data-theme="dark"] .sv-tabs button.on,
-:root[data-theme="dark"] .phero-ico{background:#1d2822}
+:root[data-theme="dark"] .phero-ico{background:#1e2127}
 :root[data-theme="dark"] .nav button{color:#cfe0d6}
-:root[data-theme="dark"] .theme-opt{border-color:#2a352e}
-:root[data-theme="dark"] .theme-opt.on{background:#1a2a22; border-color:#3fae7e}
-:root[data-theme="dark"] .theme-opt.on .to-rad{border-color:#3fae7e}
-:root[data-theme="dark"] .theme-opt.on .to-rad::after{background:#3fae7e}
-:root[data-theme="dark"] .theme-opt .to-dsc{color:#8ca396}
+:root[data-theme="dark"] .theme-opt{border-color:#2b2f37}
+:root[data-theme="dark"] .theme-opt.on{background:#232732; border-color:#5b6cff}
+:root[data-theme="dark"] .theme-opt.on .to-rad{border-color:#5b6cff}
+:root[data-theme="dark"] .theme-opt.on .to-rad::after{background:#5b6cff}
+:root[data-theme="dark"] .theme-opt .to-dsc{color:#9aa1ad}
 :root[data-theme="dark"] .hd-seg,
 :root[data-theme="dark"] .search-box,
-:root[data-theme="dark"] .icpick{background:#26322b; color:#cfe0d6}
-:root[data-theme="dark"] .pv-top{background:#131c18}
+:root[data-theme="dark"] .icpick{background:#282c34; color:#cfe0d6}
+:root[data-theme="dark"] .pv-top{background:#15171c}
 :root[data-theme="dark"] .pv-pill,
-:root[data-theme="dark"] .pv-circ{border-color:#33403a}
-:root[data-theme="dark"] .pv-search input{background:#1d2822; color:#e9ede9; border-color:#33403a}
+:root[data-theme="dark"] .pv-circ{border-color:#3a3f49}
+:root[data-theme="dark"] .pv-search input{background:#1e2127; color:#eceef2; border-color:#3a3f49}
 :root[data-theme="dark"] .setv2 .srow{background:rgba(255,255,255,.055)}
 :root[data-theme="dark"] .setv2 .srow:active{background:rgba(255,255,255,.1)}
-:root[data-theme="dark"] .ccard.ccadd{background:rgba(255,255,255,.05); border-color:#33403a}
-:root[data-theme="dark"] .mct-back{color:#e9ede9}
+:root[data-theme="dark"] .ccard.ccadd{background:rgba(255,255,255,.05); border-color:#3a3f49}
+:root[data-theme="dark"] .mct-back{color:#eceef2}
 :root[data-theme="dark"] .sheet:not(.addsheet),
 :root[data-theme="dark"] .search-ov,
-:root[data-theme="dark"] .phero{background:#131c18; color:#e9ede9; --card:#1d2822; --text:#e9ede9; --text2:#8ca396; --input:#26322b; --line:rgba(255,255,255,.12)}
+:root[data-theme="dark"] .phero{background:#15171c; color:#eceef2; --card:#1e2127; --text:#eceef2; --text2:#9aa1ad; --input:#282c34; --line:rgba(255,255,255,.12)}
 :root[data-theme="dark"] .sheet:not(.addsheet) .seg{background:rgba(255,255,255,.07)}
-:root[data-theme="dark"] .sv-donut .sv-num{fill:#e9ede9}
-:root[data-theme="dark"] .sv-donut circle:first-of-type{stroke:#2a352e}
-:root[data-theme="dark"] .sv-tabs button{background:#26322b; color:#8ca396}
-:root[data-theme="dark"] .sv-tabs button.on{background:#1d2822; color:#e9ede9}
+:root[data-theme="dark"] .sv-donut .sv-num{fill:#eceef2}
+:root[data-theme="dark"] .sv-donut circle:first-of-type{stroke:#2b2f37}
+:root[data-theme="dark"] .sv-tabs button{background:#282c34; color:#9aa1ad}
+:root[data-theme="dark"] .sv-tabs button.on{background:#1e2127; color:#eceef2}
 /* dashboard budget bar */
 .hd-bud{background:#fff; border-radius:18px; padding:15px 17px; box-shadow:0 1px 3px rgba(24,43,37,.07); cursor:pointer; transition:transform .14s ease}
 .hd-bud:active{transform:scale(.99)}
@@ -853,7 +853,7 @@ html.adding .mask{background:transparent}
 .hd-bud-set>span:first-child{font-size:15px; font-weight:700; color:var(--ink)}
 .hd-bud-chev{color:var(--muted); font-size:18px}
 .homed.hd-enter>*:nth-child(8){animation-delay:.36s}
-:root[data-theme="dark"] .hd-bud{background:#1d2822}
+:root[data-theme="dark"] .hd-bud{background:#1e2127}
 :root[data-theme="dark"] .hd-budbar{background:rgba(255,255,255,.1)}
 /* swipe-to-delete record rows */
 .hv-sw{position:relative; overflow:hidden; border-bottom:0.5px solid var(--rule)}
@@ -872,3 +872,9 @@ html.adding .mask{background:transparent}
 .sv-trenddot.cur{fill:var(--lime); stroke:var(--ink); stroke-width:1.6}
 .sv-trendlbl{font-size:9px; fill:var(--muted)}
 :root[data-theme="dark"] .sv-trendarea{fill:rgba(255,255,255,.09)}
+/* dark mode: bright lime/orange surfaces keep dark text */
+:root[data-theme="dark"] .hd-card.lime,
+:root[data-theme="dark"] .hd-card.peach{--ink:#182b25}
+:root[data-theme="dark"] .homev2 .hv-day .hv-n{color:#182b25}
+:root[data-theme="dark"] .statv2 .sv-month{--ink:#182b25; color:#182b25}
+:root[data-theme="dark"] .statv2 .sv-month button{color:#182b25}
