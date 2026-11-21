@@ -860,3 +860,15 @@ html.adding .mask{background:transparent}
 .hv-sw:last-child{border-bottom:none}
 .hv-sw-del{position:absolute; top:0; right:0; bottom:0; width:84px; border:none; background:#ff2e01; color:#fff; font-weight:700; font-size:14.5px; letter-spacing:1px; display:flex; align-items:center; justify-content:center}
 .hv-sw .hv-row{position:relative; z-index:1; background:var(--sage); border-bottom:none; transition:transform .22s cubic-bezier(.3,.9,.3,1); touch-action:pan-y}
+/* monthly spending trend chart */
+.sv-trendhead{display:flex; align-items:baseline; justify-content:space-between; margin:2px 2px 8px}
+.sv-trendhead>span:first-child{font-size:20px; font-weight:800; color:var(--ink); letter-spacing:-.3px}
+.sv-mom{font-size:13px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
+.sv-mom.up{color:#d2432f} .sv-mom.down{color:#2f7d57}
+.sv-trend{width:100%; height:auto; display:block; margin-bottom:8px; overflow:visible}
+.sv-trendarea{fill:rgba(24,43,37,.08); opacity:0; transition:opacity .7s ease}
+.sv-trendline{fill:none; stroke:var(--ink); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; transition:stroke-dashoffset .9s ease}
+.sv-trenddot{fill:var(--ink)}
+.sv-trenddot.cur{fill:var(--lime); stroke:var(--ink); stroke-width:1.6}
+.sv-trendlbl{font-size:9px; fill:var(--muted)}
+:root[data-theme="dark"] .sv-trendarea{fill:rgba(255,255,255,.09)}

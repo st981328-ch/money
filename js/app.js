@@ -453,8 +453,36 @@ function _sweepCharts(root){
   root.querySelectorAll(".sv-arc").forEach(el=>{void el.getBoundingClientRect();el.style.strokeDashoffset=el.dataset.off;});
   root.querySelectorAll(".sv-sfill").forEach(el=>{void el.getBoundingClientRect();el.style.width=el.dataset.w;});
   root.querySelectorAll(".sv-num").forEach(el=>_countUp(el,parseFloat(el.dataset.pct)||0,950));
+  root.querySelectorAll(".sv-trendline").forEach(el=>{void el.getBoundingClientRect();el.style.strokeDashoffset="0";});
+  root.querySelectorAll(".sv-trendarea").forEach(el=>{void el.getBoundingClientRect();el.style.opacity="1";});
 }
 function animateStatCharts(){_statGen++;_sweepCharts(document.getElementById("page-stats"));}   // _statGen bump invalidates count-ups still running from a previous render
+/* last n months of expense totals, ending at endMonth */
+function _monthTrend(endMonth,n){
+  const parts=endMonth.split("-").map(Number),y=parts[0],m=parts[1];const out=[];
+  for(let i=n-1;i>=0;i--){const dt=new Date(y,m-1-i,1);const mm=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");
+    let e=0;DB.records.forEach(r=>{if(r.type==="expense"&&r.date&&r.date.slice(0,7)===mm)e+=baseAmt(r);});
+    out.push({m:mm,label:(dt.getMonth()+1)+"月",exp:e});}
+  return out;
+}
+function jumpMonth(m){if(m===ui.month)return;_monthDir=m>ui.month?1:-1;ui.month=m;ui.statTab="overview";render();}
+function _trendSection(tr){
+  const n=tr.length,cur=tr[n-1].exp,prev=n>1?tr[n-2].exp:0;
+  const mom=prev>0?Math.round((cur-prev)/prev*100):null;
+  const momStr=mom==null?"—":mom>0?("較上月 ↑"+mom+"%"):mom<0?("較上月 ↓"+Math.abs(mom)+"%"):"與上月持平";
+  const momCls=mom==null?"":mom>0?"up":mom<0?"down":"";
+  const W=328,H=112,PAD=12,innerW=W-PAD*2,top=10,bh=H-26,maxE=Math.max(1,...tr.map(d=>d.exp));
+  const X=i=>PAD+(n>1?innerW*i/(n-1):innerW/2),Y=d=>top+(bh-top)*(1-d.exp/maxE);
+  const pts=tr.map((d,i)=>({x:X(i),y:Y(d),d}));
+  const line=pts.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ");
+  const area="M"+pts[0].x.toFixed(1)+" "+bh+" "+pts.map(p=>"L"+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ")+" L"+pts[n-1].x.toFixed(1)+" "+bh+" Z";
+  const dots=pts.map((p,i)=>`<circle class="sv-trenddot${i===n-1?" cur":""}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i===n-1?4:2.6}"/>`).join("");
+  const labels=pts.map(p=>`<text class="sv-trendlbl" x="${p.x.toFixed(1)}" y="${H-5}" text-anchor="middle">${p.d.label}</text>`).join("");
+  const slot=innerW/((n-1)||1);
+  const zones=pts.map(p=>`<rect x="${(p.x-slot/2).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H}" fill="transparent" style="cursor:pointer" onclick="jumpMonth('${p.d.m}')"/>`).join("");
+  return `<div class="sv-trendhead"><span>每月趨勢</span><span class="sv-mom ${momCls}">${momStr}</span></div>
+    <svg class="sv-trend" viewBox="0 0 ${W} ${H}"><path class="sv-trendarea" d="${area}"/><path class="sv-trendline" pathLength="1" style="stroke-dasharray:1;stroke-dashoffset:1" d="${line}"/>${dots}${labels}${zones}</svg>`;
+}
 function statOverview(recs){
   let exp=0,inc=0,expN=0,incN=0;
   recs.forEach(r=>{const v=baseAmt(r);if(r.type==="expense"){exp+=v;expN++;}else if(r.type==="income"){inc+=v;incN++;}});
@@ -464,6 +492,7 @@ function statOverview(recs){
       <div class="sv-sbar"><div class="sv-sfill" style="width:0;background:${color}" data-w="${(frac*100).toFixed(1)}%"></div></div>
       <span class="sv-samt" style="color:${color}">${sign}${fmt(val)}</span></div>`;
   const top3=statCats(recs).slice(0,3);
+  const trendHTML=_trendSection(_monthTrend(ui.month,6));
   const donuts=top3.length
     ?top3.map((x,i)=>`<div class="sv-dcol">${ringDonut(exp>0?x.v/exp*100:0,DONUT_PALETTE[i])}
         <div class="sv-dname">${esc(catLabel(x.c))}</div><div class="sv-damt">${fmt(x.v)}</div></div>`).join("")
@@ -474,6 +503,7 @@ function statOverview(recs){
       <div class="sv-divider"></div>
       ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"#182b25":"#ff2e01",total>=0?"+":"−")}
     </div>
+    ${trendHTML}
     <div class="sv-h">Type</div>
     <div class="sv-donuts">${donuts}</div>`;
 }
