@@ -402,7 +402,7 @@ html.fin-full .pages{padding-bottom:0}
 .hv-wl{flex:1; text-align:center; font-size:12px; font-weight:600; color:var(--ink)}
 .hv-wl.sun{color:#ff2e01}
 .hv-actions{position:absolute; right:0; top:50%; transform:translateY(-50%); display:flex; gap:6px}
-.hv-circ{width:39px; height:39px; border-radius:50%; border:1.5px solid #dddfd7; display:flex; align-items:center; justify-content:center; color:#1c1c1e; background:transparent}
+.hv-circ{width:39px; height:39px; border-radius:50%; border:1.5px solid #dddfd7; display:flex; align-items:center; justify-content:center; color:var(--ink); background:transparent}
 .hv-circ .gi{width:22px; height:22px}
 .hv-cal{position:relative; overflow:hidden; cursor:pointer}
 .hv-cal input{position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; padding:0; margin:0; cursor:pointer}
@@ -929,3 +929,12 @@ html.adding .mask{background:transparent}
 :root[data-theme="dark"] .search-cancel{color:#eceef2}
 :root[data-theme="dark"] .tp-sep{color:#eceef2}
 :root[data-theme="dark"] .tk-row.on{background:rgba(255,255,255,.07)}
+/* dark: icon-contrast fixes found by the icon audit */
+:root[data-theme="dark"] .pilchev{color:#eceef2}
+:root[data-theme="dark"] .phero-ico{color:#eceef2}
+:root[data-theme="dark"] .pv-circ.on{color:#1c1c1e}
+:root[data-theme="dark"] .hv-circ,
+:root[data-theme="dark"] .pv-pill,
+:root[data-theme="dark"] .pv-circ,
+:root[data-theme="dark"] .pv-search input,
+:root[data-theme="dark"] .sv-icon{border-color:#3a3f49}
