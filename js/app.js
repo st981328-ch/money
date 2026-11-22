@@ -41,10 +41,29 @@ function render(){
 function dstr(dt){return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
 function selectDay(ds){ui.selDate=ds;ui.month=ds.slice(0,7);render();}
 function shiftWeek(dir){const[y,m,d]=ui.selDate.split("-").map(Number);selectDay(dstr(new Date(y,m-1,d+dir*7)));}
+function shiftDay(dir){const[y,m,d]=ui.selDate.split("-").map(Number);selectDay(dstr(new Date(y,m-1,d+dir)));}
 function bindWeekSwipe(){
   const el=document.getElementById("weekstrip");if(!el)return;let x0=null;
   el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
   el.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>40)shiftWeek(dx<0?1:-1);},{passive:true});
+}
+/* swipe left/right on the day view's blank area -> next/previous day */
+function bindDaySwipe(){
+  const el=document.querySelector("#page-records .hv-list");if(!el)return;
+  let x0=0,y0=0,on=false,horiz=null;
+  el.addEventListener("touchstart",e=>{
+    if(e.target.closest(".hv-sw")){on=false;return;}
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;on=true;horiz=null;
+  },{passive:true});
+  el.addEventListener("touchmove",e=>{
+    if(!on)return;const dx=e.touches[0].clientX-x0,dy=e.touches[0].clientY-y0;
+    if(horiz===null&&(Math.abs(dx)>10||Math.abs(dy)>10))horiz=Math.abs(dx)>Math.abs(dy)*1.3;
+    if(horiz&&e.cancelable)e.preventDefault();
+  },{passive:false});
+  el.addEventListener("touchend",e=>{
+    if(!on)return;on=false;const dx=e.changedTouches[0].clientX-x0;
+    if(horiz&&Math.abs(dx)>50)shiftDay(dx<0?1:-1);
+  });
 }
 function greeting(){const h=new Date().getHours();return h<5?"夜深了":h<11?"早安":h<18?"午安":"晚安";}
 function renderRecords(){
@@ -81,6 +100,7 @@ function renderRecords(){
   _flashId=null;   // consumed: only pulse once, right after a save
   bindWeekSwipe();
   bindRowSwipe();
+  bindDaySwipe();
 }
 /* =================== home dashboard (the house-icon landing) =================== */
 let _homeEnter=false;
