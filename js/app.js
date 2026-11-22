@@ -247,7 +247,7 @@ function ringDonut(pct,color){
     <circle cx="50" cy="50" r="${r}" fill="none" stroke="#e8e8e8" stroke-width="15"/>
     <circle class="sv-arc" cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="15"
       stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" data-off="${(C-on).toFixed(2)}" transform="rotate(-90 50 50)"/>
-    <text class="sv-num" x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="#182b25" data-pct="${p.toFixed(1)}">0.0%</text>
+    <text class="sv-num" x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="#1c1c1e" data-pct="${p.toFixed(1)}">0.0%</text>
   </svg>`;
 }
 function homeStrip(sel){
@@ -499,9 +499,9 @@ function statOverview(recs){
     :`<div class="sv-empty">本月尚無支出</div>`;
   return `<div class="sv-sums">
       ${bar("EXP",expN,exp,exp/maxv,"#ff2e01","−")}
-      ${bar("INC",incN,inc,inc/maxv,"#182b25","+")}
+      ${bar("INC",incN,inc,inc/maxv,"#1c1c1e","+")}
       <div class="sv-divider"></div>
-      ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"#182b25":"#ff2e01",total>=0?"+":"−")}
+      ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"#1c1c1e":"#ff2e01",total>=0?"+":"−")}
     </div>
     ${trendHTML}
     <div class="sv-h">Type</div>
@@ -773,7 +773,7 @@ function projColorPool(){
 }
 function projColor(p){const pool=projColorPool(),id=(p&&(p.id||p.name))||"";let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))>>>0;return pool[h%pool.length];}
 /* readable ink/white on a given background by luminance */
-function inkOn(bg){let hex=(bg||"#888").replace("#","");if(hex.length===3)hex=hex.split("").map(c=>c+c).join("");const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);return (0.299*r+0.587*g+0.114*b)/255>0.62?"#182b25":"#fff";}
+function inkOn(bg){let hex=(bg||"#888").replace("#","");if(hex.length===3)hex=hex.split("").map(c=>c+c).join("");const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);return (0.299*r+0.587*g+0.114*b)/255>0.62?"#1c1c1e":"#fff";}
 function pickCover(pid){
   const old=document.getElementById("coverInput");if(old)old.remove();
   const inp=document.createElement("input");inp.id="coverInput";inp.type="file";inp.accept="image/*";
