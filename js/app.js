@@ -276,7 +276,7 @@ function homeRow(r,swipe){
   const proj=r.projectId?projOf(r.projectId):null;
   const tag=proj?`<span class="hv-ptag">${esc(proj.name)}</span>`:"";
   const inner=`<span class="hv-ic">${icon}</span><span class="hv-name">${esc(name)}</span>${tag}<span class="hv-amt ${amtcls}">${amt}</span>`;
-  if(swipe)return `<div class="hv-sw"><button class="hv-sw-del" onclick="swipeDel('${r.id}')">刪除</button><div class="hv-row${r.id===_flashId?" flash":""}" data-id="${r.id}">${inner}</div></div>`;
+  if(swipe)return `<div class="hv-sw"><button class="hv-sw-del" onclick="swipeDel('${r.id}')">Delete</button><div class="hv-row${r.id===_flashId?" flash":""}" data-id="${r.id}">${inner}</div></div>`;
   return `<div class="hv-row${r.id===_flashId?" flash":""}" onclick="openAdd('${r.id}')">${inner}</div>`;
 }
 /* swipe-left a record row to reveal delete; tap still opens the editor */
