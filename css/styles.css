@@ -921,3 +921,10 @@ html.adding .mask{background:transparent}
 :root[data-theme="dark"] .dp-d{color:#eceef2}
 :root[data-theme="dark"] .avp-confirm,
 :root[data-theme="dark"] .dp-d.on{color:#1c1c1e}
+/* dark: more contrast fixes found by the contrast audit */
+:root[data-theme="dark"] .sv-sbadge{background:#3a3f49; color:#eceef2}
+:root[data-theme="dark"] .dp-w{color:rgba(255,255,255,.55)}
+:root[data-theme="dark"] .tp-i{color:rgba(255,255,255,.42)}
+:root[data-theme="dark"] .tp-i.on{color:#eceef2}
+:root[data-theme="dark"] .search-cancel{color:#eceef2}
+:root[data-theme="dark"] .tp-sep{color:#eceef2}

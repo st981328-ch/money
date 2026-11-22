@@ -150,7 +150,7 @@ function renderHome(){
     </div>
     <div id="hdTrackRows">${trackRowsHtml()}</div></div>`;
   const recent=DB.records.slice().sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:(b._t||0)-(a._t||0)).slice(0,4);
-  const recHtml=recent.length?recent.map(homeRow).join(""):`<div class="hd-empty">還沒有記錄，按 ＋ 新增一筆</div>`;
+  const recHtml=recent.length?recent.map(r=>homeRow(r)).join(""):`<div class="hd-empty">還沒有記錄，按 ＋ 新增一筆</div>`;
   const ent=_homeEnter;_homeEnter=false;
   const html=`<div class="homed${ent?" hd-enter":""}">
     <div class="hd-top">
@@ -499,9 +499,9 @@ function statOverview(recs){
     :`<div class="sv-empty">本月尚無支出</div>`;
   return `<div class="sv-sums">
       ${bar("EXP",expN,exp,exp/maxv,"#ff2e01","−")}
-      ${bar("INC",incN,inc,inc/maxv,"#1c1c1e","+")}
+      ${bar("INC",incN,inc,inc/maxv,"var(--ink)","+")}
       <div class="sv-divider"></div>
-      ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"#1c1c1e":"#ff2e01",total>=0?"+":"−")}
+      ${bar("TOTAL",expN+incN,Math.abs(total),Math.abs(total)/maxv,total>=0?"var(--ink)":"#ff2e01",total>=0?"+":"−")}
     </div>
     ${trendHTML}
     <div class="sv-h">Type</div>
