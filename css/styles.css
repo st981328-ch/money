@@ -472,7 +472,7 @@ html.fin-full .pages{padding-bottom:0}
 .tk-row.sub{padding-left:26px}
 .tk-row.on{background:rgba(24,43,37,.06)}
 .tk-ic{width:24px; display:inline-flex; align-items:center; justify-content:center; font-size:18px; flex:0 0 auto}
-.tk-nm{flex:1; font-size:15px; font-weight:600; color:#1c1c1e}
+.tk-nm{flex:1; font-size:15px; font-weight:600; color:var(--text)}
 .tk-ck{width:20px; text-align:center; color:#28a46c; font-weight:800; font-size:15px}
 /* recent records */
 .hd-rech{display:flex; align-items:center; justify-content:space-between; margin-top:6px; padding:0 2px}
@@ -928,3 +928,4 @@ html.adding .mask{background:transparent}
 :root[data-theme="dark"] .tp-i.on{color:#eceef2}
 :root[data-theme="dark"] .search-cancel{color:#eceef2}
 :root[data-theme="dark"] .tp-sep{color:#eceef2}
+:root[data-theme="dark"] .tk-row.on{background:rgba(255,255,255,.07)}
