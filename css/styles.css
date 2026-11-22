@@ -878,3 +878,25 @@ html.adding .mask{background:transparent}
 :root[data-theme="dark"] .homev2 .hv-day .hv-n{color:#182b25}
 :root[data-theme="dark"] .statv2 .sv-month{--ink:#182b25; color:#182b25}
 :root[data-theme="dark"] .statv2 .sv-month button{color:#182b25}
+/* pie center text: resolve via CSS (presentation-attr var() isn't reliable in webkit) */
+#pieCTop{fill:var(--text2)} #pieCBot{fill:var(--text)}
+/* dark mode: add-transaction sheet (was a light frosted sheet, unreadable over dark) */
+:root[data-theme="dark"] .sheet.full.addsheet{background:rgba(26,28,34,0.93); color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-title{color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-circ{background:rgba(255,255,255,0.14); color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-tabs button{background:#2a2d35; color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-tabs button.on{background:#454a54}
+:root[data-theme="dark"] .addsheet .av-cat{color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-back .av-tile{background:rgba(255,255,255,0.14)!important}
+:root[data-theme="dark"] .addsheet .av-curpill,
+:root[data-theme="dark"] .addsheet .av-curadd{background:#2a2d35; color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-pill{background:#2a2d35; color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-pill.set{background:#dee514; color:#182b25}
+:root[data-theme="dark"] .addsheet .av-note{border-color:rgba(255,255,255,0.22); color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-note::placeholder{color:rgba(255,255,255,0.4)}
+:root[data-theme="dark"] .addsheet .av-div{background:rgba(255,255,255,0.16)}
+:root[data-theme="dark"] .addsheet .av-amtrow{border-bottom-color:rgba(255,255,255,0.16)}
+:root[data-theme="dark"] .addsheet .av-menu{background:#1e2127; color:#eceef2}
+:root[data-theme="dark"] .addsheet .av-mi.on{background:#2a2d35}
+/* dark: keep the center + dark on its lime circle (was lightened by the nav-icon override) */
+:root[data-theme="dark"] .nav button.navadd{color:#182b25}
